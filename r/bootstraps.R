@@ -34,7 +34,7 @@ w <- .025 # set in panel
 # without kernel density
 trials %>% 
   ggvis(~result) %>% 
-  layer_histograms(width = w) %>% 
+  layer_histograms(binwidth = w) %>% 
   add_axis("x", title = "means")
 
 # with kernel density
