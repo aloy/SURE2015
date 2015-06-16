@@ -1,4 +1,6 @@
 shinyServer(function(input,output){
+  
+  ## One-Sample Bootstrap
   library(mosaic)
   library(Lock5Data)
   library(dplyr)
@@ -21,35 +23,27 @@ shinyServer(function(input,output){
     sd(original_data)
   })
   
-  trialsMean <- do(1000) * mean(sample(original_data, replace = TRUE))
-  trialsMedian <- do(1000) * median(sample(original_data, replace = TRUE))
-  trialsSdev <- do(1000) * sd(sample(original_data, replace = TRUE))
-  
   trialsFunction <- function(x, list) {
     switch(list,
-           bootMean = trialsMean,
-           bootMedian = trialsMedian,
-           bootStdDev = trialsSdev
+           bootMean = do(input$num) * mean(sample(original_data, replace = TRUE)),
+           bootMedian = do(input$num) * median(sample(original_data, replace = TRUE)),
+           bootStdDev = do(input$num) * sd(sample(original_data, replace = TRUE))
     )
   }
 
   plotType <- function(x, type) {
     switch(type,
-           his =  trialsFunction(original_data, input$stat) %>% 
-             ggvis(~result) %>% 
-             layer_histograms(binwidth = input$w) %>% 
-             add_axis("x", title = paste("Bootstrap of", input$stat)),
-           den = trialsFunction(original_data, input$stat) %>% 
-             ggvis(~result) %>% 
-             layer_densities() %>%
-             add_axis("x", title = paste("Kernel Bootstrap of", input$stat))
+           his =  qplot(trialsFunction(original_data, input$stat)$result, geom="histogram", 
+                        binwidth=input$w, xlab=paste("Bootstrap of", input$stat), ylab="Frequency"),
+           den = qplot(trialsFunction(original_data, input$stat)$result, geom="density",
+                       xlab=paste(input$stat, "Hours of sleep"), ylab="Density")
    )}
   
-  output$ggBoot <- renderPlot({
+  output$bootHist <- renderPlot({
     plotType(original_data, input$plot)
   })
   
-  output$bootSummary <- renderPrint({
+ output$bootSummary <- renderPrint({
     summary(trialsFunction(original_data, input$stat)$result)
   })
 
@@ -60,16 +54,13 @@ shinyServer(function(input,output){
   output$bootSd <- renderPrint({
     sd(trialsFunction(original_data, input$stat)$result)
   })
-
-level <- 0.95
-alpha <- 1 - level  
   
   ciType <- function(x, double) {
     switch(double,
            perc =  quantile(trialsFunction(original_data, input$stat)$result, 
-                            probs = c(alpha/2, 1-alpha/2)),
-           norm = c(mean(original_data) - qnorm(1 - alpha/2) * 
-             sd(trialsFunction(original_data, input$stat)$result), mean(original_data) + qnorm(1 - alpha/2) * 
+                            probs = c((1-input$level)/2, (input$level)/2)),
+           norm = c(mean(original_data) - qnorm(input$level/2) * 
+             sd(trialsFunction(original_data, input$stat)$result), mean(original_data) + qnorm(input$level/2) * 
                sd(trialsFunction(original_data, input$stat)$result))
     )}
   
@@ -78,15 +69,41 @@ alpha <- 1 - level
   })
 
   output$percLower <- renderPrint({
-    quantile(trialsFunction(original_data, input$stat)$result, probs = c(alpha))
+    quantile(trialsFunction(original_data, input$stat)$result, probs = c(1-input$level))
   })
 
 output$percUpper <- renderPrint({
-  quantile(trialsFunction(original_data, input$stat)$result, probs = c(1-alpha))
+  quantile(trialsFunction(original_data, input$stat)$result, probs = input$level)
 })
 
-output$ciPrint2 <- renderPrint({
+output$normPrint <- renderPrint({
   ciType(trialsFunction(original_data, input$stat)$result, input$ci)
 })
-  
+
+output$normUpper <- renderPrint({
+  mean(original_data) + qnorm(input$level) * sd(trialsFunction(original_data, input$stat)$result)
+})
+
+output$normLower <- renderPrint({
+  mean(original_data) - qnorm(input$level) * sd(trialsFunction(original_data, input$stat)$result)
+})
+
+## Two-Sample Bootstrap
+tv <- read.csv("../data/TV.csv")
+grouped <- group_by(tv, Cable)
+
+plotType2 <- function(x, type) {
+  switch(type,
+         his =  qplot(summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
+                  mean = mean(Time)), mean.diff = diff(mean))$mean.diff, binwidth=input$w, 
+                  xlab="Means", ylab="Frequency"),
+         den = qplot(summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable), 
+                  mean = mean(Time)), mean.diff = diff(mean))$mean.diff, geom="density", 
+                  xlab="Difference in Means", ylab="Density")
+  )}
+
+output$bootHist2 <- renderPlot({
+  plotType2(do(input$num) * sample(grouped, replace = TRUE), input$plot)
+})
+
 })

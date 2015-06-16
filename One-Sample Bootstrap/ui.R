@@ -1,11 +1,7 @@
+library(markdown)
 shinyUI(fluidPage(
-  titlePanel("One-Sample Bootstrapping"),
-  fluidRow(
-    column(2,
-           wellPanel("Sidebar, presumably with some description about the app.")
-    ),
-    column(3,
-           wellPanel(h3("Bootstrap Control Panel"),
+    sidebarLayout(
+           sidebarPanel(h3("Bootstrap Control Panel"),
                 radioButtons("plot", label=h4("Plotting"),
                  c("Histogram" = "his", "Kernel Density" = "den"), selected="his"),
                numericInput("w", 
@@ -16,15 +12,19 @@ shinyUI(fluidPage(
                   label = h5("Number of Bootstraps"), 
                   value = 1000, min = 1, max = 100000),
                 radioButtons("stat", label = h5("Statistic"),
-                  c("Mean" = "bootMean", "Median" = "bootMedian", "Standard Deviation" = "bootStdDev"), 
-                  selected = "bootMean"),
-                radioButtons("ci", label = h5("Confidence Interval"),
+                  c("Mean" = "bootMean", "Median (One-Sample)" = "bootMedian", 
+                    "Standard Deviation (One-Sample)" = "bootStdDev"), selected = "bootMean"),
+                radioButtons("ci", label = h5("Confidence Interval (One-Sample)"),
                   c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
                 numericInput("level", 
-                  label = h5("Confidence Level"), 
-                  value = 0.95, min = 0.01, max = 0.99, step=0.01))
-    ),
-    column(3,
+                  label = h5("Confidence Level (One-Sample)"), 
+                  value = 0.95, min = 0.01, max = 0.99, step=0.01),
+              p("This might be a good place to put description, instead of having another column.")
+           ), #sidebarPanel
+    mainPanel(
+    tabsetPanel(type="tabs",
+      tabPanel("One-Sample Bootstrap",
+    column(5,
            wellPanel(h3("Original Sample"),
               plotOutput("origHist"),
             h5("Original Summary Statistics"),
@@ -35,9 +35,9 @@ shinyUI(fluidPage(
               h6("Standard Deviation"),
                 verbatimTextOutput("sd"))
     ),
-    column(4,
+    column(7,
           wellPanel(h3("Bootstrap Samples"),
-              plotOutput("ggBoot"),
+              plotOutput("bootHist"),
            h5("Bootstrap Summary Statistics"),
             h6("Estimate Five-Number Summary"),
              verbatimTextOutput("bootSummary"),
@@ -55,10 +55,23 @@ shinyUI(fluidPage(
             verbatimTextOutput("percUpper")
              ),
            conditionalPanel(
-             condition = "input.ci == 'norm'",
-              h6("Two-Tailed Confidence Interval (Normal)"),
-              verbatimTextOutput("ciPrint2"))
-             )
-    )
-  )
-))
+            condition = "input.ci == 'norm'",
+            h6("Two-Tailed Confidence Interval (Normal)"),
+              verbatimTextOutput("normPrint"),
+            h6("Lower Bound"),
+            verbatimTextOutput("normLower"),
+            h6("Upper Bound"),
+            verbatimTextOutput("normUpper")
+             ) #conditionalPanel
+          ) #wellPanel
+        )      #column
+      ), #tabPanel
+    tabPanel("Two-Sample Bootstrap",
+          h3("Bootstrap Samples"),
+             plotOutput("bootHist2")
+      ) #tabPanel
+    ) #tabsetPanel
+    ) # mainPanel
+  ) #sidebarLayout
+ ) #fluidPage
+) #shinyUI
