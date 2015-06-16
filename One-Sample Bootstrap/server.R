@@ -54,11 +54,39 @@ shinyServer(function(input,output){
   })
 
   output$bootBias <- renderPrint({
-    mean(original_data) - mean(trialsFunction(original_data, input$stat)$result)
+    mean(original_data)-mean(trialsFunction(original_data, input$stat)$result)
   })
   
   output$bootSd <- renderPrint({
     sd(trialsFunction(original_data, input$stat)$result)
   })
+
+level <- 0.95
+alpha <- 1 - level  
+  
+  ciType <- function(x, double) {
+    switch(double,
+           perc =  quantile(trialsFunction(original_data, input$stat)$result, 
+                            probs = c(alpha/2, 1-alpha/2)),
+           norm = c(mean(original_data) - qnorm(1 - alpha/2) * 
+             sd(trialsFunction(original_data, input$stat)$result), mean(original_data) + qnorm(1 - alpha/2) * 
+               sd(trialsFunction(original_data, input$stat)$result))
+    )}
+  
+  output$ciPrint <- renderPrint({
+    ciType(trialsFunction(original_data, input$stat)$result, input$ci)
+  })
+
+  output$percLower <- renderPrint({
+    quantile(trialsFunction(original_data, input$stat)$result, probs = c(alpha))
+  })
+
+output$percUpper <- renderPrint({
+  quantile(trialsFunction(original_data, input$stat)$result, probs = c(1-alpha))
+})
+
+output$ciPrint2 <- renderPrint({
+  ciType(trialsFunction(original_data, input$stat)$result, input$ci)
+})
   
 })
