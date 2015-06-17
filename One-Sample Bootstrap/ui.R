@@ -1,4 +1,6 @@
+library(shiny)
 library(markdown)
+library(datasets)
 shinyUI(fluidPage(
     sidebarLayout(
            sidebarPanel(h3("Bootstrap Control Panel"),
@@ -68,7 +70,9 @@ shinyUI(fluidPage(
       ), #tabPanel
     tabPanel("Two-Sample Bootstrap",
           h3("Bootstrap Samples"),
-             plotOutput("bootHist2")
+             plotOutput("bootHist2"),
+          h6("Mean Five-Number Summary"),
+          verbatimTextOutput("bootSummary2")
       ) #tabPanel
     ) #tabsetPanel
     ) # mainPanel

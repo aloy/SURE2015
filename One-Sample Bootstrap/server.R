@@ -5,6 +5,7 @@ shinyServer(function(input,output){
   library(Lock5Data)
   library(dplyr)
   library(ggvis)
+  library(shiny)
   
   data(SleepStudy)
   original_data <- SleepStudy$AverageSleep
@@ -14,12 +15,12 @@ shinyServer(function(input,output){
     qplot(original_data, xlab="Hours of Sleep", ylab="Frequency", main="Original Sample",)
   })
   output$summary <- renderPrint({
-    summary(original_data)
+      summary(original_data)
   })
-  output$mean <- renderPrint({
+  output$mean <- renderText({
     mean(original_data)
   })
-  output$sd <- renderPrint({
+  output$sd <- renderText({
     sd(original_data)
   })
   
@@ -31,11 +32,16 @@ shinyServer(function(input,output){
     )
   }
 
+  
+  trials <- reactive(
+    trialsFunction(original_data, input$stat)$result
+  )
+  
   plotType <- function(x, type) {
     switch(type,
-           his =  qplot(trialsFunction(original_data, input$stat)$result, geom="histogram", 
+           his =  qplot(trials(), geom="histogram", 
                         binwidth=input$w, xlab=paste("Bootstrap of", input$stat), ylab="Frequency"),
-           den = qplot(trialsFunction(original_data, input$stat)$result, geom="density",
+           den = qplot(trials(), geom="density",
                        xlab=paste(input$stat, "Hours of sleep"), ylab="Density")
    )}
   
@@ -44,66 +50,99 @@ shinyServer(function(input,output){
   })
   
  output$bootSummary <- renderPrint({
-    summary(trialsFunction(original_data, input$stat)$result)
+    summary(trials())
   })
 
-  output$bootBias <- renderPrint({
-    mean(original_data)-mean(trialsFunction(original_data, input$stat)$result)
+  output$bootBias <- renderText({
+    mean(original_data)-mean(trials())
   })
   
-  output$bootSd <- renderPrint({
-    sd(trialsFunction(original_data, input$stat)$result)
+  output$bootSd <- renderText({
+    sd(trials())
   })
+
+level <- reactive(
+  input$level
+)
+
+alpha <- reactive(
+  1- level()
+  )
+
+observed <- reactive(
+mean(original_data)
+  )
+
+SE <- reactive (
+sd(trials())
+  )
   
   ciType <- function(x, double) {
     switch(double,
-           perc =  quantile(trialsFunction(original_data, input$stat)$result, 
-                            probs = c((1-input$level)/2, (input$level)/2)),
-           norm = c(mean(original_data) - qnorm(input$level/2) * 
-             sd(trialsFunction(original_data, input$stat)$result), mean(original_data) + qnorm(input$level/2) * 
-               sd(trialsFunction(original_data, input$stat)$result))
+           perc =  quantile(trials(), probs = c(alpha()/2, 1-alpha()/2)),
+           norm = c(observed() - qnorm(1 - alpha()/2) *  SE, observed() + qnorm(1 - alpha()/2) * SE())
     )}
   
   output$ciPrint <- renderPrint({
-    ciType(trialsFunction(original_data, input$stat)$result, input$ci)
+    ciType(trials(), input$ci)
   })
 
   output$percLower <- renderPrint({
-    quantile(trialsFunction(original_data, input$stat)$result, probs = c(1-input$level))
+    quantile(trials(), probs = c(alpha()))
   })
 
 output$percUpper <- renderPrint({
-  quantile(trialsFunction(original_data, input$stat)$result, probs = input$level)
+  quantile(trials(), probs = c(1-alpha()))
 })
 
 output$normPrint <- renderPrint({
-  ciType(trialsFunction(original_data, input$stat)$result, input$ci)
+  ciType(trials(), input$ci)
 })
 
 output$normUpper <- renderPrint({
-  mean(original_data) + qnorm(input$level) * sd(trialsFunction(original_data, input$stat)$result)
+  observed() + qnorm(input$level) * SE()
 })
 
 output$normLower <- renderPrint({
-  mean(original_data) - qnorm(input$level) * sd(trialsFunction(original_data, input$stat)$result)
+  observed() - qnorm(input$level) * SE()
 })
 
 ## Two-Sample Bootstrap
 tv <- read.csv("../data/TV.csv")
 grouped <- group_by(tv, Cable)
 
+diffs <- reactive(
+  summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
+                      mean = mean(Time)), mean.diff = diff(mean))
+  )
+
+
 plotType2 <- function(x, type) {
   switch(type,
-         his =  qplot(summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
-                  mean = mean(Time)), mean.diff = diff(mean))$mean.diff, binwidth=input$w, 
+         his =  qplot(diffs()$mean.diff, binwidth=input$w, 
                   xlab="Means", ylab="Frequency"),
-         den = qplot(summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable), 
-                  mean = mean(Time)), mean.diff = diff(mean))$mean.diff, geom="density", 
+         den = qplot(diffs()$mean.diff, geom="density", 
                   xlab="Difference in Means", ylab="Density")
   )}
 
 output$bootHist2 <- renderPlot({
   plotType2(do(input$num) * sample(grouped, replace = TRUE), input$plot)
 })
+
+output$bootSummary2 <- renderPrint({
+  summary(diffs()$mean.diff)
+})
+
+# output$bootBias2 <- renderText({
+#   mean(grouped)-mean(summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
+#                                                mean = mean(Time)), mean.diff = diff(mean))$mean.diff)
+# })
+
+# output$bootSd2 <- renderText({
+#   sd((summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
+#                                        mean = mean(Time)), mean.diff = diff(mean))$mean.diff))
+# })
+
+## Not sure if these are calculated correctly (using mean(grouped))
 
 })
