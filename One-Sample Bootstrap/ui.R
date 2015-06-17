@@ -3,7 +3,10 @@ library(markdown)
 library(datasets)
 shinyUI(fluidPage(
     sidebarLayout(
-           sidebarPanel(h3("Bootstrap Control Panel"),
+           sidebarPanel(
+             conditionalPanel(
+               "$('li.active a').first().html()==='One-Sample Bootstrap'",
+             h3("Bootstrap Control Panel"),
                 radioButtons("plot", label=h4("Plotting"),
                  c("Histogram" = "his", "Kernel Density" = "den"), selected="his"),
                numericInput("w", 
@@ -14,14 +17,34 @@ shinyUI(fluidPage(
                   label = h5("Number of Bootstraps"), 
                   value = 1000, min = 1, max = 100000),
                 radioButtons("stat", label = h5("Statistic"),
-                  c("Mean" = "bootMean", "Median (One-Sample)" = "bootMedian", 
-                    "Standard Deviation (One-Sample)" = "bootStdDev"), selected = "bootMean"),
-                radioButtons("ci", label = h5("Confidence Interval (One-Sample)"),
+                  c("Mean" = "bootMean", "Median" = "bootMedian", 
+                    "Standard Deviation" = "bootStdDev"), selected = "bootMean"),
+                radioButtons("ci", label = h5("Confidence Interval"),
                   c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
                 numericInput("level", 
-                  label = h5("Confidence Level (One-Sample)"), 
+                  label = h5("Confidence Level"), 
                   value = 0.95, min = 0.01, max = 0.99, step=0.01),
               p("This might be a good place to put description, instead of having another column.")
+             ), #conditionalPanel
+             conditionalPanel(
+               "$('li.active a').first().html()==='Two-Sample Bootstrap'",
+               h3("Bootstrap Control Panel"),
+               radioButtons("plot2", label=h4("Plotting"),
+                            c("Histogram" = "his2", "Kernel Density" = "den2"), selected="his2"),
+               numericInput("w2", 
+                            label = h5("Bootstrap Bin Width"), 
+                            value = 0.2, step=0.05, min = 0.05),
+               h4("Resampling"),
+               numericInput("num2", 
+                            label = h5("Number of Bootstraps"), 
+                            value = 1000, min = 1, max = 100000),
+               radioButtons("stat2", label = h5("Statistic"),
+                    c("Mean" = "bootMean2", "Median" = "bootMedian2", 
+                     "Standard Deviation" = "bootSd2", "Difference in Ratios" = "ratioDiff",
+                     "Ratio of Standard Deviations" = "ratioSd"), selected = "bootMean2"),
+               p("More description about two-sample stuff.")
+             )
+               #conditionalPanel
            ), #sidebarPanel
     mainPanel(
     tabsetPanel(type="tabs",
@@ -70,9 +93,40 @@ shinyUI(fluidPage(
       ), #tabPanel
     tabPanel("Two-Sample Bootstrap",
           h3("Bootstrap Samples"),
-             plotOutput("bootHist2"),
-          h6("Mean Five-Number Summary"),
-          verbatimTextOutput("bootSummary2")
+          conditionalPanel(
+          condition = "input.stat2 == 'bootMean2'",
+             plotOutput("bootMeanHist2"),
+          h6("Estimate Five-Number Summary"),
+          verbatimTextOutput("bootMeanSummary2"),
+          h6("Estimate Bias"),
+          verbatimTextOutput("bootMeanBias2"),
+          h6("Estimate Standard Deviation"),
+          verbatimTextOutput("bootMeanSd2")
+          ), #conditionalPanel
+          conditionalPanel(
+            condition = "input.stat2 == 'bootMedian2'",
+              plotOutput("bootMedianHist2"),
+            h6("Estimate Five-Number Summary"),
+              verbatimTextOutput("bootMedianSummary2"),
+            h6("Estimate Bias"),
+              verbatimTextOutput("bootMedianBias2"),
+            h6("Estimate Standard Deviation"),
+              verbatimTextOutput("bootMedianSd2")
+          ), #conditionalPanel
+          conditionalPanel(
+            condition = "input.stat2 == 'bootSd2'",
+            plotOutput("bootSdHist2"),
+            h6("Estimate Five-Number Summary"),
+            verbatimTextOutput("bootSdSummary2"),
+            h6("Estimate Bias"),
+            verbatimTextOutput("bootSdBias2"),
+            h6("Estimate Standard Deviation"),
+            verbatimTextOutput("bootSdSd2")
+          ), #conditionalPanel
+          conditionalPanel(
+            condition = "input.stat2 == 'ratioDiff'",
+            plotOutput("bootRatioHist2")
+          ) #conditionalPanel
       ) #tabPanel
     ) #tabsetPanel
     ) # mainPanel

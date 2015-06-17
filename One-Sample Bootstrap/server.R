@@ -1,3 +1,4 @@
+library(shiny)
 shinyServer(function(input,output){
   
   ## One-Sample Bootstrap
@@ -5,7 +6,6 @@ shinyServer(function(input,output){
   library(Lock5Data)
   library(dplyr)
   library(ggvis)
-  library(shiny)
   
   data(SleepStudy)
   original_data <- SleepStudy$AverageSleep
@@ -80,7 +80,7 @@ sd(trials())
   ciType <- function(x, double) {
     switch(double,
            perc =  quantile(trials(), probs = c(alpha()/2, 1-alpha()/2)),
-           norm = c(observed() - qnorm(1 - alpha()/2) *  SE, observed() + qnorm(1 - alpha()/2) * SE())
+           norm = c(observed() - qnorm(1-alpha()/2) *  SE(), observed() + qnorm(1-alpha()/2) * SE())
     )}
   
   output$ciPrint <- renderPrint({
@@ -95,16 +95,16 @@ output$percUpper <- renderPrint({
   quantile(trials(), probs = c(1-alpha()))
 })
 
-output$normPrint <- renderPrint({
+output$normPrint <- renderText({
   ciType(trials(), input$ci)
 })
 
-output$normUpper <- renderPrint({
-  observed() + qnorm(input$level) * SE()
+output$normUpper <- renderText({
+  c(paste(100*level(),'%'), observed() - qnorm(input$level) * SE())
 })
 
-output$normLower <- renderPrint({
-  observed() - qnorm(input$level) * SE()
+output$normLower <- renderText({
+  c(paste(100*alpha(),'%'), observed() - qnorm(input$level) * SE())
 })
 
 ## Two-Sample Bootstrap
@@ -112,37 +112,103 @@ tv <- read.csv("../data/TV.csv")
 grouped <- group_by(tv, Cable)
 
 diffs <- reactive(
-  summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
+  summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable),
                       mean = mean(Time)), mean.diff = diff(mean))
   )
 
 
 plotType2 <- function(x, type) {
   switch(type,
-         his =  qplot(diffs()$mean.diff, binwidth=input$w, 
+         his2 =  qplot(diffs()$mean.diff, bin=input$w2, 
                   xlab="Means", ylab="Frequency"),
-         den = qplot(diffs()$mean.diff, geom="density", 
+         den2 = qplot(diffs()$mean.diff, geom="density", 
                   xlab="Difference in Means", ylab="Density")
   )}
 
-output$bootHist2 <- renderPlot({
-  plotType2(do(input$num) * sample(grouped, replace = TRUE), input$plot)
+output$bootMeanHist2 <- renderPlot({
+  plotType2(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
 })
 
-output$bootSummary2 <- renderPrint({
+output$bootMeanSummary2 <- renderPrint({
   summary(diffs()$mean.diff)
 })
 
-# output$bootBias2 <- renderText({
-#   mean(grouped)-mean(summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
-#                                                mean = mean(Time)), mean.diff = diff(mean))$mean.diff)
-# })
+output$bootMeanBias2 <- renderText({
+  mean(summarise(summarise(group_by(grouped, Cable), mean = mean(Time)), 
+  mean.diff = diff(mean))$mean.diff)-mean(diffs()$mean.diff)
+})
 
-# output$bootSd2 <- renderText({
-#   sd((summarise(summarise(group_by(do(input$num) * sample(grouped, replace = TRUE), .index, Cable),
-#                                        mean = mean(Time)), mean.diff = diff(mean))$mean.diff))
-# })
+output$bootMeanSd2 <- renderText({
+  sd(diffs()$mean.diff)
+})
 
-## Not sure if these are calculated correctly (using mean(grouped))
+meds <- reactive(
+  summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable),
+                      median = median(Time)), med.diff = diff(median))
+)
 
+
+plotType3 <- function(x, type) {
+  switch(type,
+         his2 =  qplot(meds()$med.diff, bin=input$w2, 
+                       xlab="Medians", ylab="Frequency"),
+         den2 = qplot(meds()$med.diff, geom="density", 
+                      xlab="Difference in Medians", ylab="Density")
+  )}
+
+output$bootMedianHist2 <- renderPlot({
+  plotType3(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
+})
+
+output$bootMedianSummary2 <- renderPrint({
+  summary(meds()$med.diff)
+})
+
+output$bootMedianBias2 <- renderText({
+  mean(summarise(summarise(group_by(grouped, Cable), median = median(Time)), 
+                 med.diff = diff(median))$med.diff)-mean(meds()$med.diff)
+})
+
+output$bootMedianSd2 <- renderText({
+  sd(meds()$med.diff)
+})
+
+sd2 <- reactive(
+  summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable),
+                      sd = sd(Time)), sd.diff = diff(sd))
+)
+
+plotType4 <- function(x, type) {
+  switch(type,
+         his2 =  qplot(sd2()$sd.diff, bin=input$w2, 
+                       xlab="Standard Deviations", ylab="Frequency"),
+         den2 = qplot(sd2()$sd.diff, geom="density", 
+                      xlab="Difference in Standard Deviations", ylab="Density")
+  )}
+
+output$bootSdHist2 <- renderPlot({
+  plotType4(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
+})
+
+output$bootSdSummary2 <- renderPrint({
+  summary(sd2()$sd.diff)
+})
+
+output$bootSdBias2 <- renderText({
+  mean(summarise(summarise(group_by(grouped, Cable), sd = sd(Time)), 
+                 sd.diff = diff(sd))$sd.diff)-mean(sd2()$sd.diff)
+})
+
+output$bootSdSd2 <- renderText({
+  sd(sd2()$sd.diff)
+})
+  
+#   for(i in 1:10)
+#   {
+#     if (group_means$.index[i] == group_means$.index[i+1])
+#     {
+#       print(group_means$mean[i]/group_means$mean[i+1])
+#     }
+#     i <- i+1
+#   }
 })
