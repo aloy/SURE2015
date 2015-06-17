@@ -79,8 +79,6 @@ grouped_trials <- group_by(trials, .index, Cable)
 group_means <- summarise(grouped_trials, mean = mean(Time))
 diffs <- summarise(group_means, mean.diff = diff(mean))
 
-summarise(summarise(group_by(trials, .index, Cable), mean = mean(Time)), mean.diff = diff(mean))
-
 # without kernel density
 w <- .2
 diffs %>% 

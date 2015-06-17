@@ -5,14 +5,14 @@ shinyServer(function(input,output){
   library(mosaic)
   library(Lock5Data)
   library(dplyr)
-  library(ggvis)
+  library(ggplot2)
   
   data(SleepStudy)
   original_data <- SleepStudy$AverageSleep
   
   output$origHist <- renderPlot({
     w <- input$w
-    qplot(original_data, xlab="Hours of Sleep", ylab="Frequency", main="Original Sample",)
+    qplot(original_data, xlab="Hours of Sleep", ylab="Frequency", main="Original Sample", asp=1)
   })
   output$summary <- renderPrint({
       summary(original_data)
@@ -40,9 +40,9 @@ shinyServer(function(input,output){
   plotType <- function(x, type) {
     switch(type,
            his =  qplot(trials(), geom="histogram", 
-                        binwidth=input$w, xlab=paste("Bootstrap of", input$stat), ylab="Frequency"),
+                        binwidth=input$w, xlab=paste("Bootstrap of", input$stat), ylab="Frequency", asp=1),
            den = qplot(trials(), geom="density",
-                       xlab=paste(input$stat, "Hours of sleep"), ylab="Density")
+                       xlab=paste(input$stat, "Hours of sleep"), ylab="Density", asp=1)
    )}
   
   output$bootHist <- renderPlot({
@@ -60,7 +60,7 @@ shinyServer(function(input,output){
   output$bootSd <- renderText({
     sd(trials())
   })
-
+ 
 level <- reactive(
   input$level
 )
@@ -120,9 +120,9 @@ diffs <- reactive(
 plotType2 <- function(x, type) {
   switch(type,
          his2 =  qplot(diffs()$mean.diff, bin=input$w2, 
-                  xlab="Means", ylab="Frequency"),
+                  xlab="Means", ylab="Frequency", asp=1),
          den2 = qplot(diffs()$mean.diff, geom="density", 
-                  xlab="Difference in Means", ylab="Density")
+                  xlab="Difference in Means", ylab="Density", asp=1)
   )}
 
 output$bootMeanHist2 <- renderPlot({
@@ -151,9 +151,9 @@ meds <- reactive(
 plotType3 <- function(x, type) {
   switch(type,
          his2 =  qplot(meds()$med.diff, bin=input$w2, 
-                       xlab="Medians", ylab="Frequency"),
+                       xlab="Medians", ylab="Frequency", asp=1),
          den2 = qplot(meds()$med.diff, geom="density", 
-                      xlab="Difference in Medians", ylab="Density")
+                      xlab="Difference in Medians", ylab="Density", asp=1)
   )}
 
 output$bootMedianHist2 <- renderPlot({
@@ -181,9 +181,9 @@ sd2 <- reactive(
 plotType4 <- function(x, type) {
   switch(type,
          his2 =  qplot(sd2()$sd.diff, bin=input$w2, 
-                       xlab="Standard Deviations", ylab="Frequency"),
+                       xlab="Standard Deviations", ylab="Frequency", asp=1),
          den2 = qplot(sd2()$sd.diff, geom="density", 
-                      xlab="Difference in Standard Deviations", ylab="Density")
+                      xlab="Difference in Standard Deviations", ylab="Density", asp=1)
   )}
 
 output$bootSdHist2 <- renderPlot({
@@ -202,13 +202,27 @@ output$bootSdBias2 <- renderText({
 output$bootSdSd2 <- renderText({
   sd(sd2()$sd.diff)
 })
-  
-#   for(i in 1:10)
-#   {
-#     if (group_means$.index[i] == group_means$.index[i+1])
-#     {
-#       print(group_means$mean[i]/group_means$mean[i+1])
-#     }
-#     i <- i+1
-#   }
+
+
+  ratioList <- list()
+isolate(
+  for(i in 1:input$num2)
+  {
+    if (group_means$.index[i] == group_means$.index[i+1])
+    {
+      a <- group_means$mean[i]/group_means$mean[i+1]
+      tmp <- list(ratio=a)
+      ratioList[paste(i,sep='')] <- tmp
+    }
+    i <- i+1
+  }
+)
+ratioList2 <- reactive(
+  data.frame(t(as.data.frame(ratioList)))
+)
+
+output$bootRatioHist2 <- renderPlot({
+qplot(ratioList2()$as.data.frame.ratioList.., geom="histogram")
+})
+
 })
