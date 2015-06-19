@@ -108,18 +108,18 @@ output$normLower <- renderText({
 })
 
 ## Two-Sample Bootstrap
+library(ggvis)
 tv <- read.csv("../data/TV.csv")
 grouped <- group_by(tv, Cable)
 
 diffs <- reactive(
-  summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable),
-                      mean = mean(Time)), mean.diff = diff(mean))
-  )
-
+  summarise( summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable), mean = mean(Time)), 
+             mean.diff = diff(mean))
+)
 
 plotType2 <- function(x, type) {
   switch(type,
-         his2 =  qplot(diffs()$mean.diff, bin=input$w2, 
+         his2 =  qplot(as.numeric(diffs()$mean.diff), bin=input$w2, 
                   xlab="Means", ylab="Frequency", asp=1),
          den2 = qplot(diffs()$mean.diff, geom="density", 
                   xlab="Difference in Means", ylab="Density", asp=1)
@@ -204,25 +204,37 @@ output$bootSdSd2 <- renderText({
 })
 
 
-  ratioList <- list()
-isolate(
-  for(i in 1:input$num2)
-  {
-    if (group_means$.index[i] == group_means$.index[i+1])
-    {
-      a <- group_means$mean[i]/group_means$mean[i+1]
-      tmp <- list(ratio=a)
-      ratioList[paste(i,sep='')] <- tmp
-    }
-    i <- i+1
-  }
-)
-ratioList2 <- reactive(
-  data.frame(t(as.data.frame(ratioList)))
+ratioList <- reactive(
+  summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable), 
+                      mean = mean(Time)), ratio = mean[1] / mean[2], ratio.diff=mean[1]-mean[2])
 )
 
+plotType5 <- function(x, type) {
+  switch(type,
+         his2 =  qplot(ratioList()$ratio, bin=input$w2, 
+                       xlab="Ratios", ylab="Frequency", asp=1),
+         den2 = qplot(ratioList()$ratio, geom="density", 
+                      xlab="Difference in Ratios", ylab="Density", asp=1)
+  )}
+
+
 output$bootRatioHist2 <- renderPlot({
-qplot(ratioList2()$as.data.frame.ratioList.., geom="histogram")
+  plotType5(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
 })
+
+output$bootRatioSummary2 <- renderPrint({
+  summary(ratioList()$ratio)
+})
+
+output$bootRatioBias2 <- renderText({
+  mean(summarise(summarise(group_by(grouped, Cable), 
+       mean = mean(Time)), ratio = mean[1] / mean[2], ratio.diff=mean[1]-mean[2])$ratio.diff)
+       -mean(ratioList()$ratio.diff)
+})
+
+output$bootRatioSd2 <- renderText({
+  sd(ratioList()$ratio)
+})
+
 
 })
