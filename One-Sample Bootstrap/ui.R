@@ -39,9 +39,9 @@ shinyUI(fluidPage(
                             label = h5("Number of Bootstraps"), 
                             value = 1000, min = 1, max = 100000),
                radioButtons("stat2", label = h5("Statistic"),
-                    c("Difference in Means" = "bootMean2", "Difference in Medians" = "bootMedian2", 
-                     "Difference in Standard Deviations" = "bootSd2", "Difference in Ratios" = "ratioDiff",
-                     "Ratio of Standard Deviations" = "ratioSd"), selected = "bootMean2"),
+                    c("Means" = "bootMean2", "Medians" = "bootMedian2", 
+                     "Standard Deviations" = "bootSd2", "Difference in Ratios" = "ratioDiff",
+                     "Ratio of Standard Deviations" = "sdRatio"), selected = "bootMean2"),
                p("More description about two-sample stuff.")
              )
                #conditionalPanel
@@ -132,7 +132,17 @@ shinyUI(fluidPage(
             verbatimTextOutput("bootRatioBias2"),
             h6("Estimate Standard Deviation"),
             verbatimTextOutput("bootRatioSd2")
-          ) #conditionalPanel
+          ), #conditionalPanel
+          conditionalPanel(
+            condition = "input.stat2 == 'sdRatio'",
+            plotOutput("bootSdRatioHist2"),
+            h6("Estimate Five-Number Summary"),
+            verbatimTextOutput("bootSdRatioSummary2"),
+            h6("Estimate Bias"),
+            verbatimTextOutput("bootSdRatioBias2"),
+            h6("Estimate Standard Deviation"),
+            verbatimTextOutput("bootSdRatioSd2")
+          )
       ) #tabPanel
     ) #tabsetPanel
     ) # mainPanel

@@ -236,5 +236,35 @@ output$bootRatioSd2 <- renderText({
   sd(ratioList()$ratio)
 })
 
+sd3 <- reactive(
+  summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable),
+                      sd = sd(Time)), ratio = sd[1]/sd[2], ratio.diff = sd[1]-sd[2])
+)
+
+plotType6 <- function(x, type) {
+  switch(type,
+         his2 =  qplot(sd3()$ratio, bin=input$w2, 
+                       xlab="Ratios", ylab="Frequency", asp=1),
+         den2 = qplot(sd2()$ratio, geom="density", 
+                      xlab="Difference in Ratios", ylab="Density", asp=1)
+  )}
+
+output$bootSdRatioHist2 <- renderPlot({
+  plotType6(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
+})
+
+output$bootSdRatioSummary2 <- renderPrint({
+  summary(sd3()$ratio)
+})
+
+output$bootSdRatioBias2 <- renderText({
+  mean(summarise(summarise(group_by(grouped, Cable), 
+                           sd = sd(Time)), ratio = sd[1] / sd[2], ratio.diff=sd[1]-sd[2])$ratio.diff)
+  -mean(sd3()$ratio.diff)
+})
+
+output$bootSdRatioSd2 <- renderText({
+  sd(sd3()$ratio)
+})
 
 })
