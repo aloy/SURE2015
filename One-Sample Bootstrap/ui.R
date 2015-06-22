@@ -39,8 +39,8 @@ shinyUI(fluidPage(
                      label = h5("Number of Bootstraps"), 
                      value = 1000, min = 1, max = 100000),
         radioButtons("stat2", label = h5("Statistic"),
-                     c("Means" = "bootMean2", "Medians" = "bootMedian2", 
-                       "Standard Deviations" = "bootSd2", "Difference in Ratios" = "bootRatioDiff",
+                     c("Difference of Means" = "bootMean2", "Difference of Medians" = "bootMedian2", 
+                       "Ratio of Means" = "bootMeanRatio", "Ratio of Medians" = "bootMedRatio",
                        "Ratio of Standard Deviations" = "bootSdRatio"), selected = "bootMean2"),
         radioButtons("ci2", label = h5("Confidence Interval"),
                      c("Percentile" = "perc2", "Normal-Based" = "norm2"), selected = "perc2"),
@@ -119,34 +119,34 @@ shinyUI(fluidPage(
                              verbatimTextOutput("bootMedianSd2")
                            ), #conditionalPanel
                            conditionalPanel(
-                             condition = "input.stat2 == 'bootSd2'",
-                             plotOutput("bootSdHist2"),
+                             condition = "input.stat2 == 'bootMeanRatio'",
+                             plotOutput("bootMeanRatioHist"),
                              h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootSdSummary2"),
+                             verbatimTextOutput("bootMeanRatioSummary"),
                              h6("Estimate Bias"),
-                             verbatimTextOutput("bootSdBias2"),
+                             verbatimTextOutput("bootMeanRatioBias"),
                              h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootSdSd2")
+                             verbatimTextOutput("bootMeanRatioSd")
                            ), #conditionalPanel
                            conditionalPanel(
-                             condition = "input.stat2 == 'bootRatioDiff'",
-                             plotOutput("bootRatioHist2"),
+                             condition = "input.stat2 == 'bootMedRatio'",
+                             plotOutput("bootMedRatioHist"),
                              h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootRatioSummary2"),
+                             verbatimTextOutput("bootMedRatioSummary"),
                              h6("Estimate Bias"),
-                             verbatimTextOutput("bootRatioBias2"),
+                             verbatimTextOutput("bootMedRatioBias"),
                              h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootRatioSd2")
+                             verbatimTextOutput("bootMedRatioSd")
                            ), #conditionalPanel
                            conditionalPanel(
                              condition = "input.stat2 == 'bootSdRatio'",
-                             plotOutput("bootSdRatioHist2"),
+                             plotOutput("bootSdRatioHist"),
                              h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootSdRatioSummary2"),
+                             verbatimTextOutput("bootSdRatioSummary"),
                              h6("Estimate Bias"),
-                             verbatimTextOutput("bootSdRatioBias2"),
+                             verbatimTextOutput("bootSdRatioBias"),
                              h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootSdRatioSd2")
+                             verbatimTextOutput("bootSdRatioSd")
                            ),
                            conditionalPanel(
                              condition = "input.ci2 == 'perc2'",
