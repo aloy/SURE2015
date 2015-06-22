@@ -242,7 +242,7 @@ sd3 <- reactive(
 plotType6 <- function(x, type) {
   switch(type,
          his2 =  qplot(sd3()$ratio, binwidth=input$w2, 
-                       xlab="Ratios", ylab="Frequency", asp=1),
+                       xlab="Ratios", ylab="Frequency", asp=1, rescale.axis=TRUE),
          den2 = qplot(sd3()$ratio, geom="density", 
                       xlab="Difference in Ratios", ylab="Density", asp=1)
   )}
@@ -262,7 +262,7 @@ output$bootSdRatioBias2 <- renderText({
 })
 
 output$bootSdRatioSd2 <- renderText({
-  sd(sd3()$ratio)
+  sd(sd3()$sd.ratio.diff)
 })
 
 original_data2 <- reactive(
@@ -318,7 +318,7 @@ output$percLower2 <- renderPrint({
 })
 
 output$percUpper2 <- renderPrint({
-  quantile(allStatSwitch(allStatData, input$stat2), probs = c(1-alpha()))
+  quantile(allStatSwitch(allStatData, input$stat2), probs = c(1-alpha2()))
 })
 
 output$normPrint2 <- renderText({
@@ -326,13 +326,12 @@ output$normPrint2 <- renderText({
     observedSwitch(original_data2, input$stat2) + qnorm(1-alpha2()/2) * SE2())
 })
 
-output$normUpper2 <- renderText({
-  c(paste(100*level(),'%'), observedSwitch(original_data2, input$stat2) - qnorm(level2()) * SE2())
-})
-
 output$normLower2 <- renderText({
   c(paste(100*alpha(),'%'), observedSwitch(original_data2, input$stat2) - qnorm(level2()) * SE2())
 })
 
+output$normUpper2 <- renderText({
+  c(paste(100*level(),'%'), observedSwitch(original_data2, input$stat2) + qnorm(level2()) * SE2())
+})
 
 })
