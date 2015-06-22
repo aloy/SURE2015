@@ -8,8 +8,11 @@ shinyUI(fluidPage(
         "$('li.active a').first().html()==='One-Sample Bootstrap'",
         h3("Bootstrap Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
-                     c("Histogram" = "his", "Kernel Density" = "den"), selected="his"),
+                     c("Histogram" = "his", "Kernel Density" = "den", "Q-Q Plot" = "qq"), selected="his"),
         numericInput("w", 
+                     label = h5("Original Bin Width"), 
+                     value = 0.45, step=0.005, min = 0.005),
+        numericInput("w2", 
                      label = h5("Bootstrap Bin Width"), 
                      value = 0.025, step=0.005, min = 0.005),
         h4("Resampling"),
@@ -28,10 +31,17 @@ shinyUI(fluidPage(
       ), #conditionalPanel
       conditionalPanel(
         "$('li.active a').first().html()==='Two-Sample Bootstrap'",
+        checkboxInput("one", "Show One-Variable Statistics"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot2", label=h4("Plotting"),
-                     c("Histogram" = "his2", "Kernel Density" = "den2"), selected="his2"),
-        numericInput("w2", 
+                     c("Histogram" = "his2", "Kernel Density" = "den2", "Q-Q Plot" = "qq2"), selected="his2"),
+        conditionalPanel(
+          condition = "input.one == true",
+          numericInput("w3", 
+                       label = h5("Original Bin Width"), 
+                       value = 1.5, step=0.1, min = 0.1)
+          ),
+        numericInput("w4", 
                      label = h5("Bootstrap Bin Width"), 
                      value = 0.2, step=0.05, min = 0.05),
         h4("Resampling"),
@@ -60,8 +70,6 @@ shinyUI(fluidPage(
                                             h5("Original Summary Statistics"),
                                             h6("Five-Number Summary"),
                                             verbatimTextOutput("summary"),
-                                            h6("Mean"),
-                                            verbatimTextOutput("mean"),
                                             h6("Standard Deviation"),
                                             verbatimTextOutput("sd"))
                            ),
@@ -97,7 +105,17 @@ shinyUI(fluidPage(
                            )      #column
                   ), #tabPanel
                   tabPanel("Two-Sample Bootstrap",
-                           h3("Bootstrap Samples"),
+                           conditionalPanel(
+                             condition = "input.one == true",
+                           h3("One-Variable Statistics"),
+                           plotOutput("oneVarHist"),
+                           h5("Original Summary Statistics"),
+                           h6("Five-Number Summary"),
+                           verbatimTextOutput("oneVarSummary"),
+                           h6("Standard Deviation"),
+                           verbatimTextOutput("oneVarSd"),
+                           h3("Bootstrap Samples")
+                           ),
                            conditionalPanel(
                              condition = "input.stat2 == 'bootMean2'",
                              plotOutput("bootMeanHist2"),
