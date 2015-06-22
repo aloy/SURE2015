@@ -8,7 +8,8 @@ shinyUI(fluidPage(
         "$('li.active a').first().html()==='One-Sample Bootstrap'",
         h3("Bootstrap Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
-                     c("Histogram" = "his", "Kernel Density" = "den", "Q-Q Plot" = "qq"), selected="his"),
+                     c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
+                       "Q-Q Plot" = "qq"), selected="his"),
         numericInput("w", 
                      label = h5("Original Bin Width"), 
                      value = 0.45, step=0.005, min = 0.005),
@@ -34,12 +35,13 @@ shinyUI(fluidPage(
         checkboxInput("one", "Show One-Variable Statistics"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot2", label=h4("Plotting"),
-                     c("Histogram" = "his2", "Kernel Density" = "den2", "Q-Q Plot" = "qq2"), selected="his2"),
+                     c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
+                       "Q-Q Plot" = "qq2"), selected="his2"),
         conditionalPanel(
           condition = "input.one == true",
           numericInput("w3", 
                        label = h5("Original Bin Width"), 
-                       value = 1.5, step=0.1, min = 0.1)
+                       value = 1.3, step=0.1, min = 0.1)
           ),
         numericInput("w4", 
                      label = h5("Bootstrap Bin Width"), 

@@ -16,7 +16,9 @@ shinyServer(function(input,output){
                         binwidth=input$w, xlab="Hours of Sleep", ylab="Frequency", main="Original Sample", asp=1),
            den = qplot(original_data, geom="density",
                        xlab=paste(input$stat, "Hours of sleep"), ylab="Density", asp=1),
-           qq = qplot(sample=diffs$mean.diff, asp=1)
+           qq = qplot(sample=original_data, asp=1),
+           hisDen = ggplot(SleepStudy, aes(x=AverageSleep), binwidth=input$w) 
+           + geom_histogram(aes(y=..density..)) + geom_density()
     )}
   
   output$origHist <- renderPlot({
@@ -48,7 +50,8 @@ shinyServer(function(input,output){
                         binwidth=input$w2, xlab=paste("Bootstrap of", input$stat), ylab="Frequency", asp=1),
            den = qplot(trials(), geom="density",
                        xlab=paste(input$stat, "Hours of sleep"), ylab="Density", asp=1),
-           qq = qplot(sample=diffs$mean.diff, asp=1)
+           qq = qplot(sample=trials(), asp=1),
+           hisDen = qplot(trials(), binwidth=input$w2)+ aes(y=..density..) + geom_density()
    )}
   
   output$bootHist <- renderPlot({
@@ -124,7 +127,8 @@ basicPlot <- function(x, type) {
                       binwidth=input$w3, xlab="Hours of TV (Basic)", ylab="Frequency", main="Original Sample", asp=1),
          den2 = qplot(grouped[1:10,]$Time, geom="density",
                      xlab=paste(input$stat2, "Hours of TV"), ylab="Density", asp=1),
-         qq2 = qplot(sample=grouped[1:10,]$Time, asp=1)
+         qq2 = qplot(sample=grouped[1:10,]$Time, asp=1),
+         hisDen2 = qplot(grouped[1:10,]$Time, binwidth=input$w3) + aes(y=..density..) + geom_density()
   )}
 
 output$basicHist <- renderPlot({
@@ -145,7 +149,8 @@ extendedPlot <- function(x, type) {
                        binwidth=input$w3, xlab="Hours of TV (Extended)", ylab="Frequency", main="Original Sample", asp=1),
          den2 = qplot(grouped[11:20,]$Time, geom="density",
                       xlab=paste("Hours of TV (Extended)"), ylab="Density", asp=1),
-         qq2 = qplot(sample=grouped[11:20,]$Time, asp=1)
+         qq2 = qplot(sample=grouped[11:20,]$Time, asp=1),
+         hisDen2 = qplot(grouped[11:20,]$Time, binwidth=input$w3) + aes(y=..density..) + geom_density()
   )}
 
 output$extendedHist <- renderPlot({
@@ -171,7 +176,8 @@ plotType2 <- function(x, type) {
                   xlab="Means", ylab="Frequency", asp=1),
          den2 = qplot(diffs()$mean.diff, geom="density", 
                   xlab="Difference in Means", ylab="Density", asp=1),
-         qq2 = qplot(sample=diffs()$mean.diff, asp=1)
+         qq2 = qplot(sample=diffs()$mean.diff, asp=1),
+         hisden2 = qplot(diffs()$mean.diff, binwidth=input$w4)+ aes(y=..density..) + geom_density()
   )}
 
 output$bootMeanHist2 <- renderPlot({
@@ -203,7 +209,8 @@ plotType3 <- function(x, type) {
                        xlab="Medians", ylab="Frequency", asp=1),
          den2 = qplot(meds()$med.diff, geom="density", 
                       xlab="Difference in Medians", ylab="Density", asp=1),
-         qq2 = qplot(sample=meds()$med.diff, asp=1)
+         qq2 = qplot(sample=meds()$med.diff, asp=1),
+         hisden2 = qplot(meds()$med.diff, binwidth=input$w4)+ aes(y=..density..) + geom_density()
   )}
 
 output$bootMedianHist2 <- renderPlot({
@@ -235,7 +242,8 @@ plotType4 <- function(x, type) {
                        xlab="Ratios", ylab="Frequency", asp=1),
          den2 = qplot(ratioList()$mean.ratio, geom="density", 
                       xlab="Ratio of Means", ylab="Density", asp=1),
-         qq2 = qplot(sample=ratioList()$mean.ratio, asp=1)
+         qq2 = qplot(sample=ratioList()$mean.ratio, asp=1),
+         hisden2 = qplot(ratioList()$mean.ratio, binwidth=input$w4)+ aes(y=..density..) + geom_density()
   )}
 
 
@@ -264,7 +272,8 @@ plotType5 <- function(x, type) {
                        xlab="Ratios", ylab="Frequency", asp=1),
          den2 = qplot(ratioList()$med.ratio, geom="density", 
                       xlab="Ratio of Means", ylab="Density", asp=1),
-         qq2 = qplot(sample=ratioList()$med.ratio, asp=1)
+         qq2 = qplot(sample=ratioList()$med.ratio, asp=1),
+         hisden2 = qplot(ratioList()$med.ratio)+ aes(y=..density..) + geom_density()
   )}
 
 output$bootMedRatioHist <- renderPlot({
@@ -292,7 +301,8 @@ plotType6 <- function(x, type) {
                        xlab="Ratios", ylab="Frequency", asp=1, rescale.axis=TRUE),
          den2 = qplot(ratioList()$sd.ratio, geom="density", 
                       xlab="Ratio of Standard Deviation", ylab="Density", asp=1, rescale.axis=TRUE),
-         qq2 = qplot(sample=ratioList()$sd.ratio, asp=1)
+         qq2 = qplot(sample=ratioList()$sd.ratio, asp=1),
+         hisden2 = qplot(ratioList()$sd.ratio, binwidth=input$w4)+ aes(y=..density..) + geom_density()
   )}
 
 output$bootSdRatioHist <- renderPlot({
