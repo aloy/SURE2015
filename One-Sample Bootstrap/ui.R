@@ -106,16 +106,36 @@ shinyUI(fluidPage(
                   ), #tabPanel
                   tabPanel("Two-Sample Bootstrap",
                            conditionalPanel(
-                             condition = "input.one == true",
+                          condition = "input.one == true",
                            h3("One-Variable Statistics"),
-                           plotOutput("oneVarHist"),
+                           fluidRow(
+                          column(6,
+                           h4("Basic Cable"),
+                           plotOutput("basicHist")
+                          ), #column
+                          column(6,
                            h5("Original Summary Statistics"),
                            h6("Five-Number Summary"),
-                           verbatimTextOutput("oneVarSummary"),
+                           verbatimTextOutput("basicSummary"),
                            h6("Standard Deviation"),
-                           verbatimTextOutput("oneVarSd"),
-                           h3("Bootstrap Samples")
-                           ),
+                           verbatimTextOutput("basicSd")
+                          ) #column
+                            ), #fluidRow
+                          fluidRow(
+                            column(6,
+                                   h4("Extended Cable"),
+                                   plotOutput("extendedHist")
+                            ), #column
+                            column(6,
+                                   h5("Original Summary Statistics"),
+                                   h6("Five-Number Summary"),
+                                   verbatimTextOutput("extendedSummary"),
+                                   h6("Standard Deviation"),
+                                   verbatimTextOutput("extendedSd")
+                            ) #column
+                          ) #fluidRow
+                           ), #conditionalPanel
+                          h3("Bootstrap Samples"),
                            conditionalPanel(
                              condition = "input.stat2 == 'bootMean2'",
                              plotOutput("bootMeanHist2"),

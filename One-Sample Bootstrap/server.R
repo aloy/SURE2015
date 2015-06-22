@@ -118,25 +118,46 @@ library(ggvis)
 tv <- read.csv("../data/TV.csv")
 grouped <- group_by(tv, Cable)
 
-oneVarPlot <- function(x, type) {
+basicPlot <- function(x, type) {
   switch(type,
-         his2 =  qplot(grouped[1:10]$Time, geom="histogram", 
-                      binwidth=input$w3, xlab="Hours of TV", ylab="Frequency", main="Original Sample", asp=1),
-         den2 = qplot(grouped[1:10]$Time, geom="density",
+         his2 =  qplot(grouped[1:10,]$Time, geom="histogram", 
+                      binwidth=input$w3, xlab="Hours of TV (Basic)", ylab="Frequency", main="Original Sample", asp=1),
+         den2 = qplot(grouped[1:10,]$Time, geom="density",
                      xlab=paste(input$stat2, "Hours of TV"), ylab="Density", asp=1),
-         qq2 = qplot(sample=grouped[1:10]$Time, asp=1)
+         qq2 = qplot(sample=grouped[1:10,]$Time, asp=1)
   )}
 
-output$oneVarHist <- renderPlot({
-  oneVarPlot(grouped[1:10]$Time, input$plot2)
+output$basicHist <- renderPlot({
+  basicPlot(grouped[1:10,]$Time, input$plot2)
 })
 
-output$oneVarSummary <- renderPrint({
-  summary(grouped)
+output$basicSummary <- renderPrint({
+  summary(grouped[1:10,]$Time)
 })
 
-output$oneVarSd <- renderText({
-  sd(grouped)
+output$basicSd <- renderText({
+  sd(grouped[1:10,]$Time)
+})
+
+extendedPlot <- function(x, type) {
+  switch(type,
+         his2 =  qplot(grouped[11:20,]$Time, geom="histogram", 
+                       binwidth=input$w3, xlab="Hours of TV (Extended)", ylab="Frequency", main="Original Sample", asp=1),
+         den2 = qplot(grouped[11:20,]$Time, geom="density",
+                      xlab=paste("Hours of TV (Extended)"), ylab="Density", asp=1),
+         qq2 = qplot(sample=grouped[11:20,]$Time, asp=1)
+  )}
+
+output$extendedHist <- renderPlot({
+  extendedPlot(grouped[11:20,]$Time, input$plot2)
+})
+
+output$extendedSummary <- renderPrint({
+  summary(grouped[11:20,]$Time)
+})
+
+output$extendedSd <- renderText({
+  sd(grouped[11:20,]$Time)
 })
 
 diffs <- reactive(
