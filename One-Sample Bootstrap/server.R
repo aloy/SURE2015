@@ -265,13 +265,6 @@ output$bootSdRatioSd2 <- renderText({
   sd(sd3()$sd.ratio.diff)
 })
 
-original_data2 <- reactive(
-  summarise(summarise(group_by(sample(grouped, replace = FALSE), Cable),
-            mean=mean(Time), median=median(Time), sd = sd(Time)), mean.diff=diff(mean), med.diff=diff(median),
-            sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], sd.ratio = sd[1]/sd[2], mean.ratio.diff = mean[1]-mean[2], 
-            sd.ratio.diff = sd[1]-sd[2])
-  )
-
 allStatData<- reactive(
   summarise(summarise(group_by(do(input$num2) * sample(grouped, replace = TRUE), .index, Cable),
                       mean=mean(Time), median=median(Time), sd = sd(Time)), mean.diff=diff(mean), med.diff=diff(median),
@@ -296,42 +289,35 @@ alpha2 <- reactive(
   1 - level2()
   )
 
-observedSwitch <- function(x, double) {
-  switch(double,
-         "bootMean2" = as.data.frame(original_data2())$mean.diff,
-         "bootMedian2" = as.data.frame(original_data2())$med.diff,
-         "bootSd2" = as.data.frame(original_data2())$sd.diff,
-         "bootRatioDiff" = as.data.frame(original_data2())$mean.ratio.diff,
-         "bootSdRatio" =as.data.frame(original_data2())$sd.ratio.diff
-  )}
-
 SE2 <- reactive (
-  sd(allStatSwitch(allStatData, input$stat2))
+  sqrt((1/input$num2)+(1/input$num2))
 )
 
 output$ciPrint2 <- renderPrint({
-  quantile(allStatSwitch(allStatData, input$stat2), probs=c(alpha2()/2, 1-alpha2()/2))
+  quantile((allStatSwitch(allStatData, input$stat2)), 
+            probs=c(alpha2()/2, 1-alpha2()/2))
 })
 
 output$percLower2 <- renderPrint({
-  quantile(allStatSwitch(allStatData, input$stat2), probs = c(alpha2()))
+  quantile((allStatSwitch(allStatData, input$stat2)), probs = c(alpha2()))
 })
 
 output$percUpper2 <- renderPrint({
-  quantile(allStatSwitch(allStatData, input$stat2), probs = c(1-alpha2()))
+  quantile((allStatSwitch(allStatData, input$stat2)), probs = c(1-alpha2()))
 })
 
 output$normPrint2 <- renderText({
-  c(observedSwitch(original_data2, input$stat2) - qnorm(1-alpha2()/2) *  SE2(), 
-    observedSwitch(original_data2, input$stat2) + qnorm(1-alpha2()/2) * SE2())
+  c(mean((allStatSwitch(allStatData, input$stat2))) - qnorm(1-alpha2()/2) *  SE2(), 
+    (mean(allStatSwitch(allStatData, input$stat2))) + qnorm(1-alpha2()/2) * SE2())
 })
 
 output$normLower2 <- renderText({
-  c(paste(100*alpha(),'%'), observedSwitch(original_data2, input$stat2) - qnorm(level2()) * SE2())
+  c(paste(100*alpha(),'%'), mean(allStatSwitch(allStatData, input$stat2)) 
+    - qnorm(level2()) * SE2())
 })
 
 output$normUpper2 <- renderText({
-  c(paste(100*level(),'%'), observedSwitch(original_data2, input$stat2) + qnorm(level2()) * SE2())
+  c(paste(100*level(),'%'), mean(allStatSwitch(allStatData, input$stat2))
+    + qnorm(level2()) * SE2())
 })
-
 })
