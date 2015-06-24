@@ -30,23 +30,27 @@ shinyServer(function(input,output, session){
   shinyjs::onclick("hideData",
                    shinyjs::toggle(id = "contents", anim = TRUE))
   
-  output$boot <- renderUI({
+  output$varChoose <- renderUI({
     df <- filedata()
     if (is.null(df)) 
       return(NULL)
     vars=names(df)
     names(vars)=vars
-    selectInput("boot2","Choose a quantitative variable to bootstrap:",vars)
+    selectInput("boot","Choose a quantitative variable to examine:",vars)
+  })
+  
+  varData <- reactive({
+    var<-input$boot
+    filedata()[,var]
   })
   
   output$origHist <- renderPlot({
-    var <- input$boot2
     dataPlot <- switch(input$plot, 
-                       his =  qplot(data=filedata(), x=filedata()[,var], geom="histogram", 
+                       his =  qplot(data=filedata(), x=varData(), geom="histogram", 
                               binwidth=input$w, xlab="Hours of Sleep", ylab="Frequency", main="Original Sample", asp=1),
-                       den =  qplot(data=filedata(), x=filedata()[,var], geom="density", asp=1),
-                       qq = qplot(sample=filedata()[,var], asp=1),
-                       hisDen = qplot(data=filedata(), x=filedata()[,var],
+                       den =  qplot(data=filedata(), x=varData(), geom="density", asp=1),
+                       qq = qplot(sample=varData(), asp=1),
+                       hisDen = qplot(data=filedata(), x=varData(),
                               binwidth=input$w)+ aes(y=..density..) + geom_density()
                        )
     
@@ -54,21 +58,18 @@ shinyServer(function(input,output, session){
   })
   
   output$summary <- renderPrint({
-    var<-input$boot2
-    summary(as.data.frame(filedata()[,var]))
+    summary(as.data.frame(varData()))
   })
   
   output$sd <- renderText({
-    var<-input$boot2
-    sd(filedata()[,var])
+    sd(varData())
   })
   
   trialsFunction <- function(x, list) {
-    var<-input$boot2
     switch(list,
-           bootMean = do(input$num) * mean(sample(filedata()[,var], replace = TRUE)),
-           bootMedian = do(input$num) * median(sample(filedata()[,var], replace = TRUE)),
-           bootSd = do(input$num) * sd(sample(filedata()[,var], replace = TRUE))
+           bootMean = do(input$num) * mean(sample(varData(), replace = TRUE)),
+           bootMedian = do(input$num) * median(sample(varData(), replace = TRUE)),
+           bootSd = do(input$num) * sd(sample(varData(), replace = TRUE))
     )
   }
   
@@ -76,18 +77,17 @@ shinyServer(function(input,output, session){
     trialsFunction(filedata(), input$stat)$result
   )
   
-  plotType <- function(x, type) {
-    switch(type,
-           his = qplot(trials(), geom="histogram", 
-                       binwidth=input$w2, xlab=paste("Bootstrap of", input$stat), ylab="Frequency", asp=1),
-           den = qplot(trials(), geom="density",
-                       xlab=paste(input$stat, "Hours of sleep"), ylab="Density", asp=1),
-           qq = qplot(sample=trials(), asp=1),
-           hisDen = qplot(trials(), binwidth=input$w2)+ aes(y=..density..) + geom_density()
-    )}
-  
   output$bootHist <- renderPlot({
-    plotType(trials(), input$plot)
+    dataPlot <- switch(input$plot, 
+                       his = qplot(trials(), geom="histogram", 
+                                   binwidth=input$w2, xlab=paste("Bootstrap of", input$stat), ylab="Frequency", asp=1),
+                       den = qplot(trials(), geom="density",
+                                   xlab=paste(input$stat, "Hours of sleep"), ylab="Density", asp=1),
+                       qq = qplot(sample=trials(), asp=1),
+                       hisDen = qplot(trials(), binwidth=input$w2)+ aes(y=..density..) + geom_density()
+    )
+    
+    dataPlot
   })
   
   output$bootSummary <- renderPrint({
@@ -95,8 +95,7 @@ shinyServer(function(input,output, session){
   })
   
   output$bootBias <- renderText({
-    var<-input$boot2
-    mean(filedata()[,var])-mean(trials())
+    mean(varData())-mean(trials())
   })
   
   output$bootSd <- renderText({
@@ -109,10 +108,6 @@ shinyServer(function(input,output, session){
   
   alpha <- reactive (
     1- level()
-  )
-  
-  observed <- reactive (
-    mean(filedata())
   )
   
   SE <- reactive (
@@ -153,49 +148,95 @@ shinyServer(function(input,output, session){
   library(ggvis)
   tv <- read.csv("../data/TV.csv")
   grouped <- group_by(tv, Cable)
+  groupSplit <- as.data.frame(split(grouped, grouped$Cable))
+  
+  filedata2 <- reactive({
+    if(input$chooseData2=="uploadYes"){
+      inFile2 <- input$file2
+      if (is.null(inFile2))
+        return(NULL)
+      return(      
+        read.csv(inFile2$datapath, header=input$header2, sep=input$sep2, quote=input$quote2)
+      )
+    }
+    else
+      as.data.frame(groupSplit)
+  })
+  
+  output$contents2 <- renderTable({
+    filedata2()
+  })
+  
+  shinyjs::onclick("hideData2",
+                   shinyjs::toggle(id = "contents2", anim = TRUE))
+  
+  output$varChoose2 <- renderUI({
+    df2 <- filedata2()
+    if (is.null(df2)) 
+      return(NULL)
+    vars2=names(df2)
+    names(vars2)=vars2
+    selectInput("boot2","Choose a quantitative variable:",vars2)
+  })
+  
+  output$varChoose3<- renderUI({
+    df2 <- filedata2()
+    if (is.null(df2)) 
+      return(NULL)
+    vars2=names(df2)
+    names(vars2)=vars2
+    selectInput("boot3","Choose another variable for comparison for fun:",vars2)
+  })
+  
+  output$checkData <-renderUI({
+    if (input$boot2 == input$boot3)
+      p("Please select different variables.", style="color:red")
+    else
+      return(NULL)
+  })
   
   basicPlot <- function(x, type) {
     switch(type,
-           his2 =  qplot(grouped[1:10,]$Time, geom="histogram", 
+           his2 =  qplot(groupSplit$Basic.Time, geom="histogram", 
                          binwidth=input$w3, xlab="Hours of TV (Basic)", ylab="Frequency", main="Original Sample", asp=1),
-           den2 = qplot(grouped[1:10,]$Time, geom="density",
+           den2 = qplot(groupSplit$Basic.Time, geom="density",
                         xlab=paste(input$stat2, "Hours of TV"), ylab="Density", asp=1),
-           qq2 = qplot(sample=grouped[1:10,]$Time, asp=1),
-           hisDen2 = qplot(grouped[1:10,]$Time, binwidth=input$w3) + aes(y=..density..) + geom_density()
+           qq2 = qplot(sample=groupSplit$Basic.Time, asp=1),
+           hisDen2 = qplot(groupSplit$Basic.Time, binwidth=input$w3) + aes(y=..density..) + geom_density()
     )}
   
   output$basicHist <- renderPlot({
-    basicPlot(grouped[1:10,]$Time, input$plot2)
+    basicPlot(groupSplit$Basic.Time, input$plot2)
   })
   
   output$basicSummary <- renderPrint({
-    summary(grouped[1:10,]$Time)
+    summary(groupSplit$Basic.Time)
   })
   
   output$basicSd <- renderText({
-    sd(grouped[1:10,]$Time)
+    sd(groupSplit$Basic.Time)
   })
   
   extendedPlot <- function(x, type) {
     switch(type,
-           his2 =  qplot(grouped[11:20,]$Time, geom="histogram", 
+           his2 =  qplot(groupSplit$Extended.Time, geom="histogram", 
                          binwidth=input$w3, xlab="Hours of TV (Extended)", ylab="Frequency", main="Original Sample", asp=1),
-           den2 = qplot(grouped[11:20,]$Time, geom="density",
+           den2 = qplot(groupSplit$Extended.Time, geom="density",
                         xlab=paste("Hours of TV (Extended)"), ylab="Density", asp=1),
-           qq2 = qplot(sample=grouped[11:20,]$Time, asp=1),
-           hisDen2 = qplot(grouped[11:20,]$Time, binwidth=input$w3) + aes(y=..density..) + geom_density()
+           qq2 = qplot(sample=groupSplit$Extended.Time, asp=1),
+           hisDen2 = qplot(groupSplit$Extended.Time, binwidth=input$w3) + aes(y=..density..) + geom_density()
     )}
   
   output$extendedHist <- renderPlot({
-    extendedPlot(grouped[11:20,]$Time, input$plot2)
+    extendedPlot(groupSplit$Extended.Time, input$plot2)
   })
   
   output$extendedSummary <- renderPrint({
-    summary(grouped[11:20,]$Time)
+    summary(groupSplit$Extended.Time)
   })
   
   output$extendedSd <- renderText({
-    sd(grouped[11:20,]$Time)
+    sd(groupSplit$Extended.Time)
   })
   
   diffs <- reactive(

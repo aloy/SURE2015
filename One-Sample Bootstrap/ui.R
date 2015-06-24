@@ -34,7 +34,7 @@ shinyUI(fluidPage(
                          'Single Quote'="'"),
                        '"')
         ), #conditionalPanel
-          uiOutput("boot"),
+          uiOutput("varChoose"),
           actionButton("hideData", "Show/hide data set"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
@@ -62,6 +62,38 @@ shinyUI(fluidPage(
       ), #conditionalPanel
       conditionalPanel(
         "$('li.active a').first().html()==='Two-Sample Bootstrap'",
+        radioButtons("chooseData2", label=h5("Choose data set"),
+                     c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
+                     selected = "uploadNo"),
+        conditionalPanel(
+          condition= "input.chooseData2=='uploadYes'",
+          fileInput('file2', 'Choose a file to upload. The data set will appear below the main panel.',
+                    accept = c(
+                      'text/csv',
+                      'text/comma-separated-values',
+                      'text/tab-separated-values',
+                      'text/plain',
+                      '.csv',
+                      '.tsv'
+                    )
+          ),
+          h5("Data Set Options"),
+          checkboxInput('header2', 'Header', TRUE),
+          radioButtons('sep2', 'Separator',
+                       c(Comma=',',
+                         Semicolon=';',
+                         Tab='\t'),
+                       ','),
+          radioButtons('quote2', 'Quote',
+                       c(None='',
+                         'Double Quote'='"',
+                         'Single Quote'="'"),
+                       '"')
+        ), #conditionalPanel
+        uiOutput("varChoose2"),
+        uiOutput("varChoose3"),
+        uiOutput("checkData"),
+        actionButton("hideData2", "Show/hide data set"),
         checkboxInput("one", "Show One-Variable Statistics"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot2", label=h4("Plotting"),
@@ -239,7 +271,10 @@ shinyUI(fluidPage(
                              verbatimTextOutput("normLower2"),
                              h6("Upper Bound"),
                              verbatimTextOutput("normUpper2")
-                           ) 
+                           ),
+                           hidden(
+                             tableOutput("contents2")
+                           )
                   ) #tabPanel
       ) #tabsetPanel
     ) # mainPanel
