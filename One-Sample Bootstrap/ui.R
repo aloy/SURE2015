@@ -1,11 +1,41 @@
 library(shiny)
-library(markdown)
-library(datasets)
+library(shinyjs)
 shinyUI(fluidPage(
+  useShinyjs(),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
         "$('li.active a').first().html()==='One-Sample Bootstrap'",
+        radioButtons("chooseData", label=h5("Choose data set"),
+                     c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
+                    selected = "uploadNo"),
+        conditionalPanel(
+          condition= "input.chooseData=='uploadYes'",
+          fileInput('file1', 'Choose a file to upload. The data set will appear below the main panel.',
+                    accept = c(
+                      'text/csv',
+                      'text/comma-separated-values',
+                      'text/tab-separated-values',
+                      'text/plain',
+                      '.csv',
+                      '.tsv'
+                    )
+          ),
+          h5("Data Set Options"),
+          checkboxInput('header', 'Header', TRUE),
+          radioButtons('sep', 'Separator',
+                       c(Comma=',',
+                         Semicolon=';',
+                         Tab='\t'),
+                       ','),
+          radioButtons('quote', 'Quote',
+                       c(None='',
+                         'Double Quote'='"',
+                         'Single Quote'="'"),
+                       '"')
+        ), #conditionalPanel
+          uiOutput("boot"),
+          actionButton("hideData", "Show/hide data set"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
@@ -20,7 +50,7 @@ shinyUI(fluidPage(
         numericInput("num", 
                      label = h5("Number of Bootstraps"), 
                      value = 1000, min = 1, max = 100000),
-        radioButtons("stat", label = h5("Statistic"),
+        radioButtons("stat", label = h5("Bootstrap Statistic"),
                      c("Mean" = "bootMean", "Median" = "bootMedian", 
                        "Standard Deviation" = "bootSd"), selected = "bootMean"),
         radioButtons("ci", label = h5("Confidence Interval"),
@@ -40,9 +70,9 @@ shinyUI(fluidPage(
         conditionalPanel(
           condition = "input.one == true",
           numericInput("w3", 
-                       label = h5("Original Bin Width"), 
+                       label = h5("One-Variable Bin Width"), 
                        value = 1.3, step=0.1, min = 0.1)
-          ),
+        ),
         numericInput("w4", 
                      label = h5("Bootstrap Bin Width"), 
                      value = 0.2, step=0.05, min = 0.05),
@@ -73,7 +103,8 @@ shinyUI(fluidPage(
                                             h6("Five-Number Summary"),
                                             verbatimTextOutput("summary"),
                                             h6("Standard Deviation"),
-                                            verbatimTextOutput("sd"))
+                                            verbatimTextOutput("sd")
+                                            )
                            ),
                            column(7,
                                   wellPanel(h3("Bootstrap Samples"),
@@ -104,40 +135,43 @@ shinyUI(fluidPage(
                                               verbatimTextOutput("normUpper")
                                             ) #conditionalPanel
                                   ) #wellPanel
-                           )      #column
+                           ),      #column
+                           hidden(
+                           tableOutput("contents")
+                           )
                   ), #tabPanel
                   tabPanel("Two-Sample Bootstrap",
                            conditionalPanel(
-                          condition = "input.one == true",
-                           h3("One-Variable Statistics"),
-                           fluidRow(
-                          column(6,
-                           h4("Basic Cable"),
-                           plotOutput("basicHist")
-                          ), #column
-                          column(6,
-                           h5("Original Summary Statistics"),
-                           h6("Five-Number Summary"),
-                           verbatimTextOutput("basicSummary"),
-                           h6("Standard Deviation"),
-                           verbatimTextOutput("basicSd")
-                          ) #column
-                            ), #fluidRow
-                          fluidRow(
-                            column(6,
-                                   h4("Extended Cable"),
-                                   plotOutput("extendedHist")
-                            ), #column
-                            column(6,
-                                   h5("Original Summary Statistics"),
-                                   h6("Five-Number Summary"),
-                                   verbatimTextOutput("extendedSummary"),
-                                   h6("Standard Deviation"),
-                                   verbatimTextOutput("extendedSd")
-                            ) #column
-                          ) #fluidRow
+                             condition = "input.one == true",
+                             h3("One-Variable Statistics"),
+                             fluidRow(
+                               column(6,
+                                      h4("Basic Cable"),
+                                      plotOutput("basicHist")
+                               ), #column
+                               column(6,
+                                      h5("Original Summary Statistics"),
+                                      h6("Five-Number Summary"),
+                                      verbatimTextOutput("basicSummary"),
+                                      h6("Standard Deviation"),
+                                      verbatimTextOutput("basicSd")
+                               ) #column
+                             ), #fluidRow
+                             fluidRow(
+                               column(6,
+                                      h4("Extended Cable"),
+                                      plotOutput("extendedHist")
+                               ), #column
+                               column(6,
+                                      h5("Original Summary Statistics"),
+                                      h6("Five-Number Summary"),
+                                      verbatimTextOutput("extendedSummary"),
+                                      h6("Standard Deviation"),
+                                      verbatimTextOutput("extendedSd")
+                               ) #column
+                             ) #fluidRow
                            ), #conditionalPanel
-                          h3("Bootstrap Samples"),
+                           h3("Bootstrap Samples"),
                            conditionalPanel(
                              condition = "input.stat2 == 'bootMean2'",
                              plotOutput("bootMeanHist2"),
