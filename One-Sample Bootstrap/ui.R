@@ -181,11 +181,11 @@ shinyUI(fluidPage(
                                ), #column
                                column(6,
                                       h5("Original Summary Statistics"),
-                                      h6("Five-Number Summary"),
                                       verbatimTextOutput("basicSummary")
                                ) #column
                              ) #fluidRow
                            ), #conditionalPanel
+                           verbatimTextOutput("test"),
                            h3("Bootstrap Samples"),
                            conditionalPanel(
                              condition = "input.stat2 == 'bootMean2'",

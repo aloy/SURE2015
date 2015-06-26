@@ -155,7 +155,6 @@ shinyServer(function(input,output, session){
   ## Two-Sample Bootstrap
   library(ggvis)
   tv <- read.csv("../data/TV.csv")
-  grouped <- group_by(tv, Cable)
   
   filedata2 <- reactive({
     if(input$chooseData2=="uploadYes"){
@@ -197,20 +196,12 @@ shinyServer(function(input,output, session){
       textInput("choose2",label="Choose a quantitative variable to examine between groups:",vars3)
   })
   
-  catName <- reactive({ #Name of the categorical variable, e.g. Cable
-    input$choose1
-  })
-  
-  quantName <- reactive({  #Name of the quantitative variable, e.g. Time
-    input$choose2
-  })
-  
   catVar <- reactive({ 
-    filedata2()[catName()]
+    filedata2()[,input$choose1]
   })
   
   quantVar <- reactive({ 
-    filedata2()[,quantName()]
+    filedata2()[,input$choose2]
   })
 
   grouped <- reactive({
@@ -218,30 +209,35 @@ shinyServer(function(input,output, session){
       group_by(filedata2(), catName())
     }
     else
-      group_by(tv, Cable)
+      group_by(filedata2(), Cable)
   })
   
   output$origHist2 <- renderPlot({
+    f<-paste(input$choose1, "~", ".")
     dataPlot <-switch(input$plot2,
-                       his2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~., binwidth=input$w3, 
+                       his2 = qplot(data=filedata2(), x=quantVar(), facets=f, binwidth=input$w3, 
                                     main="Original Sample", asp=1),
-                       den2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~., geom="density", asp=1),
-                       qq2 = qplot(sample=filedata2(), data=filedata2(), facets=varCat()~., asp=1),
-                       hisDen2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~.) + aes(y=..density..)+geom_density()
+                       den2 = qplot(data=filedata2(), x=quantVar(), facets=f, geom="density", asp=1),
+                       qq2 = qplot(sample=quantVar(), data=filedata2(), facets=f, asp=1),
+                       hisDen2 = qplot(data=filedata2(), x=quantVar(), facets=f) + aes(y=..density..)+geom_density()
     )
-    dataPlot
+dataPlot
     })
 
   output$basicSummary <- renderPrint({
     favstats(~quantVar()|catVar())  
     })
  
-#   allStat<- reactive(
-#     summarise(summarise(group_by(do(input$num2) * sample(grouped(), replace = TRUE), .index, varCat()),
-#               mean=mean(varQuant()), med=median(varQuant()), sd = sd(varQuant())), mean.diff=diff(mean), med.diff=diff(med),
-#               sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
-#   )
-#   
+  allStat<- reactive({
+    summarise(summarise(group_by(do(input$num2) * sample(grouped(), replace = TRUE), .index, varCat()),
+              mean=mean(varQuant()), med=median(varQuant()), sd = sd(varQuant())), mean.diff=diff(mean), med.diff=diff(med),
+              sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
+  })
+  
+test<- renderPrint({
+  head(allStat())
+})
+
 # #   
 #   plotType2 <- function(x, type) {
 #     switch(type,
