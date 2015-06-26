@@ -77,7 +77,7 @@ shinyUI(fluidPage(
                       '.tsv'
                     )
           ),
-          h5("Data Set Options"),
+          h4("Data Set Options"),
           checkboxInput('header2', 'Header', TRUE),
           radioButtons('sep2', 'Separator',
                        c(Comma=',',
@@ -92,7 +92,6 @@ shinyUI(fluidPage(
         ), #conditionalPanel
         uiOutput("varChoose2"),
         uiOutput("varChoose3"),
-        uiOutput("checkData"),
         actionButton("hideData2", "Show/hide data set"),
         checkboxInput("one", "Show One-Variable Statistics"),
         h3("Bootstrap Control Panel"),
@@ -184,9 +183,7 @@ shinyUI(fluidPage(
                                column(6,
                                       h5("Original Summary Statistics"),
                                       h6("Five-Number Summary"),
-                                      verbatimTextOutput("basicSummary"),
-                                      h6("Standard Deviation"),
-                                      verbatimTextOutput("basicSd")
+                                      verbatimTextOutput("basicSummary")
                                ) #column
                              ), #fluidRow
                              fluidRow(
