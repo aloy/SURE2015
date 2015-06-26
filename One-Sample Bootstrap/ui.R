@@ -177,26 +177,12 @@ shinyUI(fluidPage(
                              h3("One-Variable Statistics"),
                              fluidRow(
                                column(6,
-                                      h4("Basic Cable"),
-                                      plotOutput("basicHist")
+                                      plotOutput("origHist2")
                                ), #column
                                column(6,
                                       h5("Original Summary Statistics"),
                                       h6("Five-Number Summary"),
                                       verbatimTextOutput("basicSummary")
-                               ) #column
-                             ), #fluidRow
-                             fluidRow(
-                               column(6,
-                                      h4("Extended Cable"),
-                                      plotOutput("extendedHist")
-                               ), #column
-                               column(6,
-                                      h5("Original Summary Statistics"),
-                                      h6("Five-Number Summary"),
-                                      verbatimTextOutput("extendedSummary"),
-                                      h6("Standard Deviation"),
-                                      verbatimTextOutput("extendedSd")
                                ) #column
                              ) #fluidRow
                            ), #conditionalPanel

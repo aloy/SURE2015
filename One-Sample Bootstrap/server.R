@@ -205,8 +205,8 @@ shinyServer(function(input,output, session){
     input$choose2
   })
   
-  catVar <- reactive({ #
-    filedata2()[,catName()]
+  catVar <- reactive({ 
+    filedata2()[catName()]
   })
   
   quantVar <- reactive({ 
@@ -220,45 +220,22 @@ shinyServer(function(input,output, session){
     else
       group_by(tv, Cable)
   })
-#   
-#   basicPlot <- function(x, type) {
-#     switch(type,
-#            his2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~., ylab="Frequency", main="Original Sample", asp=1),
-#            den2 = qplot(group1(), geom="density", ylab="Density", asp=1),
-#            qq2 = qplot(sample=group1(), asp=1),
-#            hisDen2 = qplot(group1(), binwidth=input$w3) + aes(y=..density..) + geom_density()
-#     )}
   
-  output$basicHist <- renderPlot({
-    qplot(data=filedata2(), x=quantName(), facets=catName()~.)
-  })
-  
+  output$origHist2 <- renderPlot({
+    dataPlot <-switch(input$plot2,
+                       his2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~., binwidth=input$w3, 
+                                    main="Original Sample", asp=1),
+                       den2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~., geom="density", asp=1),
+                       qq2 = qplot(sample=filedata2(), data=filedata2(), facets=varCat()~., asp=1),
+                       hisDen2 = qplot(data=filedata2(), x=varQuant(), facets=varCat()~.) + aes(y=..density..)+geom_density()
+    )
+    dataPlot
+    })
+
   output$basicSummary <- renderPrint({
     favstats(~quantVar()|catVar())  
     })
-  
-#   extendedPlot <- function(x, type) {
-#     switch(type,
-#            his2 =  qplot(group2(), geom="histogram", 
-#                          binwidth=input$w3, xlab=paste(input$boot3), ylab="Frequency", main="Original Sample", asp=1),
-#            den2 = qplot(group2(), geom="density",
-#                         xlab=paste("Hours of TV (Extended)"), ylab="Density", asp=1),
-#            qq2 = qplot(sample=group2(), asp=1),
-#            hisDen2 = qplot(group2(), binwidth=input$w3) + aes(y=..density..) + geom_density()
-#     )}
-#   
-#   output$extendedHist <- renderPlot({
-#     extendedPlot(group2(), input$plot2)
-#   })
-#   
-#   output$extendedSummary <- renderPrint({
-#     summary(as.data.frame(group2()))
-#   })
-#   
-#   output$extendedSd <- renderText({
-#     sd(group2())
-#   })
-#   
+ 
 #   allStat<- reactive(
 #     summarise(summarise(group_by(do(input$num2) * sample(grouped(), replace = TRUE), .index, varCat()),
 #               mean=mean(varQuant()), med=median(varQuant()), sd = sd(varQuant())), mean.diff=diff(mean), med.diff=diff(med),
