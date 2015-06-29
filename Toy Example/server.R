@@ -65,7 +65,7 @@ output$plot <- renderPlot({
 })
 
 simdata <- reactive({ 
-  data.frame(catVals(), quantVals())
+  data.frame(col1= catVals(), col2= quantVals())
 })
 
 trials <- reactive({
