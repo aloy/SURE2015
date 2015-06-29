@@ -11,6 +11,7 @@ shinyUI(fluidPage(
                     selected = "uploadNo"),
         conditionalPanel(
           condition= "input.chooseData=='uploadYes'",
+          tags$div(id="dataOptions",
           fileInput('file1', 'Choose a file to upload. The data set will appear below the main panel.',
                     accept = c(
                       'text/csv',
@@ -32,9 +33,11 @@ shinyUI(fluidPage(
                        c(None='',
                          'Double Quote'='"',
                          'Single Quote'="'"),
-                       '"')
+                       '"'),
+          uiOutput("varChoose")
+          ),
+          actionButton("hideDataOptions", "Show/hide data set options")
         ), #conditionalPanel
-          uiOutput("varChoose"),
           actionButton("hideData", "Show/hide data set"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
@@ -67,6 +70,7 @@ shinyUI(fluidPage(
                      selected = "uploadNo"),
         conditionalPanel(
           condition= "input.chooseData2=='uploadYes'",
+          tags$div(id="dataOptions2",
           fileInput('file2', 'Choose a file to upload. The data set will appear below the main panel.',
                     accept = c(
                       'text/csv',
@@ -88,12 +92,14 @@ shinyUI(fluidPage(
                        c(None='',
                          'Double Quote'='"',
                          'Single Quote'="'"),
-                       '"')
-        ), #conditionalPanel
+                       '"'),
         uiOutput("varChoose2"),
-        uiOutput("varChoose3"),
+        uiOutput("varChoose3")
+          ), #divid
+        actionButton("hideDataOptions2", "Show/hide data set options")
+        ), #conditionalpanel
         actionButton("hideData2", "Show/hide data set"),
-        checkboxInput("one", "Show One-Variable Statistics"),
+        checkboxInput("one", "Show one-variable statistics"),
         h3("Bootstrap Control Panel"),
         radioButtons("plot2", label=h4("Plotting"),
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
@@ -185,76 +191,32 @@ shinyUI(fluidPage(
                                ) #column
                              ) #fluidRow
                            ), #conditionalPanel
-                           verbatimTextOutput("test"),
                            h3("Bootstrap Samples"),
-                           conditionalPanel(
-                             condition = "input.stat2 == 'bootMean2'",
-                             plotOutput("bootMeanHist2"),
+                             plotOutput("bootHist2"),
                              h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootMeanSummary2"),
+                             verbatimTextOutput("bootSummary2"),
                              h6("Estimate Bias"),
-                             verbatimTextOutput("bootMeanBias2"),
+                             verbatimTextOutput("bootBias2"),
                              h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootMeanSd2")
-                           ), #conditionalPanel
-                           conditionalPanel(
-                             condition = "input.stat2 == 'bootMedian2'",
-                             plotOutput("bootMedianHist2"),
-                             h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootMedianSummary2"),
-                             h6("Estimate Bias"),
-                             verbatimTextOutput("bootMedianBias2"),
-                             h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootMedianSd2")
-                           ), #conditionalPanel
-                           conditionalPanel(
-                             condition = "input.stat2 == 'bootMeanRatio'",
-                             plotOutput("bootMeanRatioHist"),
-                             h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootMeanRatioSummary"),
-                             h6("Estimate Bias"),
-                             verbatimTextOutput("bootMeanRatioBias"),
-                             h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootMeanRatioSd")
-                           ), #conditionalPanel
-                           conditionalPanel(
-                             condition = "input.stat2 == 'bootMedRatio'",
-                             plotOutput("bootMedRatioHist"),
-                             h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootMedRatioSummary"),
-                             h6("Estimate Bias"),
-                             verbatimTextOutput("bootMedRatioBias"),
-                             h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootMedRatioSd")
-                           ), #conditionalPanel
-                           conditionalPanel(
-                             condition = "input.stat2 == 'bootSdRatio'",
-                             plotOutput("bootSdRatioHist"),
-                             h6("Estimate Five-Number Summary"),
-                             verbatimTextOutput("bootSdRatioSummary"),
-                             h6("Estimate Bias"),
-                             verbatimTextOutput("bootSdRatioBias"),
-                             h6("Estimate Standard Deviation"),
-                             verbatimTextOutput("bootSdRatioSd")
-                           ),
-                           conditionalPanel(
-                             condition = "input.ci2 == 'perc2'",
-                             h6("Two-Tailed Confidence Interval (Percentile)"),
-                             verbatimTextOutput("ciPrint2"),
-                             h6("Lower Bound"),
-                             verbatimTextOutput("percLower2"),
-                             h6("Upper Bound"),
-                             verbatimTextOutput("percUpper2")
-                           ),
-                           conditionalPanel(
-                             condition = "input.ci2 == 'norm2'",
-                             h6("Two-Tailed Confidence Interval (Normal)"),
-                             verbatimTextOutput("normPrint2"),
-                             h6("Lower Bound"),
-                             verbatimTextOutput("normLower2"),
-                             h6("Upper Bound"),
-                             verbatimTextOutput("normUpper2")
-                           ),
+                             verbatimTextOutput("bootSd2"),
+#                            conditionalPanel(
+#                              condition = "input.ci2 == 'perc2'",
+#                              h6("Two-Tailed Confidence Interval (Percentile)"),
+#                              verbatimTextOutput("ciPrint2"),
+#                              h6("Lower Bound"),
+#                              verbatimTextOutput("percLower2"),
+#                              h6("Upper Bound"),
+#                              verbatimTextOutput("percUpper2")
+#                            ),
+#                            conditionalPanel(
+#                              condition = "input.ci2 == 'norm2'",
+#                              h6("Two-Tailed Confidence Interval (Normal)"),
+#                              verbatimTextOutput("normPrint2"),
+#                              h6("Lower Bound"),
+#                              verbatimTextOutput("normLower2"),
+#                              h6("Upper Bound"),
+#                              verbatimTextOutput("normUpper2")
+#                            ),
                            hidden(
                              tableOutput("contents2")
                            )

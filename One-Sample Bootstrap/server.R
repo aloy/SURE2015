@@ -29,6 +29,8 @@ shinyServer(function(input,output, session){
   
   shinyjs::onclick("hideData",
                    shinyjs::toggle(id = "contents", anim = TRUE))
+  shinyjs::onclick("hideDataOptions",
+                   shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
   output$varChoose <- renderUI({
     df <- filedata()
@@ -73,13 +75,6 @@ shinyServer(function(input,output, session){
     )
   }
   
-  varDataFunction <- function(x, list) {
-    switch(input$stat,
-           bootMean = mean(filedata()),
-           bootMedian = median(filedata()),
-           bootSd = sd(filedata())
-    )
-  }
   
   trials <- reactive(
     trialsFunction(filedata(), input$stat)$result
@@ -176,233 +171,125 @@ shinyServer(function(input,output, session){
   shinyjs::onclick("hideData2",
                    shinyjs::toggle(id = "contents2", anim = TRUE))
   
+  shinyjs::onclick("hideDataOptions2",
+                   shinyjs::toggle(id = "dataOptions2", anim = TRUE))
+  
   output$varChoose2 <- renderUI({
     df2 <- filedata2()
     vars2 <- colnames(df2)[sapply(df2,is.factor)]
     names(vars2)=vars2
-      if(input$chooseData=="uploadNo")
+      if(input$chooseData2=="uploadNo")
         textInput("choose1",label="Choose a categorical variable with two groups:", value="Cable")
       else
-        textInput("choose1",label="Choose a categorical variable with two groups:",vars2)
+        selectInput("choose1",label="Choose a categorical variable with two groups:",vars2)
     })
     
   output$varChoose3 <- renderUI({
     df2 <- filedata2()
-    vars3 <- colnames(df2)[sapply(df2,is.factor)]
+    vars3 <- colnames(df2)[sapply(df2,is.numeric)]
     names(vars3)=vars3
-    if(input$chooseData=="uploadNo")
+    if(input$chooseData2=="uploadNo")
       textInput("choose2",label="Choose a quantitative variable to examine between groups:", value="Time")
     else
-      textInput("choose2",label="Choose a quantitative variable to examine between groups:",vars3)
+      selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars3)
   })
   
-  catVar <- reactive({ 
+  catVals <- reactive({ 
     filedata2()[,input$choose1]
   })
   
-  quantVar <- reactive({ 
+  quantVals <- reactive({ 
     filedata2()[,input$choose2]
-  })
-
-  grouped <- reactive({
-    if(input$chooseData2=="uploadYes"){
-      group_by(filedata2(), catName())
-    }
-    else
-      group_by(filedata2(), Cable)
   })
   
   output$origHist2 <- renderPlot({
     f<-paste(input$choose1, "~", ".")
     dataPlot <-switch(input$plot2,
-                       his2 = qplot(data=filedata2(), x=quantVar(), facets=f, binwidth=input$w3, 
+                       his2 = qplot(data=filedata2(), x=quantVals(), facets=f, binwidth=input$w3, 
                                     main="Original Sample", asp=1),
-                       den2 = qplot(data=filedata2(), x=quantVar(), facets=f, geom="density", asp=1),
-                       qq2 = qplot(sample=quantVar(), data=filedata2(), facets=f, asp=1),
-                       hisDen2 = qplot(data=filedata2(), x=quantVar(), facets=f) + aes(y=..density..)+geom_density()
+                       den2 = qplot(data=filedata2(), x=quantVals(), facets=f, geom="density", asp=1),
+                       qq2 = qplot(sample=quantVals(), data=filedata2(), facets=f, asp=1),
+                       hisDen2 = qplot(data=filedata2(), x=quantVals(), facets=f) + aes(y=..density..)+geom_density()
     )
 dataPlot
     })
 
   output$basicSummary <- renderPrint({
-    favstats(~quantVar()|catVar())  
+    favstats(~quantVals()|catVals())  
     })
- 
-# q <- reactive({
-#   filedata()[,input$choose2]
-#   
-# })
-# 
-# trials2 <- reactive({
-#   do(input$num) * sample(group_by(filedata2(), q()), replace = TRUE)
-# })
-# 
-# allStat <- reactive({
-#   grouped_trials <- group_by(trials2(), .index, q..) 
-#   aggregate(Time~Cable+.index, data= grouped_trials, mean)
-# })
 
-  allStat<- reactive({
-    summarise(summarise(group_by(do(input$num2) * sample(grouped(), replace = TRUE), .index, varCat()),
-              mean=mean(varQuant()), med=median(varQuant()), sd = sd(varQuant())), mean.diff=diff(mean), med.diff=diff(med),
-              sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
-  })
-  
-test<- renderPrint({
-  head(allStat())
+simdata <- reactive({ 
+  data.frame(catVals(), quantVals())
 })
 
-# #   
-#   plotType2 <- function(x, type) {
-#     switch(type,
-#            his2 =  qplot(allStat()$mean.diff, binwidth=input$w4, 
-#                          xlab="Means", ylab="Frequency", asp=1),
-#            den2 = qplot(allStat()$mean.diff, geom="density", 
-#                         xlab="Difference in Means", ylab="Density", asp=1),
-#            qq2 = qplot(sample=allStat()$mean.diff, asp=1),
-#            hisDen2 = qplot(allStat()$mean.diff, binwidth=input$w4)+ aes(y=..density..) + geom_density()
-#     )}
-#   
-#   output$bootMeanHist2 <- renderPlot({
-#     plotType2(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
-#   })
-#   
-#   output$bootMeanSummary2 <- renderPrint({
-#     summary(allStat()$mean.diff)
-#   })
-#   
-#   output$bootMeanBias2 <- renderText({
-#     mean(summarise(summarise(group_by(grouped, varQuant()), mean = mean(varQuant())), 
-#                    mean.diff = diff(mean))$mean.diff)-mean(allStat()$mean.diff)
-#   })
-#   
-#   output$bootMeanSd2 <- renderText({
-#     sd(allStat()$mean.diff)
-#   })
-#   
-#   
-#   plotType3 <- function(x, type) {
-#     switch(type,
-#            his2 =  qplot(allStat()$med.diff, binwidth=input$w4, 
-#                          xlab="Medians", ylab="Frequency", asp=1),
-#            den2 = qplot(allStat()$med.diff, geom="density", 
-#                         xlab="Difference in Medians", ylab="Density", asp=1),
-#            qq2 = qplot(sample=allStat()$med.diff, asp=1),
-#            hisDen2 = qplot(allStat()$med.diff, binwidth=input$w4)+ aes(y=..density..) + geom_density()
-#     )}
-#   
-#   output$bootMedianHist2 <- renderPlot({
-#     plotType3(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
-#   })
-#   
-#   output$bootMedianSummary2 <- renderPrint({
-#     summary(allStat()$med.diff)
-#   })
-#   
-#   output$bootMedianBias2 <- renderText({
-#     mean(summarise(summarise(group_by(grouped, varQuant()), median = median(varQuant())), 
-#                    med.diff = diff(median))$med.diff)-mean(allStat()$med.diff)
-#   })
-#   
-#   output$bootMedianSd2 <- renderText({
-#     sd(allStat()$med.diff)
-#   })
-# 
-#   plotType4 <- function(x, type) {
-#     switch(type,
-#            his2 =  qplot(allStat()$mean.ratio, binwidth=input$w4, 
-#                          xlab="Ratios", ylab="Frequency", asp=1),
-#            den2 = qplot(allStat()$mean.ratio, geom="density", 
-#                         xlab="Ratio of Means", ylab="Density", asp=1),
-#            qq2 = qplot(sample=allStat()$mean.ratio, asp=1),
-#            hisDen2 = qplot(allStat()$mean.ratio, binwidth=input$w4)+ aes(y=..density..) + geom_density()
-#     )}
-#   
-#   
-#   output$bootMeanRatioHist <- renderPlot({
-#     plotType4(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
-#   })
-#   
-#   output$bootMeanRatioSummary <- renderPrint({
-#     summary(allStat()$mean.ratio)
-#   })
-#   
-#   output$bootMeanRatioBias <- renderText({
-#     mean(summarise(summarise(group_by(grouped, varQuant()), 
-#                              mean = mean(varQuant())), mean.ratio = mean[1] / mean[2])$mean.ratio)
-#     -mean(allStat()$mean.ratio)
-#   })
-#   
-#   output$bootMeanRatioSd <- renderText({
-#     sd(allStat()$mean.ratio)
-#   })
-#   
-#   
-#   plotType5 <- function(x, type) {
-#     switch(type,
-#            his2 =  qplot(allStat()$med.ratio, binwidth=input$w4, 
-#                          xlab="Ratios", ylab="Frequency", asp=1),
-#            den2 = qplot(allStat()$med.ratio, geom="density", 
-#                         xlab="Ratio of Means", ylab="Density", asp=1),
-#            qq2 = qplot(sample=allStat()$med.ratio, asp=1),
-#            hisDen2 = qplot(allStat()$med.ratio)+ aes(y=..density..) + geom_density()
-#     )}
-#   
-#   output$bootMedRatioHist <- renderPlot({
-#     plotType5(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
-#   })
-#   
-#   output$bootMedRatioSummary <- renderPrint({
-#     summary(allStat()$med.ratio)
-#   })
-#   
-#   output$bootMedRatioBias <- renderText({
-#     mean(summarise(summarise(group_by(grouped, varQuant()), 
-#                              med = median(varQuant())), med.ratio = med[1] / med[2])$med.ratio)
-#     -mean(allStat()$med.ratio)
-#   })
-#   
-#   output$bootMedRatioSd <- renderText({
-#     sd(allStat()$med.ratio)
-#   })
-#   
-#   
-#   plotType6 <- function(x, type) {
-#     switch(type,
-#            his2 =  qplot(allStat()$sd.ratio, binwidth=input$w4, 
-#                          xlab="Ratios", ylab="Frequency", asp=1, rescale.axis=TRUE),
-#            den2 = qplot(allStat()$sd.ratio, geom="density", 
-#                         xlab="Ratio of Standard Deviation", ylab="Density", asp=1, rescale.axis=TRUE),
-#            qq2 = qplot(sample=allStat()$sd.ratio, asp=1),
-#            hisDen2 = qplot(allStat()$sd.ratio, binwidth=input$w4)+ aes(y=..density..) + geom_density()
-#     )}
-#   
-#   output$bootSdRatioHist <- renderPlot({
-#     plotType6(do(input$num2) * sample(grouped, replace = TRUE), input$plot2)
-#   })
-#   
-#   output$bootSdRatioSummary <- renderPrint({
-#     summary(allStat()$sd.ratio)
-#   })
-#   
-#   output$bootSdRatioBias <- renderText({
-#     mean(summarise(summarise(group_by(grouped, varQuant()), sd = sd(varQuant())), sd.ratio = sd[1] / sd[2])$sd.ratio)
-#     -mean(allStat()$sd.ratio)
-#   })
-#   
-#   output$bootSdRatioSd <- renderText({
-#     sd(allStat()$sd.ratio)
-#   })
-#   
-#   allStatSwitch <- function(x, double) {
-#     switch(double,
-#            "bootMean2" = as.data.frame(allStat())$mean.diff,
-#            "bootMedian2" = as.data.frame(allStat())$med.diff,
-#            "bootMeanRatio" = as.data.frame(allStat())$mean.ratio,
-#            "bootMedRatio" = as.data.frame(allStat())$med.ratio,
-#            "bootSdRatio" =as.data.frame(allStat())$sd.ratio
-#     )}
-#   
+origStat <- reactive({ #Our original data frame, with all of the calculations we want (for bias)
+  grouped_trials <- group_by(simdata(), catVals())
+  group_means <- summarise(grouped_trials, mean=mean(quantVals()), med=median(quantVals()) * 1.0, sd = sd(quantVals()))
+  summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
+    mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2] * 1.0, sd.ratio = sd[1]/sd[2])
+  
+})
+
+trials2 <- reactive({
+  do(input$num) * sample(group_by(simdata(), catVals..), replace = TRUE)
+})
+
+allStat <- reactive({
+  grouped_trials <- group_by(trials2(), .index, catVals..)
+  group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..) * 1.0, sd = sd(quantVals..))
+  summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
+             mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2] * 1.0, sd.ratio = sd[1]/sd[2])
+})
+
+x1 = list()
+x2 = list()
+
+origStatSwitch <- function(x1, list){
+    switch(input$stat2, 
+           bootMean2= assign("x1", origStat()$mean.diff),
+           bootMedian2= assign("x1", origStat()$med.diff),
+           bootMeanRatio = assign("x1", origStat()$mean.ratio),
+           bootMedRatio = assign("x1", origStat()$med.ratio),
+           bootSdRatio= assign("x1", origStat()$sd.ratio)
+    )}
+
+
+plotType2 <- function(x2, type) {
+  switch(type,
+         his2 =  qplot(x2, binwidth=input$w4, 
+                       ylab="Frequency", asp=1),
+         den2 = qplot(x2, geom="density", 
+                      ylab="Density", asp=1),
+         qq2 = qplot(sample=x2, asp=1),
+         hisDen2 = qplot(x2, binwidth=input$w4)+ aes(y=..density..) + geom_density()
+  )}
+
+dataSwitch <- function(y, list){
+  switch(input$stat2, 
+      bootMean2= assign("x2", allStat()$mean.diff),
+      bootMedian2= assign("x2", allStat()$med.diff),
+      bootMeanRatio = assign("x2", allStat()$mean.ratio),
+      bootMedRatio = assign("x2", allStat()$med.ratio),
+      bootSdRatio= assign("x2", allStat()$sd.ratio)
+)}
+
+  output$bootHist2 <- renderPlot({
+    plotType2(dataSwitch(), input$plot2)
+  })
+  
+  output$bootSummary2 <- renderPrint({
+    summary(dataSwitch())
+  })
+  
+  output$bootBias2 <- renderText({
+    mean(origStatSwitch())-mean(dataSwitch())
+  })
+
+  
+  output$bootSd2 <- renderText({
+    sd(dataSwitch())
+  })
+  
 #   level2 <- reactive(
 #     input$level2
 #   )
