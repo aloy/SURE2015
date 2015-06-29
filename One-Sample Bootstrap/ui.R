@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyjs)
+library("ggvis")
 shinyUI(fluidPage(
   useShinyjs(),
   sidebarLayout(
@@ -199,24 +200,24 @@ shinyUI(fluidPage(
                              verbatimTextOutput("bootBias2"),
                              h6("Estimate Standard Deviation"),
                              verbatimTextOutput("bootSd2"),
-#                            conditionalPanel(
-#                              condition = "input.ci2 == 'perc2'",
-#                              h6("Two-Tailed Confidence Interval (Percentile)"),
-#                              verbatimTextOutput("ciPrint2"),
-#                              h6("Lower Bound"),
-#                              verbatimTextOutput("percLower2"),
-#                              h6("Upper Bound"),
-#                              verbatimTextOutput("percUpper2")
-#                            ),
-#                            conditionalPanel(
-#                              condition = "input.ci2 == 'norm2'",
-#                              h6("Two-Tailed Confidence Interval (Normal)"),
-#                              verbatimTextOutput("normPrint2"),
-#                              h6("Lower Bound"),
-#                              verbatimTextOutput("normLower2"),
-#                              h6("Upper Bound"),
-#                              verbatimTextOutput("normUpper2")
-#                            ),
+                           conditionalPanel(
+                             condition = "input.ci2 == 'perc2'",
+                             h6("Two-Tailed Confidence Interval (Percentile)"),
+                             verbatimTextOutput("ciPrint2"),
+                             h6("Lower Bound"),
+                             verbatimTextOutput("percLower2"),
+                             h6("Upper Bound"),
+                             verbatimTextOutput("percUpper2")
+                           ),
+                           conditionalPanel(
+                             condition = "input.ci2 == 'norm2'",
+                             h6("Two-Tailed Confidence Interval (Normal)"),
+                             verbatimTextOutput("normPrint2"),
+                             h6("Lower Bound"),
+                             verbatimTextOutput("normLower2"),
+                             h6("Upper Bound"),
+                             verbatimTextOutput("normUpper2")
+                           ),
                            hidden(
                              tableOutput("contents2")
                            )

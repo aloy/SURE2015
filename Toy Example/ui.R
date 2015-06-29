@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyjs)
+library(ggvis)
 
 shinyUI(fluidPage(
   shinyjs::useShinyjs(),
@@ -41,12 +42,14 @@ shinyUI(fluidPage(
       actionButton("hideData", label="Show/hide data"),
       numericInput("num", 
                    label = h5("Number of Bootstraps"), 
-                   value = 100, min = 1, max = 100000)
+                   value = 100, min = 1, max = 100000),
+      sliderInput("width", label="Bin width", value=0.5, min=0, max=2, step=0.1)
     ), #sidebar
     mainPanel(
       tableOutput("contents"),
       plotOutput("plot"),
-      verbatimTextOutput("trials2"),
-      tableOutput("statTest"))
+      htmlOutput("ggvisplot_ui"),
+      tableOutput("statTest")
+  )
   )
 ))

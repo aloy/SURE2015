@@ -5,6 +5,8 @@ shinyServer(function(input, output, session) {
   library(ggplot2)
   library(dplyr)
   library(mosaic)
+  library(magrittr)
+  library(ggvis)
   
   filedata <- reactive({
     if(input$chooseData=="uploadYes"){
@@ -66,7 +68,7 @@ simdata <- reactive({
   data.frame(catVals(), quantVals())
 })
 
-trials2 <- reactive({
+trials <- reactive({
   do(input$num) * sample(group_by(simdata(), catVals..), replace = TRUE)
 })
 
@@ -78,15 +80,20 @@ trials2 <- reactive({
 # group_means <- summarise(grouped_trials, mean = mean(Time))
 # diffs <- summarise(group_means, mean.diff = diff(mean))
 
-output$trials2 <- renderPrint({
- head(trials2())
+output$ggvisplot_ui <- renderUI({
+    trials() %>% 
+    ggvis(~quantVals..) %>% 
+    layer_histograms(width = input$width) %>% 
+    add_axis("x", title = "means") %>%
+    bind_shiny("ggvisplot")
+    ggvisOutput("ggvisplot")
 })
 
 allStat <- reactive({
-grouped_trials <- group_by(trials2(), .index, catVals..)
-group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..), sd = sd(quantVals..))
+grouped_trials <- group_by(trials(), .index, catVals..)
+group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..)*1.0, sd = sd(quantVals..))
 summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
-               sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
+               sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2]*1.0, sd.ratio = sd[1]/sd[2])
 })
 
 output$statTest <- renderTable({

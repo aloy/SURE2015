@@ -7,6 +7,7 @@ shinyServer(function(input,output, session){
   library(Lock5Data)
   library(dplyr)
   library(ggplot2)
+  library(ggvis)
   
   data(SleepStudy)
   
@@ -48,8 +49,7 @@ shinyServer(function(input,output, session){
   
   output$origHist <- renderPlot({
     dataPlot <- switch(input$plot, 
-                       his =  qplot(data=filedata(), x=varData(), geom="histogram", 
-                              binwidth=input$w, main="Original Sample", asp=1),
+                       his =  qplot(data=filedata(), x=varData(), geom="histogram", binwidth=input$w, asp=1),
                        den =  qplot(data=filedata(), x=varData(), geom="density", asp=1),
                        qq = qplot(sample=varData(), asp=1),
                        hisDen = qplot(data=filedata(), x=varData(),
@@ -140,11 +140,11 @@ shinyServer(function(input,output, session){
   })
   
   output$normUpper <- renderText({
-    c(paste(100*level(),'%'), varDataFunction(filedata(), input$stat) - qnorm(input$level) * SE())
+    c(paste(100*level(),'%'), varData() - qnorm(input$level) * SE())
   })
   
   output$normLower <- renderText({
-    c(paste(100*alpha(),'%'), varDataFunction(filedata(), input$stat) - qnorm(input$level) * SE())
+    c(paste(100*alpha(),'%'), varData() - qnorm(input$level) * SE())
   })
   
   ## Two-Sample Bootstrap
@@ -290,43 +290,43 @@ dataSwitch <- function(y, list){
     sd(dataSwitch())
   })
   
-#   level2 <- reactive(
-#     input$level2
-#   )
-#   
-#   alpha2 <- reactive(
-#     1 - level2()
-#   )
-#   
-#   SE2 <- reactive (
-#     sd(allStatSwitch(allStat, input$stat2))
-#   )
-#   
-#   output$ciPrint2 <- renderPrint({
-#     quantile((allStatSwitch(allStat, input$stat2)), 
-#              probs=c(alpha2()/2, 1-alpha2()/2))
-#   })
-#   
-#   output$percLower2 <- renderPrint({
-#     quantile((allStatSwitch(allStat, input$stat2)), probs = c(alpha2()))
-#   })
-#   
-#   output$percUpper2 <- renderPrint({
-#     quantile((allStatSwitch(allStat, input$stat2)), probs = c(1-alpha2()))
-#   })
-#   
-#   output$normPrint2 <- renderText({
-#     c(mean((allStatSwitch(allStat, input$stat2))) - qnorm(1-alpha2()/2) *  SE2(), 
-#       (mean(allStatSwitch(allStat, input$stat2))) + qnorm(1-alpha2()/2) * SE2())
-#   })
-#   
-#   output$normLower2 <- renderText({
-#     c(paste(100*alpha(),'%'), mean(allStatSwitch(allStat, input$stat2)) 
-#       - qnorm(level2()) * SE2())
-#   })
-#   
-#   output$normUpper2 <- renderText({
-#     c(paste(100*level(),'%'), mean(allStatSwitch(allStat, input$stat2))
-#       + qnorm(level2()) * SE2())
-#   })
+  level2 <- reactive(
+    input$level2
+  )
+  
+  alpha2 <- reactive(
+    1 - level2()
+  )
+  
+  SE2 <- reactive (
+    sd(dataSwitch())
+  )
+  
+  output$ciPrint2 <- renderPrint({
+    quantile(dataSwitch(), 
+             probs=c(alpha2()/2, 1-alpha2()/2))
+  })
+  
+  output$percLower2 <- renderPrint({
+    quantile(dataSwitch(), probs = c(alpha2()))
+  })
+  
+  output$percUpper2 <- renderPrint({
+    quantile(dataSwitch(), probs = c(1-alpha2()))
+  })
+  
+  output$normPrint2 <- renderText({
+    c(mean(origStatSwitch()) - qnorm(1-alpha2()/2) *  SE2(), 
+      mean(origStatSwitch()) + qnorm(1-alpha2()/2) * SE2())
+  })
+  
+  output$normLower2 <- renderText({
+    c(paste(100*alpha(),'%'), mean(origStatSwitch())
+      - qnorm(level2()) * SE2())
+  })
+  
+  output$normUpper2 <- renderText({
+    c(paste(100*level(),'%'), mean(origStatSwitch())
+      + qnorm(level2()) * SE2())
+  })
 })
