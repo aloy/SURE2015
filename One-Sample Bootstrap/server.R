@@ -228,6 +228,20 @@ dataPlot
     favstats(~quantVar()|catVar())  
     })
  
+# q <- reactive({
+#   filedata()[,input$choose2]
+#   
+# })
+# 
+# trials2 <- reactive({
+#   do(input$num) * sample(group_by(filedata2(), q()), replace = TRUE)
+# })
+# 
+# allStat <- reactive({
+#   grouped_trials <- group_by(trials2(), .index, q..) 
+#   aggregate(Time~Cable+.index, data= grouped_trials, mean)
+# })
+
   allStat<- reactive({
     summarise(summarise(group_by(do(input$num2) * sample(grouped(), replace = TRUE), .index, varCat()),
               mean=mean(varQuant()), med=median(varQuant()), sd = sd(varQuant())), mean.diff=diff(mean), med.diff=diff(med),
