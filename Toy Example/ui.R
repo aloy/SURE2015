@@ -46,9 +46,7 @@ shinyUI(fluidPage(
     mainPanel(
       tableOutput("contents"),
       plotOutput("plot"),
-      tableOutput("trialsBase"),
       verbatimTextOutput("trials2"),
-      tableOutput("statBase"),
       tableOutput("statTest"))
   )
 ))

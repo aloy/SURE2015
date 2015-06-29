@@ -16,7 +16,7 @@ shinyServer(function(input, output, session) {
     )
     }
     else
-      read.csv("~/Desktop/Example/data/TV.csv")
+      read.csv("~/Desktop/SURE2015/Toy Example/data/TV.csv")
     })
   
   output$contents <- renderTable({
@@ -43,13 +43,7 @@ shinyServer(function(input, output, session) {
     names(vars2)=vars2
     selectInput("boot3","Choose a quantitative variable",vars2)
   })
-  
-  grp <- reactive({ input$boot2})
-  qvar <- reactive({ input$boot3})
-  
-#   colnames(filedata())[colnames(filedata()) == as.character(grp())] <- "group"
-#   colnames(filedata())[colnames(filedata()) == as.character(qvar())] <- "variable"
-  
+    
   shinyjs::onclick("hideData",
                    shinyjs::toggle(id = "contents", anim = TRUE))
 
@@ -68,17 +62,12 @@ output$plot <- renderPlot({
   qplot(quantVals(), data=filedata(), facets=x)
 })
 
-cat <- reactive({
-  filedata()[,input$boot2] 
+simdata <- reactive({ 
+  data.frame(catVals(), quantVals())
 })
 
 trials2 <- reactive({
-  do(input$num) * sample(group_by(filedata(), cat()), replace = TRUE)
-})
-
-statBase <- reactive({
-grouped_trials <- group_by(trialsBase(), .index, Cable) 
-summarise(group_by(grouped_trials, .index, Cable), mean(Time))
+  do(input$num) * sample(group_by(simdata(), catVals..), replace = TRUE)
 })
 
 # grouped <- group_by(tv, Cable)
@@ -90,15 +79,18 @@ summarise(group_by(grouped_trials, .index, Cable), mean(Time))
 # diffs <- summarise(group_means, mean.diff = diff(mean))
 
 output$trials2 <- renderPrint({
- colnames(filedata())[colnames(filedata()) == grp()] <- "group"
+ head(trials2())
+})
+
+allStat <- reactive({
+grouped_trials <- group_by(trials2(), .index, catVals..)
+group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..), sd = sd(quantVals..))
+summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
+               sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
 })
 
 output$statTest <- renderTable({
-  grouped_trials <- group_by(trials2(), .index, cat..) 
-  y <- paste(input$boot3)
-  z <- paste(input$boot2)
-  index <- c(".index")
- head(aggregate(y~z, data=grouped_trials, mean))
+  head(allStat())
 })
 
 })
