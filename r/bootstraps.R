@@ -70,7 +70,18 @@ observed + qnorm(1 - alpha/2) * SE
 
 tv <- read.csv("../data/TV.csv")
 
+dat <- tv
+grp <- function() "Cable"
+qvar <- "Time"
+
+colnames(dat)[colnames(dat) == grp()] <- "group"
+colnames(dat)[colnames(dat) == qvar] <- "variable"
+
 grouped <- group_by(tv, Cable)
+
+
+
+grouped <- group_by(tv, "Cable")
 
 B <- 1000
 trials <- do(B) * sample(grouped, replace = TRUE)
