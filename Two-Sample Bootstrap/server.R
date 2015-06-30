@@ -83,10 +83,10 @@ simdata <- reactive({
 })
 
 origStat <- reactive({ #Our original data frame, with all of the calculations we want (for bias)
-  grouped_trials <- group_by(simdata(), catVals())
-  group_means <- summarise(grouped_trials, mean=mean(quantVals()), med=median(quantVals()) * 1.0, sd = sd(quantVals()))
-  summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
-            mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2] * 1.0, sd.ratio = sd[1]/sd[2])
+  grouped_trials <- group_by(simdata(), catVals..)
+  group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..), sd = sd(quantVals..))
+  summarise(group_means, mean.diff=diff(mean), med.diff=diff(med),
+            mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
   
 })
 
@@ -181,7 +181,6 @@ output$normPrint2 <- renderText({
 
 output$normLower2 <- renderText({
   c(paste(100*alpha2(),'%'), mean(origStatSwitch()) - (qnorm(1-alpha2()) * SE2()))
-  
 })
 
 output$normUpper2 <- renderText({
