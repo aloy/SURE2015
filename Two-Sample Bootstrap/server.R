@@ -176,7 +176,7 @@ output$percUpper2 <- renderPrint({
 })
 
 output$normPrint2 <- renderText({
-  c(origStatSwitch() - qnorm(1-alpha2()/2) *  SE2(), mean(origStatSwitch()) + qnorm(1-(alpha2()/2)) * SE2())
+  c(mean(origStatSwitch()) - qnorm(1-alpha2()/2)*SE2(), mean(origStatSwitch()) + qnorm(1-(alpha2()/2)) * SE2())
 })
 
 output$normLower2 <- renderText({
