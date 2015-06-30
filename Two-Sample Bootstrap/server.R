@@ -176,18 +176,17 @@ output$percUpper2 <- renderPrint({
 })
 
 output$normPrint2 <- renderText({
-  c(mean(origStatSwitch()) - qnorm(1-(alpha2()/2)) *  SE2(), 
-    mean(origStatSwitch()) + qnorm(1-(alpha2()/2)) * SE2())
+  c(origStatSwitch() - qnorm(1-alpha2()/2) *  SE2(), mean(origStatSwitch()) + qnorm(1-(alpha2()/2)) * SE2())
 })
 
 output$normLower2 <- renderText({
-  c(paste(100*alpha2(),'%'), mean(origStatSwitch())
-    - qnorm(level2()) * SE2())
+  c(paste(100*alpha2(),'%'), mean(origStatSwitch()) - (qnorm(1-alpha2()) * SE2()))
+  
 })
 
 output$normUpper2 <- renderText({
-  c(paste(100*level2(),'%'), mean(origStatSwitch())
-    + qnorm(level2()) * SE2())
+  c(paste(100*level2(),'%'), mean(origStatSwitch()) + qnorm(1-alpha2()) * SE2())
+  
 })
 
 })

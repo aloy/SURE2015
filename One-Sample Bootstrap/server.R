@@ -139,11 +139,11 @@ shinyServer(function(input,output, session){
   })
   
   output$normUpper <- renderText({
-    c(paste(100*level(),'%'), mean(varData()) + qnorm(1-alpha()/2) * SE())
+    c(paste(100*level(),'%'), mean(varData()) + qnorm(1-alpha()) * SE())
   })
   
   output$normLower <- renderText({
-    c(paste(100*alpha(),'%'), mean(varData()) - qnorm(1-alpha()/2) * SE())
+    c(paste(100*alpha(),'%'), mean(varData()) - qnorm(1-alpha()) * SE())
   })
  
 })
