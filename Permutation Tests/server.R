@@ -46,40 +46,41 @@ output$varChoose2 <- renderUI({
     selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars2)
 })
 
-catVals <- reactive({ 
+Category <- reactive({ 
   catName <- input$choose
   filedata()[,catName]
 })
 
-quantVals <- reactive({ 
+Quantitative <- reactive({ 
   quantName<-input$choose2
   filedata()[,quantName]
 })
 
 output$summary <- renderTable({
-favstats(~quantVals()|catVals())  
+favstats(~Quantitative()|Category())  
 })
 
 simdata <- reactive({
-  data.frame(catVals(), quantVals())  
+  data.frame(Category(), Quantitative())  
 })
 
 diff <- reactive({
 catName <- input$choose
 quantName<-input$choose2
-grouped<- group_by(simdata(), catVals..)
-summarise(summarise(grouped, mean = mean(quantVals..)), mean.diff=mean[1]-mean[2])
+grouped<- group_by(simdata(), Category..)
+summarise(summarise(grouped, mean = mean(Quantitative..)), mean.diff=mean[1]-mean[2])
 })
 
-output$observedDiff <- renderPrint({
+output$observedDiff <- renderText({
 diff()$mean.diff
 })
+
 
 trials <- reactive({
 dataSize <- nrow(simdata())
 size <- nrow(simdata())/2
 n <- input$num
-toSample <- simdata()$quantVals..
+toSample <- simdata()$Quantitative..
 result <- matrix(nrow=n)
 for (i in 1:n){
 index <- sample(dataSize, size=size, replace = FALSE)
@@ -89,33 +90,43 @@ colnames(result) <- c("result")
 as.data.frame(result)
 })
 
-output$trialsHist<- renderPlot({
-    dataPlot <- switch(input$type, 
-                       his = qplot(data=trials(), x=result, xlab="xbar1-xbar2", 
-                            main="Permutation Distribution", binwidth=input$width, asp=1) + 
-                            geom_vline(aes(xintercept=diff()$mean.diff), colour="blue"),
-                       den = qplot(trials()$result, geom="density", ylab="Density", asp=1),
-                       hisDen = qplot(trials()$result, binwidth=input$width)+ aes(y=..density..) + geom_density() + 
-                         geom_vline(aes(xintercept=diff()$mean.diff), colour="blue"),
-                       qq = qplot(sample=trials()$result, asp=1),
-    )
-    
-    dataPlot
-  })
-
-output$pval <- renderPrint({
+output$pval <- renderText({
 n <- input$num
 (sum(trials()$result >= diff()$mean.diff) +1)/(n+1)
 })
 
-as.data.frame(result) %>% 
-  ggvis(~result) %>% 
-  layer_histograms(width = input_slider(0, 2, step=0.1, value=0.6)) %>%
-  add_axis("x", title = "mean difference") %>%
-  add_axis("x", title="Permutation Distribution", ticks=0, orient="top", properties = axis_props(
-    axis = list(stroke = "white"),
-    labels = list(fontSize = 0))) %>% 
-  bind_shiny("trialsHist2", "trialsHist2_ui")
-
+observe({
+  n <- input$num
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(result, na.rm = T), sd(result, na.rm = T))
+  qqdata <- data.frame(sort(normal.quantiles), sort(result))
+ggSwitch <- switch(input$type,
+  his = as.data.frame(result) %>% 
+    ggvis(~result) %>% 
+    layer_histograms(width = input_slider(0, 2, step=0.1, value=0.6)) %>%
+    add_axis("x", title = "Mean Difference") %>%
+    add_axis("y", title="Count") %>%
+    add_axis("x", title="Permutation Distribution", ticks=0, orient="top", properties = axis_props(
+      axis = list(stroke = "white"),
+      labels = list(fontSize = 0))) %>% 
+    bind_shiny("trialsHist2", "trialsHist2_ui"),
+  den = as.data.frame(result) %>% 
+    ggvis(~result) %>% 
+    layer_densities() %>%
+    add_axis("x", title = "Mean Difference") %>%
+    add_axis("y", title="Density") %>%
+    add_axis("x", title="Permutation Distribution", ticks=0, orient="top", properties = axis_props(
+      axis = list(stroke = "white"),
+      labels = list(fontSize = 0))) %>% 
+    bind_shiny("trialsHist2", "trialsHist2_ui"),
+  qq = qqdata %>% 
+    ggvis(~sort.normal.quantiles., ~sort.result.) %>% 
+    layer_points() %>% 
+    add_axis("x", title="Theoretical") %>%
+    add_axis("y", title="Sample") %>%
+    bind_shiny("trialsHist2", "trialsHist2_ui")
+  )
+ggSwitch
+})
 
 })

@@ -43,13 +43,12 @@ sidebarLayout(
     actionButton("hideData", "Show/hide data set"),
     h4("Resampling"),
     radioButtons("type", label=h5("Plot Type"),
-                 c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
+                 c("Histogram" = "his", "Kernel Density" = "den",
                    "Q-Q Plot" = "qq"), selected="his"),
     numericInput("num", 
                  label = h5("Number of Bootstraps"), 
                  value = 1000, min = 1, max = 100000),
-    numericInput("width", label= h5("qplot Bootstrap Bin Width"), value=0.5, min=0, step=0.1),
-    h5("ggvis Bootstrap Bin Width"),
+    h5("Bootstrap Bin Width"),
     uiOutput("trialsHist2_ui"),
     p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
     the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
@@ -62,10 +61,9 @@ sidebarLayout(
     tableOutput("summary"),
     h6("Observed Mean Difference"),
     verbatimTextOutput("observedDiff"),
-    plotOutput("trialsHist"),
+    ggvisOutput("trialsHist2"),
     h6("P-Value"),
     verbatimTextOutput("pval"),
-    ggvisOutput("trialsHist2"),
     hidden(
       tableOutput("contents")
     )
