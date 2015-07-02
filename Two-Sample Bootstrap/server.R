@@ -4,8 +4,6 @@ shinyServer(function(input,output, session){
 library(mosaic)
 library(Lock5Data)
 library(dplyr)
-library(ggplot2)
-library(ggvis)
 
 tv <- read.csv("../data/TV.csv")
 
