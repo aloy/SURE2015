@@ -1,5 +1,7 @@
 library(shiny)
 library(shinyjs)
+library(ggvis)
+library(dplyr)
 shinyUI(fluidPage(
   useShinyjs(),
   titlePanel("Permutation Tests"),
@@ -43,7 +45,9 @@ sidebarLayout(
     numericInput("num", 
                  label = h5("Number of Bootstraps"), 
                  value = 1000, min = 1, max = 100000),
-    numericInput("width", label= h5("Bootstrap Bin Width"), value=0.5, min=0, step=0.1),
+    numericInput("width", label= h5("qplot Bootstrap Bin Width"), value=0.5, min=0, step=0.1),
+    h5("ggvis Bootstrap Bin Width"),
+    uiOutput("trialsHist2_ui"),
     p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
     the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
     to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
@@ -58,6 +62,7 @@ sidebarLayout(
     plotOutput("trialsHist"),
     h6("p-Value"),
     verbatimTextOutput("pval"),
+      htmlOutput("plots"),
     hidden(
       tableOutput("contents")
     )

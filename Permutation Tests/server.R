@@ -2,6 +2,8 @@ library(shiny)
 library(shinyjs)
 shinyServer(function(input,output, session){
 library(mosaic)
+library(ggvis)
+library(dplyr)
 
 filedata <- reactive({
   if(input$chooseData=="uploadYes"){
@@ -85,13 +87,27 @@ as.data.frame(result)
 })
 
 output$trialsHist<- renderPlot({
-  qplot(data=trials(), x=result, xlab="xbar1-xbar2", main="Permutation Distribution", binwidth=input$width, asp=1) + 
-    geom_vline(xintercept=diff$mean.diff, col="red")
+qplot(data=trials(), x=result, xlab="xbar1-xbar2", main="Permutation Distribution", binwidth=input$width, asp=1) + 
+ geom_vline(xintercept=diff$mean.diff, col="red")
 })
 
 output$pval <- renderPrint({
 n <- input$num
 (sum(trials()$result >= diff$mean.diff) +1)/(n+1)
 })
+
+
+output$plots <- renderUI({
+  trials() %>%
+  ggvis(~result) %>%
+    layer_histograms(width = input_slider(0, 2, step=0.1, value=0.6)) %>%
+    add_axis("x", title = "mean difference") %>%
+    add_axis("x", title="Permutation Distribution", ticks=0, orient="top", properties = axis_props(
+        axis = list(stroke = "white"),
+        labels = list(fontSize = 0))) %>% 
+    set_options(renderer = "canvas", duration=0) %>%
+  bind_shiny("trialsHist2", "trialsHist2_ui" )
+ggvisOutput("trialsHist2")
+  })
 
 })
