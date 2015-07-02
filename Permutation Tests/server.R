@@ -64,12 +64,15 @@ simdata <- reactive({
   data.frame(catVals(), quantVals())  
 })
 
+diff <- reactive({
+catName <- input$choose
+quantName<-input$choose2
+grouped<- group_by(simdata(), catVals..)
+summarise(summarise(grouped, mean = mean(quantVals..)), mean.diff=mean[1]-mean[2])
+})
+
 output$observedDiff <- renderPrint({
-  catName <- input$choose
-  quantName<-input$choose2
-  grouped<- group_by(simdata(), catVals..)
-diff <- summarise(summarise(grouped, mean = mean(quantVals..)), mean.diff=mean[1]-mean[2])
-diff$mean.diff
+diff()$mean.diff
 })
 
 trials <- reactive({
@@ -87,13 +90,22 @@ as.data.frame(result)
 })
 
 output$trialsHist<- renderPlot({
-qplot(data=trials(), x=result, xlab="xbar1-xbar2", main="Permutation Distribution", binwidth=input$width, asp=1) + 
- geom_vline(xintercept=diff$mean.diff, col="red")
-})
+    dataPlot <- switch(input$type, 
+                       his = qplot(data=trials(), x=result, xlab="xbar1-xbar2", 
+                            main="Permutation Distribution", binwidth=input$width, asp=1) + 
+                            geom_vline(aes(xintercept=diff()$mean.diff), colour="blue"),
+                       den = qplot(trials()$result, geom="density", ylab="Density", asp=1),
+                       hisDen = qplot(trials()$result, binwidth=input$width)+ aes(y=..density..) + geom_density() + 
+                         geom_vline(aes(xintercept=diff()$mean.diff), colour="blue"),
+                       qq = qplot(sample=trials()$result, asp=1),
+    )
+    
+    dataPlot
+  })
 
 output$pval <- renderPrint({
 n <- input$num
-(sum(trials()$result >= diff$mean.diff) +1)/(n+1)
+(sum(trials()$result >= diff()$mean.diff) +1)/(n+1)
 })
 
 
@@ -106,7 +118,7 @@ output$plots <- renderUI({
         axis = list(stroke = "white"),
         labels = list(fontSize = 0))) %>% 
     set_options(renderer = "canvas", duration=0) %>%
-  bind_shiny("trialsHist2", "trialsHist2_ui" )
+  bind_shiny("trialsHist2", "trialsHist2_ui")
 ggvisOutput("trialsHist2")
   })
 

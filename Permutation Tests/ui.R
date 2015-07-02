@@ -42,6 +42,9 @@ sidebarLayout(
     ), #conditionalPanel
     actionButton("hideData", "Show/hide data set"),
     h4("Resampling"),
+    radioButtons("type", label=h5("Plot Type"),
+                 c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
+                   "Q-Q Plot" = "qq"), selected="his"),
     numericInput("num", 
                  label = h5("Number of Bootstraps"), 
                  value = 1000, min = 1, max = 100000),
