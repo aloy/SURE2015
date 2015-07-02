@@ -2,7 +2,7 @@ library(shiny)
 library(shinyjs)
 library(ggvis)
 library(dplyr)
-shinyUI(fluidPage(
+shinyUI(bootstrapPage(
   useShinyjs(),
   titlePanel("Permutation Tests"),
 sidebarLayout(
@@ -63,9 +63,9 @@ sidebarLayout(
     h6("Observed Mean Difference"),
     verbatimTextOutput("observedDiff"),
     plotOutput("trialsHist"),
-    h6("p-Value"),
+    h6("P-Value"),
     verbatimTextOutput("pval"),
-      htmlOutput("plots"),
+    ggvisOutput("trialsHist2"),
     hidden(
       tableOutput("contents")
     )
