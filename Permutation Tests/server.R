@@ -4,6 +4,8 @@ shinyServer(function(input,output, session){
 library(mosaic)
 library(ggvis)
 library(dplyr)
+library(Lock5Data)
+data("CaffeineTaps")
 
 filedata <- reactive({
   if(input$chooseData=="uploadYes"){
@@ -15,8 +17,8 @@ filedata <- reactive({
     )
   }
   else
-    read.csv("~/Desktop/SURE2015/Permutation Tests/data/CaffeineTaps.csv")
-})
+  data.frame(CaffeineTaps)
+  })
 output$contents <- renderTable({
   filedata()
 })
@@ -28,6 +30,8 @@ shinyjs::onclick("hideDataOptions",
 
 output$varChoose <- renderUI({
   df <- filedata()
+  if (is.null(df)) 
+    return(NULL)
   vars <- colnames(df)[sapply(df,is.factor)]
   names(vars)=vars
   if(input$chooseData=="uploadNo")
@@ -38,6 +42,8 @@ output$varChoose <- renderUI({
 
 output$varChoose2 <- renderUI({
   df <- filedata()
+  if (is.null(df)) 
+    return(NULL)
   vars2 <- colnames(df)[sapply(df,is.numeric)]
   names(vars2)=vars2
   if(input$chooseData=="uploadNo")

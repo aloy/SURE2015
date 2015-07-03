@@ -84,11 +84,10 @@ shinyServer(function(input,output, session){
                        his = qplot(trials(), geom="histogram", 
                                    binwidth=input$w2, xlab=paste("Bootstrap of", input$stat), ylab="Frequency", asp=1),
                        den = qplot(trials(), geom="density",
-                                   xlab=paste(input$stat, ylab="Density", asp=1),
+                                   xlab=paste(input$stat, ylab="Density", asp=1)),
                        qq = qplot(sample=trials(), asp=1),
                        hisDen = qplot(trials(), binwidth=input$w2)+ aes(y=..density..) + geom_density()
     )
-    
     dataPlot
   })
   
