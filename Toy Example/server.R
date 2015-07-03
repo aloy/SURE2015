@@ -1,103 +1,82 @@
-library(shiny)
-library(shinyjs)
+library("ggvis")
+library("Lock5Data")
+data("CaffeineTaps")
+library(mosaic)
 
 shinyServer(function(input, output, session) {
-  library(ggplot2)
-  library(dplyr)
-  library(mosaic)
-  library(magrittr)
-  library(ggvis)
+  # A reactive subset of mtcars
   
   filedata <- reactive({
     if(input$chooseData=="uploadYes"){
-    inFile <- input$file1
-    if (is.null(inFile))
-      return(NULL)
-    return(      
-      read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
-    )
+      inFile <- input$file1
+      if (is.null(inFile))
+        return(NULL)
+      return(      
+        read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+      )
     }
     else
-      read.csv("~/Desktop/SURE2015/Toy Example/data/TV.csv")
-    })
-  
-  output$contents <- renderTable({
-    filedata()
+      read.csv("~/Desktop/SURE2015/Permutation Tests/data/CaffeineTaps.csv")
   })
   
-  output$boot <- renderUI({
+  output$varChoose <- renderUI({
     df <- filedata()
-    if (is.null(df)) 
-      return(NULL)
-    else
     vars <- colnames(df)[sapply(df,is.factor)]
     names(vars)=vars
-    selectInput("boot2","Choose a categorical variable to bootstrap:",vars)
-    
-  })
-  
-  output$bootAgain<- renderUI({
-    df <- filedata()
-    if (is.null(df)) 
-      return(NULL)
+    if(input$chooseData=="uploadNo")
+      textInput("choose",label="Choose a categorical variable with two groups of equal size:", value="Group")
     else
-    vars2 <-colnames(df)[sapply(df,is.numeric)]
+      selectInput("choose",label="Choose a categorical variable with two groups of equal size:",vars)
+  })
+  
+  output$varChoose2 <- renderUI({
+    df <- filedata()
+    vars2 <- colnames(df)[sapply(df,is.numeric)]
     names(vars2)=vars2
-    selectInput("boot3","Choose a quantitative variable",vars2)
-  })
-    
-  shinyjs::onclick("hideData",
-                   shinyjs::toggle(id = "contents", anim = TRUE))
-
-  catVals <- reactive({
-    catVals <- input$boot2
-    filedata()[,catVals] #list of categorical values
+    if(input$chooseData=="uploadNo")
+      textInput("choose2",label="Choose a quantitative variable to examine between groups:", value="Taps")
+    else
+      selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars2)
   })
   
-  quantVals <- reactive({
-    quantVals<-input$boot3
-    filedata()[,quantVals] # list of all quantitative values
+#   Category <- reactive({ 
+#     catName <- input$choose
+#     filedata()[,catName]
+#   })
+#   
+#   Quantitative <- reactive({ 
+#     quantName<-input$choose2
+#     filedata()[,quantName]
+#   })
+  
+  simdata <- reactive({
+    catName <- input$choose
+    Category <- filedata()[,catName]
+    quantName <- input$choose2
+    Quantitative <- filedata()[,quantName]
+    data.frame(Category, Quantitative)  
   })
   
-output$plot <- renderPlot({
-  x<-paste(input$boot2, "~", ".")
-  qplot(quantVals(), data=filedata(), facets=x)
+output$test <- renderTable({
+  head(simdata())
 })
 
-simdata <- reactive({ 
-  data.frame(col1= catVals(), col2= quantVals())
-})
-
-trials <- reactive({
-  do(input$num) * sample(group_by(simdata(), catVals..), replace = TRUE)
-})
-
-# grouped <- group_by(tv, Cable)
-# B <- 1000
-# trials <- do(B) * sample(grouped, replace = TRUE)
-# 
-# grouped_trials <- group_by(trials, .index, Cable)
-# group_means <- summarise(grouped_trials, mean = mean(Time))
-# diffs <- summarise(group_means, mean.diff = diff(mean))
-
-output$ggvisplot_ui <- renderUI({
-    trials() %>% 
-    ggvis(~quantVals..) %>% 
-    layer_histograms(width = input$width) %>% 
-    add_axis("x", title = "means") %>%
-    bind_shiny("ggvisplot")
-    ggvisOutput("ggvisplot")
-})
-
-allStat <- reactive({
-grouped_trials <- group_by(trials(), .index, catVals..)
-group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..)*1.0, sd = sd(quantVals..))
-summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
-               sd.diff=diff(sd), mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2]*1.0, sd.ratio = sd[1]/sd[2])
-})
-
-output$statTest <- renderTable({
-  head(allStat())
-})
-
+  trials <- reactive({
+    perms <- do(input$n) * diff(mean(Quantitative ~ shuffle(Category), data = simdata()))
+    colnames(perms) <- "perms"
+    data.frame(perms)
+  })
+  
+  input_width <- reactive(input$w)
+  
+  # A simple visualisation. In shiny apps, need to register observers
+  # and tell shiny where to put the controls
+  trials %>%
+    ggvis(~perms) %>%
+    layer_histograms(width = input_width) %>%
+    bind_shiny("plot", "plot_ui")
+  
+  output$stats <- renderTable({
+    favstats(~perms, data = trials())
+  })
 })

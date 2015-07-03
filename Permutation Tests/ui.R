@@ -46,7 +46,7 @@ sidebarLayout(
                  c("Histogram" = "his", "Kernel Density" = "den",
                    "Q-Q Plot" = "qq"), selected="his"),
     numericInput("num", 
-                 label = h5("Number of Bootstraps"), 
+                 label = h5("Number of Permutation Resamples"), 
                  value = 1000, min = 1, max = 100000),
     h5("Bootstrap Bin Width"),
     uiOutput("trialsHist2_ui"),

@@ -2,16 +2,14 @@ library(shiny)
 library(shinyjs)
 library(ggvis)
 
-shinyUI(fluidPage(
-  shinyjs::useShinyjs(),
-  titlePanel("Uploading Files"),
-  sidebarLayout(
-    sidebarPanel(
-      radioButtons("chooseData", label=h5("Choose data set"),
-                   c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
-                   selected = "uploadNo"),
-      conditionalPanel(
-        condition= "input.chooseData=='uploadYes'",
+shinyUI(pageWithSidebar(
+  div(),
+  sidebarPanel(
+    radioButtons("chooseData", label=h5("Choose data set"),
+                 c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
+                 selected = "uploadNo"),
+    conditionalPanel(
+      condition= "input.chooseData=='uploadYes'",
       fileInput('file1', 'Choose file to upload',
                 accept = c(
                   'text/csv',
@@ -34,22 +32,22 @@ shinyUI(fluidPage(
                      'Double Quote'='"',
                      'Single Quote'="'"),
                    '"')
-      ), #conditionalPanel
-      uiOutput("boot"),
-      uiOutput("groupChoose"),
-      uiOutput("groupChoose2"),
-      uiOutput("bootAgain"),
-      actionButton("hideData", label="Show/hide data"),
-      numericInput("num", 
-                   label = h5("Number of Bootstraps"), 
-                   value = 100, min = 1, max = 100000),
-      sliderInput("width", label="Bin width", value=0.5, min=0, max=2, step=0.1)
-    ), #sidebar
-    mainPanel(
-      tableOutput("contents"),
-      plotOutput("plot"),
-      htmlOutput("ggvisplot_ui"),
-      tableOutput("statTest")
-  )
+    ),
+    numericInput("n", 
+                 label = "Permutation samples", 
+                 value = 1000, min = 1, max = 10000),
+    sliderInput("w", "Binwidth", min = .1, max = 5,
+                value = .5, step = .1),
+    uiOutput("varChoose"),
+    uiOutput("varChoose2")
+  ),
+
+  mainPanel(
+    tableOutput("test"),
+    h3("Permutation Distribution"),
+    uiOutput("plot_ui"),
+    ggvisOutput("plot"),
+    h3("Summary Statistics"),
+    tableOutput("stats")
   )
 ))

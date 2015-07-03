@@ -46,81 +46,70 @@ output$varChoose2 <- renderUI({
     selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars2)
 })
 
-Category <- reactive({ 
-  catName <- input$choose
-  filedata()[,catName]
-})
 
-Quantitative <- reactive({ 
-  quantName<-input$choose2
-  filedata()[,quantName]
+simdata <- reactive({
+  catName <- input$choose
+  Category <- filedata()[,catName]
+  quantName <- input$choose2
+  Quantitative <- filedata()[,quantName]
+  data.frame(Category, Quantitative)  
 })
 
 output$summary <- renderTable({
-favstats(~Quantitative()|Category())  
+  favstats(~Quantitative|Category)  
 })
 
-simdata <- reactive({
-  data.frame(Category(), Quantitative())  
-})
-
-diff <- reactive({
-catName <- input$choose
-quantName<-input$choose2
-grouped<- group_by(simdata(), Category..)
-summarise(summarise(grouped, mean = mean(Quantitative..)), mean.diff=mean[1]-mean[2])
+observedDiff <- reactive({
+grouped<- group_by(simdata(), Category)
+summarise(summarise(grouped, mean = mean(Quantitative)), mean.diff=mean[1]-mean[2])
 })
 
 output$observedDiff <- renderText({
-diff()$mean.diff
+observedDiff()$mean.diff
 })
+
 
 trials <- reactive({
-n <- input$num
-dataSize <- nrow(simdata())
-size <- nrow(simdata())/2
-toSample <- simdata()$Quantitative..
-result <- matrix(nrow=n)
-for (i in 1:n){
-index <- sample(dataSize, size=size, replace = FALSE)
-result[i,] <- mean(toSample[index]) - mean(toSample[-index])
-}
-colnames(result) <- c("result")
-as.data.frame(result)
+perms <- do(input$num) * mean(Quantitative~shuffle(Category), data=simdata())
+perms$diff <- perms[,1]-perms[,2]
+colnames(perms) <- c("Group 1", "Group 2", "diff")
+data.frame(perms)
 })
 
-output$pval <- renderText({
-(sum(trials()$result >= diff()$mean.diff) +1)/(n+1)
+output$pval <- renderPrint({
+n <- input$num
+(sum(trials()$diff >= observedDiff()$mean.diff) +1)/(n+1)
   })
 
-observe({
+qqdata <- reactive({
+  n <- input$num
   probabilities <- (1:n)/(1+n)
-normal.quantiles <- qnorm(probabilities, mean(result, na.rm = T), sd(result, na.rm = T))
-qqdata <- data.frame(sort(normal.quantiles), sort(result))
+  normal.quantiles <- qnorm(probabilities, mean(trials()[,"diff"], na.rm = T), sd(trials()[,"diff"], na.rm = T))
+  qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()[,"diff"]))
+  colnames(qqdata0) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata0)
+  })
+
+observe(
 ggSwitch <- switch(input$type,
-  his = as.data.frame(result) %>% 
-    ggvis(~result) %>% 
-    layer_histograms(width = input_slider(0, 2, step=0.1, value=0.6)) %>%
+  his = trials %>%
+    ggvis(~diff) %>%
+    layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
     add_axis("x", title = "Mean Difference") %>%
     add_axis("y", title="Count") %>%
-    add_axis("x", title="Permutation Distribution", ticks=0, orient="top", properties = axis_props(
-      axis = list(stroke = "white"),
-      labels = list(fontSize = 0))),
-  den = as.data.frame(result) %>% 
-    ggvis(~result) %>% 
+    bind_shiny("trialsHist2", "trialsHist2_ui"),
+  den = trials %>% 
+    ggvis(~diff) %>% 
     layer_densities() %>%
     add_axis("x", title = "Mean Difference") %>%
     add_axis("y", title="Density") %>%
-    add_axis("x", title="Permutation Distribution", ticks=0, orient="top", properties = axis_props(
-      axis = list(stroke = "white"),
-      labels = list(fontSize = 0))), 
+    bind_shiny("trialsHist2", "trialsHist2_ui"),
   qq = qqdata %>% 
-    ggvis(~sort.normal.quantiles., ~sort.result.) %>% 
+    ggvis(~normal.quantiles, ~diffs) %>% 
     layer_points() %>% 
     add_axis("x", title="Theoretical") %>%
-    add_axis("y", title="Sample")
+    add_axis("y", title="Sample") %>%
+  bind_shiny("trialsHist2", "trialsHist2_ui")
   )
-ggSwitch %>% bind_shiny("trialsHist2", "trialsHist2_ui")
-})
-
+)
 })
