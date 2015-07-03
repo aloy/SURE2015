@@ -84,7 +84,12 @@ data.frame(perms)
 
 output$pval <- renderPrint({
 n <- input$num
-(sum(trials()$diff >= observedDiff()$mean.diff) +1)/(n+1)
+pvalSwitch <- switch(input$test, 
+                   tt = (sum(abs(trials()$diff) <= observedDiff()$mean.diff) +1)/(n+1),
+                   lt = (sum(trials()$diff <= observedDiff()$mean.diff) +1)/(n+1),
+                   ut = (sum(trials()$diff >= observedDiff()$mean.diff) +1)/(n+1),
+)
+pvalSwitch
   })
 
 qqdata <- reactive({
@@ -118,4 +123,9 @@ ggSwitch <- switch(input$type,
   bind_shiny("trialsHist2", "trialsHist2_ui")
   )
 )
+
+output$summary2 <- renderTable({
+  favstats(trials()$diff) 
+})
+
 })

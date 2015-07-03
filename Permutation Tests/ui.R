@@ -48,8 +48,10 @@ sidebarLayout(
     numericInput("num", 
                  label = h5("Number of Permutation Resamples"), 
                  value = 1000, min = 1, max = 100000),
-    h5("Bootstrap Bin Width"),
+    h5("Permutation Histogram Bin Width"),
     uiOutput("trialsHist2_ui"),
+    radioButtons("test", label=h5("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
+                 selected="tt"),
     p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
     the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
     to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
@@ -64,6 +66,8 @@ sidebarLayout(
     ggvisOutput("trialsHist2"),
     h6("P-Value"),
     verbatimTextOutput("pval"),
+    h6("Summary of Permutation Resampling"),
+    tableOutput("summary2"),
     hidden(
       tableOutput("contents")
     )
