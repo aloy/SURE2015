@@ -6,7 +6,7 @@ shinyServer(function(input,output, session){
   library(mosaic)
   library(Lock5Data)
   library(dplyr)
-  library(ggplot2)
+  library(ggvis)
   
   data(SleepStudy)
   
@@ -41,84 +41,108 @@ shinyServer(function(input,output, session){
     selectInput("boot","Choose a quantitative variable to examine:",vars)
   })
   
-  varData <- reactive({
-    var<-input$boot
-    filedata()[,var]
+  simdata <- reactive({
+    quantName <- input$choose2
+    Quantitative <- filedata()[,quantName]
+    data.frame(Quantitative)  
+  })
+
+  qqdata <- reactive({
+    n <- input$num
+    probabilities <- (1:n)/(1+n)
+    normal.quantiles <- qnorm(probabilities, mean(simdata(), na.rm = T), 
+                              sd(simdata(), na.rm = T))
+    qqdata0 <- data.frame(sort(normal.quantiles), sort(simdata()))
+    colnames(qqdata0) <- c("normal.quantiles", "data")
+    data.frame(qqdata0)
   })
   
-  output$origHist <- renderPlot({
-    dataPlot <- switch(input$plot, 
-                       his =  qplot(data=filedata(), x=varData(), geom="histogram", binwidth=input$w, asp=1),
-                       den =  qplot(data=filedata(), x=varData(), geom="density", asp=1),
-                       qq = qplot(sample=varData(), asp=1),
-                       hisDen = qplot(data=filedata(), x=varData(),
-                              binwidth=input$w)+ aes(y=..density..) + geom_density()
-                       )
-    
-    dataPlot
-  })
+observe(
+  ggSwitch <-  switch(input$plot, 
+                       his =  simdata %>%
+                         ggvis(~Quantitative) %>%
+                         layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
+                         bind_shiny("origHist", "origHist_ui"),
+                       den = simdata %>% 
+                          ggvis(~Quantitative) %>% 
+                         layer_densities() %>%
+                          add_axis("x", title = "Mean Difference") %>%
+                          add_axis("y", title="Density") %>%
+                          bind_shiny("origHist", "origHist_ui")
+  )
+)
   
-  output$summary <- renderPrint({
-    summary(as.data.frame(varData()))
-  })
+  output$summary <- renderTable({
+    favstats(~Quantitative|Category)  
+    })
   
   output$sd <- renderText({
-    sd(varData())
+    sd(Quantitative)
   })
   
-  trialsFunction <- function(x, list) {
-    switch(list,
-           bootMean = do(input$num) * mean(sample(varData(), replace = TRUE)),
-           bootMedian = do(input$num) * median(sample(varData(), replace = TRUE)),
-           bootSd = do(input$num) * sd(sample(varData(), replace = TRUE))
-    )
+
+output$hisDenPlot <- renderPlot ({
+  qplot(Quantitative, ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+})
+
+
+trials <- reactive({
+  if(input$stat=="bootMean"){
+    trials0 <- do(input$num) * mean(sample(Quantitative, replace = TRUE))
   }
-  
-  
-  trials <- reactive(
-    trialsFunction(filedata(), input$stat)$result
+  if(input$stat=="bootMedian"){
+    trials0 <-  do(input$num) * median(sample(Quantitative, replace = TRUE))
+}
+  if(input$stat=="bootSd"){
+    trials0 <-  do(input$num) * sd(sample(Quantitative, replace = TRUE))
+}
+colnames(trials0) <- "result"
+data.frame(trials0)
+})
+
+observe(
+  ggSwitch2 <-  switch(input$plot, 
+                      his =  trials %>%
+                        ggvis(~result) %>%
+                        layer_histograms(width = input_slider(0.005, 0.1, step=0.005, value=0.05)) %>%
+                        bind_shiny("bootHist", "bootHist_ui"),
+                      den = trials %>%
+                        ggvis(~result) %>%
+                        layer_densities() %>%
+                        add_axis("x", title = "Mean Difference") %>%
+                        add_axis("y", title="Density") %>%
+                        bind_shiny("bootHist", "bootHist_ui")
   )
+)
   
-  output$bootHist <- renderPlot({
-    dataPlot <- switch(input$plot, 
-                       his = qplot(trials(), geom="histogram", 
-                                   binwidth=input$w2, xlab=paste("Bootstrap of", input$stat), ylab="Frequency", asp=1),
-                       den = qplot(trials(), geom="density",
-                                   xlab=paste(input$stat, ylab="Density", asp=1)),
-                       qq = qplot(sample=trials(), asp=1),
-                       hisDen = qplot(trials(), binwidth=input$w2)+ aes(y=..density..) + geom_density()
-    )
-    dataPlot
-  })
-  
-  output$bootSummary <- renderPrint({
-    summary(as.data.frame(trials()))
-  })
+  output$bootSummary <- renderTable({
+summary(trials())
+})
   
   output$bootBias <- renderText({
-    mean(varData())-mean(trials())
+    mean(Quantitative)-mean(trials())
   })
   
   output$bootSd <- renderText({
     sd(trials())
   })
   
-  level <- reactive (
+  level <- reactive({
     input$level
-  )
+  })
   
-  alpha <- reactive (
-    1- level()
-  )
+  alpha <- reactive({
+    1- input$level
+  })
   
-  SE <- reactive (
+  SE <- reactive({
     sd(trials())
-  )
+  })
   
   ciType <- function(x, double) {
     switch(double,
            perc =  quantile(trials(), probs = c(alpha()/2, 1-alpha()/2)),
-           norm = c(mean(varData()) - qnorm(1-alpha()/2) *  SE(), mean(varData()) + qnorm(1-alpha()/2) * SE())
+           norm = c(mean(Quantitative) - qnorm(1-alpha()/2) *  SE(), mean(Quantitative) + qnorm(1-alpha()/2) * SE())
     )}
   
   output$ciPrint <- renderPrint({
@@ -138,11 +162,11 @@ shinyServer(function(input,output, session){
   })
   
   output$normUpper <- renderText({
-    c(paste(100*level(),'%'), mean(varData()) + qnorm(1-alpha()) * SE())
+    c(paste(100*level(),'%'), mean(Quantitative) + qnorm(1-alpha()) * SE())
   })
   
   output$normLower <- renderText({
-    c(paste(100*alpha(),'%'), mean(varData()) - qnorm(1-alpha()) * SE())
+    c(paste(100*alpha(),'%'), mean(Quantitative)- qnorm(1-alpha()) * SE())
   })
  
 })
