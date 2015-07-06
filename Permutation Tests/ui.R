@@ -57,21 +57,21 @@ shinyUI(bootstrapPage(
     to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
       p("If there is truly no difference between the groups, there would be no significant difference in the test statistic when 
   we randomly assigning their values to the another group.")
-    ),#sidebarPanel
-    mainPanel(
-      h6("Summary of Original Data"),
-      tableOutput("summary"),
+     ),#sidebarPanel
+     mainPanel(
+       h6("Summary of Original Data"),
+       tableOutput("summary"),
       h6("Observed Mean Difference"),
       verbatimTextOutput("observedDiff"),
       ggvisOutput("trialsHist2"),
       h6("P-Value"),
       verbatimTextOutput("pval"),
       h6("Summary of Permutation Resampling"),
-      tableOutput("summary2"),
-      hidden(
-        tableOutput("contents")
-      )
+      tableOutput("summary2")
+#       hidden(
+#         tableOutput("contents")
+        # )
     ) #mainPanel
-  )#sidebarLayout
+   )#sidebarLayout
 )
 )
