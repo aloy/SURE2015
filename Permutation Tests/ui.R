@@ -42,14 +42,23 @@ shinyUI(bootstrapPage(
       ), #conditionalPanel
       actionButton("hideData", "Show/hide data set"),
       h4("Resampling"),
-      radioButtons("type", label=h5("Plot Type"),
-                   c("Histogram" = "his", "Kernel Density" = "den",
+      radioButtons("plot", label=h5("Plot Type"),
+                   c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                      "Q-Q Plot" = "qq"), selected="his"),
       numericInput("num", 
                    label = h5("Number of Permutation Resamples"), 
                    value = 1000, min = 1, max = 100000),
       h5("Permutation Histogram Bin Width"),
-      uiOutput("trialsHist_ui"),
+      conditionalPanel(
+        condition="input.plot=='hisDen'",
+        sliderInput("w", 
+                    label = "", 
+                    value = 0.55, step=0.05, min = 0.05, max=1)
+      ),
+      conditionalPanel(
+        condition="input.plot != 'hisDen'",
+        uiOutput("trialsHist_ui")
+      ),
       radioButtons("test", label=h5("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
                    selected="tt"),
       p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
@@ -63,7 +72,14 @@ shinyUI(bootstrapPage(
        tableOutput("summary"),
       h6("Observed Mean Difference"),
       verbatimTextOutput("observedDiff"),
-      ggvisOutput("trialsHist"),
+      conditionalPanel(
+        condition="input.plot=='hisDen'",
+        plotOutput("hisDenPlot")
+      ),
+      conditionalPanel(
+        condition="input.plot != 'hisDen'",
+        ggvisOutput("trialsHist")
+      ),
       h6("P-Value"),
       verbatimTextOutput("pval"),
       h6("Summary of Permutation Resampling"),

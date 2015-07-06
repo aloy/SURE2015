@@ -53,19 +53,33 @@ output$varChoose2 <- renderUI({
 })
 
 
-simdata <- reactive({
+Category <- reactive({
   catName <- input$choose
-  Category <- filedata()[,catName]
+  filedata()[,catName]
+  })
+
+Quantitative <- reactive({
   quantName <- input$choose2
-  Quantitative <- filedata()[,quantName]
-  data.frame(Category, Quantitative)  
+  filedata()[,quantName]
+})
+
+simdata <- reactive({
+  if (is.null(Category()))
+    return(NULL)
+  simdata0 <- data.frame(Category(), Quantitative())  
+  colnames(simdata0) <- c("Category", "Quantitative")
+  simdata0
 })
 
 output$summary <- renderTable({
+  if (is.null(simdata()))
+    return(NULL)
   favstats(~Quantitative|Category, data = simdata())  
 })
 
 observedDiff <- reactive({
+  if (is.null(simdata()))
+    return(NULL)
 grouped<- group_by(simdata(), Category)
 summarise(summarise(grouped, mean = mean(Quantitative)), mean.diff=mean[1]-mean[2])
 })
@@ -102,7 +116,7 @@ qqdata <- reactive({
   })
 
 observe(
-ggSwitch <- switch(input$type,
+ggSwitch <- switch(input$plot,
   his = trials %>%
     ggvis(~diff) %>%
     layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
@@ -126,5 +140,10 @@ ggSwitch <- switch(input$type,
 output$summary2 <- renderTable({
   favstats(trials()$diff) 
 })
+
+output$hisDenPlot <- renderPlot ({
+  qplot(diff, data=trials(), ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
+})
+
 
 })

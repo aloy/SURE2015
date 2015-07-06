@@ -20,7 +20,7 @@ shinyServer(function(input,output, session){
       )
     }
     else
-      as.data.frame(SleepStudy[,26, drop=FALSE])
+      as.data.frame(SleepStudy)
   })
   
   output$contents <- renderTable({
@@ -36,95 +36,105 @@ shinyServer(function(input,output, session){
     df <- filedata()
     if (is.null(df)) 
       return(NULL)
-    vars=names(df)
+    vars <- colnames(df)[sapply(df,is.numeric)]
     names(vars)=vars
-    selectInput("boot","Choose a quantitative variable to examine:",vars)
-  })
-  
-  simdata <- reactive({
-    quantName <- input$choose2
-    Quantitative <- filedata()[,quantName]
-    data.frame(Quantitative)  
+    if(input$chooseData=="uploadNo")
+      selectInput("choose",label="Choose a quantitative variable to examine:", vars, selected="AverageSleep")
+    else
+      selectInput("choose",label="Choose a quantitative variable to examine:",vars)
   })
 
+simdata <- reactive({
+  quantName <- input$choose
+  simdata0 <- data.frame(filedata()[,quantName])
+  colnames(simdata0)[colnames(simdata0)=="filedata.....quantName."] <- "Quantitative"
+  simdata0
+})
+
   qqdata <- reactive({
-    n <- input$num
+    n <- nrow(simdata())
     probabilities <- (1:n)/(1+n)
-    normal.quantiles <- qnorm(probabilities, mean(simdata(), na.rm = T), 
-                              sd(simdata(), na.rm = T))
-    qqdata0 <- data.frame(sort(normal.quantiles), sort(simdata()))
-    colnames(qqdata0) <- c("normal.quantiles", "data")
+    normal.quantiles <- qnorm(probabilities, mean(simdata()$Quantitative, na.rm = T), sd(simdata()$Quantitative, na.rm = T))
+    qqdata0 <- data.frame(sort(normal.quantiles), sort(simdata()$Quantitative))
+    colnames(qqdata0) <- c("normal.quantiles", "diffs")
     data.frame(qqdata0)
   })
   
 observe(
   ggSwitch <-  switch(input$plot, 
-                       his =  simdata %>%
-                         ggvis(~Quantitative) %>%
-                         layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
-                         bind_shiny("origHist", "origHist_ui"),
+                       his= simdata %>% 
+                        ggvis(~simdata()$Quantitative) %>%
+                        add_axis("x", title = input$choose) %>%
+                        layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>% 
+                        bind_shiny("origHist", "origHist_ui"),
                        den = simdata %>% 
-                          ggvis(~Quantitative) %>% 
+                          ggvis(~simdata()$Quantitative) %>% 
                          layer_densities() %>%
-                          add_axis("x", title = "Mean Difference") %>%
+                          add_axis("x", title = input$choose) %>%
                           add_axis("y", title="Density") %>%
-                          bind_shiny("origHist", "origHist_ui")
+                          bind_shiny("origHist", "origHist_ui"),
+                      qq = qqdata %>% 
+                        ggvis(~normal.quantiles, ~diffs) %>% 
+                        layer_points() %>% 
+                        add_axis("x", title="Theoretical") %>%
+                        add_axis("y", title="Sample") %>%
+                        bind_shiny("origHist", "origHist_ui")
   )
 )
   
-  output$summary <- renderTable({
-    favstats(~Quantitative|Category)  
-    })
-  
-  output$sd <- renderText({
-    sd(Quantitative)
+output$summary <- renderTable({
+favstats(Quantitative, data=simdata())
   })
   
+  output$sd <- renderText({
+    sd(simdata()$Quantitative)
+  })
 
 output$hisDenPlot <- renderPlot ({
-  qplot(Quantitative, ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+  qplot(Quantitative, data=simdata(), xlab=input$choose, 
+  ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
 })
 
 
 trials <- reactive({
-  if(input$stat=="bootMean"){
-    trials0 <- do(input$num) * mean(sample(Quantitative, replace = TRUE))
-  }
-  if(input$stat=="bootMedian"){
-    trials0 <-  do(input$num) * median(sample(Quantitative, replace = TRUE))
-}
-  if(input$stat=="bootSd"){
-    trials0 <-  do(input$num) * sd(sample(Quantitative, replace = TRUE))
-}
-colnames(trials0) <- "result"
-data.frame(trials0)
+  switch(input$stat,
+    bootMean= do(input$num) * mean(sample(simdata()$Quantitative, replace=TRUE)),
+    bootMedian= do(input$num) * median(sample(simdata()$Quantitative, replace = TRUE)),
+    bootSd= do(input$num) * sd(sample(simdata()$Quantitative, replace = TRUE))
+  )
 })
 
-observe(
-  ggSwitch2 <-  switch(input$plot, 
-                      his =  trials %>%
-                        ggvis(~result) %>%
-                        layer_histograms(width = input_slider(0.005, 0.1, step=0.005, value=0.05)) %>%
-                        bind_shiny("bootHist", "bootHist_ui"),
-                      den = trials %>%
-                        ggvis(~result) %>%
-                        layer_densities() %>%
-                        add_axis("x", title = "Mean Difference") %>%
-                        add_axis("y", title="Density") %>%
-                        bind_shiny("bootHist", "bootHist_ui")
-  )
-)
-  
-  output$bootSummary <- renderTable({
-summary(trials())
+# observe(
+#   ggSwitch2 <-  switch(input$plot, 
+#                       his = trials %>%
+#                         ggvis(~trials()$result) %>%
+#                         layer_histograms(width = input_slider(0.05, 1.5, step=0.05, value=0.1)) %>%
+#                         bind_shiny("bootHist", "bootHist_ui"),
+#                       den = trials %>%
+#                         ggvis(~result) %>%
+#                         layer_densities() %>%
+#                         add_axis("x", title = "Mean Difference") %>%
+#                         add_axis("y", title="Density") %>%
+#                         bind_shiny("bootHist", "bootHist_ui")
+#   )
+# )
+
+
+output$bootSummary <- renderTable({
+favstats(~result, data=trials())
 })
-  
+
   output$bootBias <- renderText({
-    mean(Quantitative)-mean(trials())
+    biasStat <- switch(input$stat,
+           bootMean = mean(simdata()$Quantitative)-mean(trials()),
+           bootMedian= median(simdata()$Quantitative)-median(trials()),
+           bootSd=sd(simdata()$Quantitative)-sd(trials())
+           )
+   biasStat
   })
   
   output$bootSd <- renderText({
-    sd(trials())
+    sd(trials()$result)
   })
   
   level <- reactive({
@@ -132,41 +142,43 @@ summary(trials())
   })
   
   alpha <- reactive({
-    1- input$level
+    1-as.numeric(level())
   })
   
   SE <- reactive({
     sd(trials())
   })
   
-  ciType <- function(x, double) {
-    switch(double,
-           perc =  quantile(trials(), probs = c(alpha()/2, 1-alpha()/2)),
-           norm = c(mean(Quantitative) - qnorm(1-alpha()/2) *  SE(), mean(Quantitative) + qnorm(1-alpha()/2) * SE())
-    )}
-  
-  output$ciPrint <- renderPrint({
-    ciType(trials(), input$ci)
+observed <- reactive({
+  switch(input$stat,
+         bootMean= mean(simdata()$Quantitative),
+         bootMedian= median(simdata()$Quantitative),
+         bootSd= sd(simdata()$Quantitative)
+  )
+})
+
+  output$percPrint <- renderText({
+    quantile(trials()$result, probs = c(alpha()/2, 1-alpha()/2))
   })
   
-  output$percLower <- renderPrint({
-    quantile(trials(), probs = c(alpha()))
+  output$percLower <- renderText({
+    quantile(trials()$result, probs = c(alpha()))
   })
   
-  output$percUpper <- renderPrint({
-    quantile(trials(), probs = c(1-alpha()))
+  output$percUpper <- renderText({
+    quantile(trials()$result, probs = c(1-alpha()))
   })
-  
-  output$normPrint <- renderText({
-    ciType(trials(), input$ci)
-  })
-  
+
+output$normPrint <- renderText({
+  c(observed() - qnorm(1-alpha()/2) *  SE(),
+    observed() + qnorm(1-alpha()/2) * SE())
+})
   output$normUpper <- renderText({
-    c(paste(100*level(),'%'), mean(Quantitative) + qnorm(1-alpha()) * SE())
+    c(paste(100*level(),'%'), observed() + qnorm(1-alpha()) * SE())
   })
   
   output$normLower <- renderText({
-    c(paste(100*alpha(),'%'), mean(Quantitative)- qnorm(1-alpha()) * SE())
+    c(paste(100*alpha(),'%'), observed()- qnorm(1-alpha()) * SE())
   })
  
 })

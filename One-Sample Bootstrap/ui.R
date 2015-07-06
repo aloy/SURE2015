@@ -35,23 +35,24 @@ shinyUI(fluidPage(
                               c(None='',
                                 'Double Quote'='"',
                                 'Single Quote'="'"),
-                              '"'),
-                 uiOutput("varChoose")
+                              '"')
         ),
         actionButton("hideDataOptions", "Show/hide data set options")
-      )
+      ),
+      uiOutput("varChoose")
       ),
         conditionalPanel(
           "$('li.active a').first().html()==='Summaries'",
           h3("Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
-                     c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen"), 
+                     c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
+                       "Q-Q Plot" = "qq"), 
                      selected="his"),
         conditionalPanel(
           condition="input.plot=='hisDen'",
-          sliderInput("w2", 
+          sliderInput("w", 
                        label = "", 
-                       value = 0.25, step=0.01, min = 0.01, max=0.75)
+                       value = 0.7, step=0.1, min = 0.1, max=3)
         ),
         conditionalPanel(
           condition="input.plot != 'hisDen'",
@@ -66,7 +67,7 @@ shinyUI(fluidPage(
                      selected="his2"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
-          sliderInput("w3", 
+          sliderInput("w2", 
                       label = "",
                       value = 0.25, step=0.01, min = 0.01, max=0.75)
         ),
@@ -126,7 +127,7 @@ shinyUI(fluidPage(
                                             conditionalPanel(
                                               condition = "input.ci == 'perc'",
                                               h6("Two-Tailed Confidence Interval (Percentile)"),
-                                              verbatimTextOutput("ciPrint"),
+                                              verbatimTextOutput("percPrint"),
                                               h6("Lower Bound"),
                                               verbatimTextOutput("percLower"),
                                               h6("Upper Bound"),
