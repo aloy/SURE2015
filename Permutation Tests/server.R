@@ -85,45 +85,44 @@ data.frame(perms)
 output$pval <- renderPrint({
 n <- input$num
 pvalSwitch <- switch(input$test, 
-                   tt = (sum(abs(trials()$diff) <= observedDiff()$mean.diff) +1)/(n+1),
-                   lt = (sum(trials()$diff <= observedDiff()$mean.diff) +1)/(n+1),
-                   ut = (sum(trials()$diff >= observedDiff()$mean.diff) +1)/(n+1)
+                  tt = (sum(abs(trials()$diff) <= observedDiff()$mean.diff) +1)/(n+1),
+                  lt = (sum(trials()$diff <= observedDiff()$mean.diff) +1)/(n+1),
+                  ut = (sum(trials()$diff >= observedDiff()$mean.diff) +1)/(n+1)
 )
 pvalSwitch
   })
 
-# qqdata <- reactive({
-#   n <- input$num
-#   probabilities <- (1:n)/(1+n)
-#   normal.quantiles <- qnorm(probabilities, mean(trials()[,"diff"], na.rm = T), sd(trials()[,"diff"], na.rm = T))
-#   qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()[,"diff"]))
-#   colnames(qqdata0) <- c("normal.quantiles", "diffs")
-#   data.frame(qqdata0)
-#   })
+qqdata <- reactive({
+  n <- input$num
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(trials()[,"diff"], na.rm = T), sd(trials()[,"diff"], na.rm = T))
+  qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()[,"diff"]))
+  colnames(qqdata0) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata0)
+  })
 
-# observe(
-# ggSwitch <- switch(input$type,
-#   his = trials %>%
-#     ggvis(~diff) %>%
-#     layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
-#     add_axis("x", title = "Mean Difference") %>%
-#     add_axis("y", title="Count") %>%
-#     bind_shiny("trialsHist2", "trialsHist2_ui"),
-#   den = trials %>% 
-#     ggvis(~diff) %>% 
-#     layer_densities() %>%
-#     add_axis("x", title = "Mean Difference") %>%
-#     add_axis("y", title="Density") %>%
-#     bind_shiny("trialsHist2", "trialsHist2_ui"),
-#   qq = qqdata %>% 
-#     ggvis(~normal.quantiles, ~diffs) %>% 
-#     layer_points() %>% 
-#     add_axis("x", title="Theoretical") %>%
-#     add_axis("y", title="Sample") %>%
-#   bind_shiny("trialsHist2", "trialsHist2_ui")
-#   )
-# )
-# 
+observe(
+ggSwitch <- switch(input$type,
+  his = trials %>%
+    ggvis(~diff) %>%
+    layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
+    add_axis("x", title = "Mean Difference") %>%
+    add_axis("y", title="Count") %>%
+    bind_shiny("trialsHist", "trialsHist_ui"),
+  den = trials %>% 
+    ggvis(~diff) %>% 
+    layer_densities() %>%
+    add_axis("x", title = "Mean Difference") %>%
+    add_axis("y", title="Density") %>%
+    bind_shiny("trialsHist", "trialsHist_ui"),
+  qq = qqdata %>% 
+    ggvis(~normal.quantiles, ~diffs) %>% 
+    layer_points() %>% 
+    add_axis("x", title="Theoretical") %>%
+    add_axis("y", title="Sample") %>%
+   bind_shiny("trialsHist", "trialsHist_ui")
+  )
+)
 output$summary2 <- renderTable({
   favstats(trials()$diff) 
 })

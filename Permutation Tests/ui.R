@@ -13,7 +13,7 @@ shinyUI(bootstrapPage(
       conditionalPanel(
         condition= "input.chooseData=='uploadYes'",
         tags$div(id="dataOptions",
-                 fileInput('file1', 'Choose a file to upload. The data set will appear below the main panel.',
+                 fileInput('file1', 'Choose a file to upload.',
                            accept = c(
                              'text/csv',
                              'text/comma-separated-values',
@@ -49,7 +49,7 @@ shinyUI(bootstrapPage(
                    label = h5("Number of Permutation Resamples"), 
                    value = 1000, min = 1, max = 100000),
       h5("Permutation Histogram Bin Width"),
-      uiOutput("trialsHist2_ui"),
+      uiOutput("trialsHist_ui"),
       radioButtons("test", label=h5("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
                    selected="tt"),
       p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
@@ -63,14 +63,14 @@ shinyUI(bootstrapPage(
        tableOutput("summary"),
       h6("Observed Mean Difference"),
       verbatimTextOutput("observedDiff"),
-      ggvisOutput("trialsHist2"),
+      ggvisOutput("trialsHist"),
       h6("P-Value"),
       verbatimTextOutput("pval"),
       h6("Summary of Permutation Resampling"),
-      tableOutput("summary2")
-#       hidden(
-#         tableOutput("contents")
-        # )
+      tableOutput("summary2"),
+      hidden(
+        tableOutput("contents")
+        )
     ) #mainPanel
    )#sidebarLayout
 )
