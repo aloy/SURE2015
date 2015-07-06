@@ -95,30 +95,36 @@ output$hisDenPlot <- renderPlot ({
   ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
 })
 
-
 trials <- reactive({
-  switch(input$stat,
+ trials0 <- switch(input$stat,
     bootMean= do(input$num) * mean(sample(simdata()$Quantitative, replace=TRUE)),
     bootMedian= do(input$num) * median(sample(simdata()$Quantitative, replace = TRUE)),
     bootSd= do(input$num) * sd(sample(simdata()$Quantitative, replace = TRUE))
   )
+ data.frame(trials0)
 })
 
-# observe(
-#   ggSwitch2 <-  switch(input$plot, 
-#                       his = trials %>%
-#                         ggvis(~trials()$result) %>%
-#                         layer_histograms(width = input_slider(0.05, 1.5, step=0.05, value=0.1)) %>%
-#                         bind_shiny("bootHist", "bootHist_ui"),
-#                       den = trials %>%
-#                         ggvis(~result) %>%
-#                         layer_densities() %>%
-#                         add_axis("x", title = "Mean Difference") %>%
-#                         add_axis("y", title="Density") %>%
-#                         bind_shiny("bootHist", "bootHist_ui")
-#   )
-# )
+observe(
+  ggSwitch2 <-  switch(input$plot2, 
+                      his2= trials %>% 
+                        ggvis(~trials()$result) %>%
+                        add_axis("x", title = paste(input$choose, "Bootstrap")) %>%
+                        layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>% 
+                        bind_shiny("bootHist", "bootHist_ui"),
+                      den2 = trials %>% 
+                        ggvis(~trials()$result) %>% 
+                        layer_densities() %>%
+                        add_axis("x", title = paste(input$choose, "Bootstrap")) %>%
+                        add_axis("y", title="Density") %>%
+                        bind_shiny("bootHist", "bootHist_ui")
 
+  )
+  )
+
+output$hisDenPlot2 <- renderPlot ({
+  qplot(result, data=trials(), xlab=input$choose, 
+        ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+})
 
 output$bootSummary <- renderTable({
 favstats(~result, data=trials())
@@ -126,9 +132,9 @@ favstats(~result, data=trials())
 
   output$bootBias <- renderText({
     biasStat <- switch(input$stat,
-           bootMean = mean(simdata()$Quantitative)-mean(trials()),
-           bootMedian= median(simdata()$Quantitative)-median(trials()),
-           bootSd=sd(simdata()$Quantitative)-sd(trials())
+           bootMean = mean(simdata()$Quantitative)-mean(trials()$result),
+           bootMedian= median(simdata()$Quantitative)-median(trials()$result),
+           bootSd=sd(simdata()$Quantitative)-sd(trials()$result)
            )
    biasStat
   })
@@ -146,7 +152,7 @@ favstats(~result, data=trials())
   })
   
   SE <- reactive({
-    sd(trials())
+    sd(trials()$result)
   })
   
 observed <- reactive({

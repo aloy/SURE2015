@@ -69,7 +69,7 @@ shinyUI(fluidPage(
           condition="input.plot2=='hisDen2'",
           sliderInput("w2", 
                       label = "",
-                      value = 0.25, step=0.01, min = 0.01, max=0.75)
+                      value = 0.02, step=0.005, min = 0.005, max=0.1)
         ),
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",
@@ -116,7 +116,14 @@ shinyUI(fluidPage(
                            ),
                   tabPanel("Bootstrap",
                                   wellPanel(h3("Bootstrap Samples"),
-                                            ggvisOutput("bootHist"),
+                                            conditionalPanel(
+                                              condition="input.plot2=='hisDen2'",
+                                              plotOutput("hisDenPlot2")
+                                            ),
+                                            conditionalPanel(
+                                              condition="input.plot2 != 'hisDen2'",
+                                              ggvisOutput("bootHist")
+                                            ),
                                             h5("Bootstrap Summary Statistics"),
                                             h6("Estimate Five-Number Summary"),
                                             tableOutput("bootSummary"),
