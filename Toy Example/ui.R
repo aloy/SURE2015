@@ -34,7 +34,7 @@ shinyUI(pageWithSidebar(
     ),
     selectInput('group', 'Grouping variable:' ,'group'),
     selectInput('response', 'Response variable:', 'response'),
-#     radioButtons("type", label="Plot Type", c("Histogram" = "his", "Density" = "den"), selected="his"),
+    radioButtons("type", label="Plot Type", c("Histogram" = "his", "Density" = "den"), selected="his"),
     numericInput("n", 
                  label = "Permutation samples", 
                  value = 1000, min = 1, max = 10000),

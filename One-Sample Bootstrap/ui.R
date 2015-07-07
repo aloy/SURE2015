@@ -14,7 +14,7 @@ shinyUI(fluidPage(
       conditionalPanel(
         condition= "input.chooseData=='uploadYes'",
         tags$div(id="dataOptions",
-                 fileInput('file1', 'Choose a file to upload. The data set will appear below the main panel.',
+                 fileInput('file1', 'Choose a file to upload.',
                            accept = c(
                              'text/csv',
                              'text/comma-separated-values',
@@ -39,7 +39,7 @@ shinyUI(fluidPage(
         ),
         actionButton("hideDataOptions", "Show/hide data set options")
       ),
-      uiOutput("varChoose")
+      selectInput('response', 'Response variable:', 'response')
       ),
         conditionalPanel(
           "$('li.active a').first().html()==='Summaries'",

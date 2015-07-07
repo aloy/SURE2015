@@ -64,10 +64,19 @@ trials <- reactive({
 })
 
 output$trials <- renderDataTable(trials() %>% head)
-
-trials %>%
-  ggvis(~perms) %>%
-  layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
-  bind_shiny("plot", "plot_ui")
-
+# observe({
+# if (input$type == "his"){ 
+# trials %>%
+#   ggvis(~perms) %>%
+#   layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
+#   bind_shiny("plot", "plot_ui")
+# }
+# if (input$type == "den"){ 
+#   trials %>% 
+#     ggvis(~perms) %>% 
+#     layer_densities() %>%
+#     add_axis("y", title="Density") %>%
+#     bind_shiny("plot", "plot_ui")
+# }
+# })
 })
