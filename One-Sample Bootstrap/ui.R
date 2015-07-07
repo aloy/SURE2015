@@ -50,12 +50,14 @@ shinyUI(fluidPage(
                      selected="his"),
         conditionalPanel(
           condition="input.plot=='hisDen'",
+          h5("Original Bin Width"),
           sliderInput("w", 
                        label = "", 
                        value = 0.7, step=0.1, min = 0.1, max=3)
         ),
         conditionalPanel(
           condition="input.plot != 'hisDen'",
+          h5("Original Bin Width"),
           uiOutput("origHist_ui")
         )
         ),
@@ -63,16 +65,19 @@ shinyUI(fluidPage(
         "$('li.active a').first().html()==='Bootstrap'",
         h3("Control Panel"),
         radioButtons("plot2", label=h4("Plotting"),
-                     c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2"), 
+                     c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
+                       "Q-Q Plot" = "qq2"), 
                      selected="his2"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
+          h5("Bootstrap Bin Width"),
           sliderInput("w2", 
                       label = "",
                       value = 0.02, step=0.005, min = 0.005, max=0.1)
         ),
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",
+          h5("Bootstrap Bin Width"),
           uiOutput("bootHist_ui")
         ),
         h4("Resampling"),
@@ -82,6 +87,10 @@ shinyUI(fluidPage(
         radioButtons("stat", label = h5("Bootstrap Statistic"),
                      c("Mean" = "bootMean", "Median" = "bootMedian", 
                        "Standard Deviation" = "bootSd"), selected = "bootMean"),
+        actionButton("goButton", "Permute!")
+        ),
+        conditionalPanel(
+          "$('li.active a').first().html()==='Confidence Intervals'",
         radioButtons("ci", label = h5("Confidence Interval"),
                      c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
         numericInput("level", 
@@ -122,8 +131,7 @@ shinyUI(fluidPage(
                                             ),
                                             conditionalPanel(
                                               condition="input.plot2 != 'hisDen2'",
-                                              ggvisOutput("bootHist"),
-                                              plotOutput("test")
+                                              ggvisOutput("bootHist")
                                             ),
                                             h5("Bootstrap Summary Statistics"),
                                             h6("Estimate Five-Number Summary"),
@@ -132,25 +140,28 @@ shinyUI(fluidPage(
                                             verbatimTextOutput("bootBias"),
                                             h6("Estimate Standard Deviation"),
                                             verbatimTextOutput("bootSd"),
-                                            conditionalPanel(
-                                              condition = "input.ci == 'perc'",
-                                              h6("Two-Tailed Confidence Interval (Percentile)"),
-                                              verbatimTextOutput("percPrint"),
-                                              h6("Lower Bound"),
-                                              verbatimTextOutput("percLower"),
-                                              h6("Upper Bound"),
-                                              verbatimTextOutput("percUpper")
-                                            ),
-                                            conditionalPanel(
-                                              condition = "input.ci == 'norm'",
-                                              h6("Two-Tailed Confidence Interval (Normal)"),
-                                              verbatimTextOutput("normPrint"),
-                                              h6("Lower Bound"),
-                                              verbatimTextOutput("normLower"),
-                                              h6("Upper Bound"),
-                                              verbatimTextOutput("normUpper")
-                                            ) #conditionalPanel
+                                            dataTableOutput("trials")
                                   ) #wellPanel
+                  ),
+                  tabPanel("Confidence Intervals",
+                           conditionalPanel(
+                             condition = "input.ci == 'perc'",
+                             h6("Two-Tailed Confidence Interval (Percentile)"),
+                             verbatimTextOutput("percPrint"),
+                             h6("Lower Bound"),
+                             verbatimTextOutput("percLower"),
+                             h6("Upper Bound"),
+                             verbatimTextOutput("percUpper")
+                           ),
+                           conditionalPanel(
+                             condition = "input.ci == 'norm'",
+                             h6("Two-Tailed Confidence Interval (Normal)"),
+                             verbatimTextOutput("normPrint"),
+                             h6("Lower Bound"),
+                             verbatimTextOutput("normLower"),
+                             h6("Upper Bound"),
+                             verbatimTextOutput("normUpper")
+                           )
                   )
       ) #tabset
     ) # mainPanel
