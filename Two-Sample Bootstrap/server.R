@@ -7,78 +7,67 @@ library(dplyr)
 
 tv <- read.csv("../data/TV.csv")
 
-filedata2 <- reactive({
+filedata <- reactive({
   if(input$chooseData2=="uploadYes"){
-    inFile2 <- input$file2
-    if (is.null(inFile2))
+    inFile1 <- input$file1
+    if (is.null(inFile1))
       return(NULL)
     return(      
-      read.csv(inFile2$datapath, header=input$header2, sep=input$sep2, quote=input$quote2)
+      read.csv(inFile1$datapath, header=input$header, sep=input$sep, quote=input$quote)
     )
   }
   else
     as.data.frame(tv)
 })
 
-output$contents2 <- renderTable({
-  filedata2()
+output$contents <- renderTable({
+  filedata()
 })
 
-shinyjs::onclick("hideData2",
-                 shinyjs::toggle(id = "contents2", anim = TRUE))
+shinyjs::onclick("hideData",
+                 shinyjs::toggle(id = "contents", anim = TRUE))
 
-shinyjs::onclick("hideDataOptions2",
-                 shinyjs::toggle(id = "dataOptions2", anim = TRUE))
+shinyjs::onclick("hideDataOptions",
+                 shinyjs::toggle(id = "dataOptions", anim = TRUE))
 
-output$varChoose2 <- renderUI({
-  df2 <- filedata2()
-  vars2 <- colnames(df2)[sapply(df2,is.factor)]
-  names(vars2)=vars2
-  if(input$chooseData2=="uploadNo")
-    textInput("choose1",label="Choose a categorical variable with two groups:", value="Cable")
-  else
-    selectInput("choose1",label="Choose a categorical variable with two groups:",vars2)
+observe({
+  data <- filedata()
+  cvars <- colnames(data)[sapply(data,is.factor)]
+  qvars <- colnames(data)[sapply(data,is.numeric)]
+  updateSelectInput(session, 'group', choices = cvars)
+  updateSelectInput(session, 'response', choices = qvars)
 })
 
-output$varChoose3 <- renderUI({
-  df2 <- filedata2()
-  vars3 <- colnames(df2)[sapply(df2,is.numeric)]
-  names(vars3)=vars3
-  if(input$chooseData2=="uploadNo")
-    textInput("choose2",label="Choose a quantitative variable to examine between groups:", value="Time")
-  else
-    selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars3)
+filteredData<-reactive({
+  data<-isolate(filedata())
+  #if there is no input, make a dummy dataframe
+  if(input$group=="group" && input$response=="response"){
+    if(is.null(data)){
+      data<-data.frame(group=0, response=0)
+    }
+  }else{
+    data <- data[,c(input$group,input$response)]
+    names(data)<-c("group","response")
+  }
+  data
 })
 
-catVals <- reactive({ 
-  catVals <- input$choose1
-  filedata2()[,catVals]
-})
-
-quantVals <- reactive({ 
-  quantVals<-input$choose2
-  filedata2()[,quantVals]
-})
-
-output$origHist2 <- renderPlot({
-  f<-paste(input$choose1, "~", ".")
-  dataPlot <-switch(input$plot2,
-                    his2 = qplot(data=filedata2(), x=quantVals(), facets=f, binwidth=input$w3, 
-                                 main="Original Sample", asp=1),
-                    den2 = qplot(data=filedata2(), x=quantVals(), facets=f, geom="density", asp=1),
-                    qq2 = qplot(sample=quantVals(), data=filedata2(), facets=f, asp=1),
-                    hisDen2 = qplot(data=filedata2(), x=quantVals(), facets=f) + aes(y=..density..)+geom_density()
+output$origHist <- renderPlot({
+  dataPlot <-switch(input$plot,
+                    his = qplot(data=filteredData(), x=response, facets=group~., binwidth=input$w, 
+                                 main="Original Sample"),
+                    den = qplot(data=filteredData(), x=response, facets=group~., geom="density"),
+                    qq = qplot(sample=response, data=filteredData(), facets=group~.),
+                    hisDen = qplot(data=filteredData(), x=response, facets=group~.) + aes(y=..density..)+geom_density()
   )
   dataPlot
 })
 
-output$basicSummary <- renderPrint({
-  favstats(~quantVals()|catVals())  
-})
 
-simdata <- reactive({ 
-  data.frame(catVals(), quantVals())
-})
+output$basicSummary <- renderTable({
+  favstats(~response|group, data=filteredData())  
+  })
+
 
 origStat <- reactive({ #Our original data frame, with all of the calculations we want (for bias)
   grouped_trials <- group_by(simdata(), catVals..)
@@ -88,101 +77,140 @@ origStat <- reactive({ #Our original data frame, with all of the calculations we
   
 })
 
-trials2 <- reactive({
-  do(input$num2) * sample(group_by(simdata(), catVals..), replace = TRUE)
+trials <- reactive({
+  
+  if(input$goButton > 0) {
+    if(input$stat=="bootMean"){
+      perms <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
+      colnames(perms) <- "perms"
+    }
+    if(input$stat=="bootMedian"){
+      perms <- do(input$num) * diff(median(response ~ shuffle(group), data = filteredData()))
+      colnames(perms) <- "perms"
+    }
+    if(input$stat=="bootMeanRatio"){
+      perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      grouped_trials <- group_by(perms0, .index, group)
+      perms <- summarise(summarise(grouped_trials, mean=mean(response)), mean.ratio = mean[1]/mean[2])
+      names(perms) <- c("index", "perms")
+    }
+    if(input$stat=="bootMedianRatio"){
+      perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      grouped_trials <- group_by(perms0, .index, group)
+      perms <- summarise(summarise(grouped_trials, median=median(response)), med.ratio = median[1]/median[2])
+      names(perms) <- c("index", "perms")
+    }
+    if(input$stat=="bootSdRatio"){
+      perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      grouped_trials <- group_by(perms0, .index, group)
+      perms <- summarise(summarise(grouped_trials, sd=sd(response)), sd.ratio = sd[1]/sd[2])
+      names(perms) <- c("index", "perms")
+    }
+    data.frame(perms)
+  } else {
+    data.frame(perms = rep(0, 10))
+  }
 })
 
-allStat <- reactive({
-  grouped_trials <- group_by(trials2(), .index, catVals..)
-  group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..) * 1.0, sd = sd(quantVals..))
-  summarise(group_means, mean.diff=diff(mean), med.diff=diff(med) * 1.0,
-            mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2] * 1.0, sd.ratio = sd[1]/sd[2])
+observe({
+  if(input$plot2=="his2"){
+    trials %>%
+      ggvis(~perms) %>%
+      layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.06)) %>%
+      bind_shiny("bootHist", "bootHist_ui")
+  }
+  if(input$plot2=="den2"){
+    trials %>%
+      ggvis(~perms) %>%
+      layer_densities() %>%
+      add_axis("y", title="Density") %>%
+      bind_shiny("bootHist", "bootHist_ui")
+  }
+  if(input$plot2=="qq2"){
+    qqdata2 %>% 
+      ggvis(~normal.quantiles, ~diffs) %>% 
+      layer_points() %>% 
+      add_axis("x", title="Theoretical") %>%
+      add_axis("y", title="Sample") %>%
+      bind_shiny("bootHist", "bootHist_ui")
+  }
 })
 
-x1 = list()
-x2 = list()
-
-origStatSwitch <- function(x1, list){
-  switch(input$stat2, 
-         bootMean2= assign("x1", origStat()$mean.diff),
-         bootMedian2= assign("x1", origStat()$med.diff),
-         bootMeanRatio = assign("x1", origStat()$mean.ratio),
-         bootMedRatio = assign("x1", origStat()$med.ratio),
-         bootSdRatio= assign("x1", origStat()$sd.ratio)
-  )}
-
-
-plotType2 <- function(x2, type) {
-  switch(type,
-         his2 =  qplot(x2, binwidth=input$w4, 
-                       ylab="Frequency", asp=1),
-         den2 = qplot(x2, geom="density", 
-                      ylab="Density", asp=1),
-         qq2 = qplot(sample=x2, asp=1),
-         hisDen2 = qplot(x2, binwidth=input$w4)+ aes(y=..density..) + geom_density()
-  )}
-
-dataSwitch <- function(x2, list){
-  switch(input$stat2, 
-         bootMean2= assign("x2", allStat()$mean.diff),
-         bootMedian2= assign("x2", allStat()$med.diff),
-         bootMeanRatio = assign("x2", allStat()$mean.ratio),
-         bootMedRatio = assign("x2", allStat()$med.ratio),
-         bootSdRatio= assign("x2", allStat()$sd.ratio)
-  )}
-
-output$bootHist2 <- renderPlot({
-  plotType2(dataSwitch(), input$plot2)
+qqdata2 <- reactive({
+  n <- input$num
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(trials()$perms, na.rm = T), sd(trials()$perms, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$perms))
+  colnames(qqdata1) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata1)
 })
 
-output$bootSummary2 <- renderPrint({
-  summary(dataSwitch())
+observed <- reactive({
+  switch(input$stat,
+         bootMean= summarise(summarise(group_by(filteredData(), group), mean=mean(response)), 
+                             stat=diff(mean)),
+         bootMedian= summarise(summarise(group_by(filteredData(), group), median=median(response)), 
+                               stat=diff(median)),
+         bootMeanRatio = summarise(summarise(group_by(filteredData(), group), mean=mean(response)), 
+                        stat=mean[1]/mean[2]),
+         bootMedianRatio =  summarise(summarise(group_by(filteredData(), group), median=median(response)), 
+                                      stat=median[1]/median[2]),
+         bootSdRatio = summarise(summarise(group_by(filteredData(), group), sd=sd(response)), 
+                                 stat=sd[1]/sd[2])
+  )
 })
 
-output$bootBias2 <- renderText({
-  mean(origStatSwitch())-mean(dataSwitch())
+output$hisDenPlot2 <- renderPlot ({
+  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
-
-output$bootSd2 <- renderText({
-  sd(dataSwitch())
+output$bootSummary <- renderTable({
+  favstats(~perms, data=trials())
 })
 
-level2 <- reactive(
-  input$level2
+output$bootBias <- renderPrint({
+  observed()$stat-mean(trials()$perms)
+ })
+
+output$bootSd <- renderPrint({
+  sd(trials()$perms)
+})
+
+level <- reactive(
+  input$level
 )
 
-alpha2 <- reactive(
-  1 - level2()
+alpha <- reactive(
+  1 - level()
 )
 
-SE2 <- reactive (
-  sd(dataSwitch())
+SE <- reactive (
+  sd(trials()$perms)
 )
 
-output$ciPrint2 <- renderPrint({
-  quantile(dataSwitch(), 
-           probs=c(alpha2()/2, 1-alpha2()/2))
+output$ciPrint <- renderPrint({
+  quantile(trials()$perms, 
+           probs=c(alpha()/2, 1-alpha()/2))
 })
 
-output$percLower2 <- renderPrint({
-  quantile(dataSwitch(), probs = c(alpha2()))
+output$percLower <- renderPrint({
+  quantile(trials()$perms, probs = c(alpha()))
 })
 
-output$percUpper2 <- renderPrint({
-  quantile(dataSwitch(), probs = c(1-alpha2()))
+output$percUpper <- renderPrint({
+  quantile(trials()$perms, probs = c(1-alpha()))
 })
 
-output$normPrint2 <- renderText({
-  c(mean(origStatSwitch()) - qnorm(1-alpha2()/2)*SE2(), mean(origStatSwitch()) + qnorm(1-(alpha2()/2)) * SE2())
+output$normPrint <- renderText({
+  c(mean(trials()$perms) - qnorm(1-alpha()/2)*SE(), observed()$stat + qnorm(1-(alpha()/2)) * SE())
 })
 
-output$normLower2 <- renderText({
-  c(paste(100*alpha2(),'%'), mean(origStatSwitch()) - (qnorm(1-alpha2()) * SE2()))
+output$normLower <- renderText({
+  c(paste(100*alpha(),'%'), observed()$stat - qnorm(1-alpha()) * SE())
 })
 
-output$normUpper2 <- renderText({
-  c(paste(100*level2(),'%'), mean(origStatSwitch()) + qnorm(1-alpha2()) * SE2())
+output$normUpper <- renderText({
+  c(paste(100*level(),'%'), observed()$stat + qnorm(1-alpha()) * SE())
   
 })
 

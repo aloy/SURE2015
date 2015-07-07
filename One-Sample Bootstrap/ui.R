@@ -68,16 +68,15 @@ shinyUI(fluidPage(
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                        "Q-Q Plot" = "qq2"), 
                      selected="his2"),
+        h5("Bootstrap Bin Width"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
-          h5("Bootstrap Bin Width"),
           sliderInput("w2", 
                       label = "",
                       value = 0.02, step=0.005, min = 0.005, max=0.1)
         ),
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",
-          h5("Bootstrap Bin Width"),
           uiOutput("bootHist_ui")
         ),
         h4("Resampling"),
