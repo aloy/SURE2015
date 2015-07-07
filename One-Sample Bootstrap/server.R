@@ -16,11 +16,11 @@ shinyServer(function(input,output, session){
       if (is.null(inFile))
         return(NULL)
       return(      
-        read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+        d <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
       )
     }
     else
-      as.data.frame(SleepStudy)
+      d <- as.data.frame(SleepStudy)
   })
   
   output$contents <- renderTable({
@@ -81,7 +81,7 @@ observe(
                         bind_shiny("origHist", "origHist_ui")
   )
 )
-  
+
 output$summary <- renderTable({
 favstats(Quantitative, data=simdata())
   })
@@ -101,25 +101,38 @@ trials <- reactive({
     bootMedian= do(input$num) * median(sample(simdata()$Quantitative, replace = TRUE)),
     bootSd= do(input$num) * sd(sample(simdata()$Quantitative, replace = TRUE))
   )
- data.frame(trials0)
+as.data.frame(trials0)
 })
 
-observe(
-  ggSwitch2 <-  switch(input$plot2, 
-                      his2= trials %>% 
-                        ggvis(~trials()$result) %>%
-                        add_axis("x", title = paste(input$choose, "Bootstrap")) %>%
-                        layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>% 
-                        bind_shiny("bootHist", "bootHist_ui"),
-                      den2 = trials %>% 
-                        ggvis(~trials()$result) %>% 
-                        layer_densities() %>%
-                        add_axis("x", title = paste(input$choose, "Bootstrap")) %>%
-                        add_axis("y", title="Density") %>%
-                        bind_shiny("bootHist", "bootHist_ui")
+# observe(
+#   ggSwitch2 <-  switch(input$plot2, 
+#                       his2= trials %>% 
+#                         ggvis(~trials()$result) %>%
+#                         add_axis("x", title = paste(input$choose, "Bootstrap")) %>%
+#                         layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>% 
+#                         bind_shiny("bootHist", "bootHist_ui"),
+#                       den2 = trials %>% 
+#                         ggvis(~trials()$result) %>% 
+#                         layer_densities() %>%
+#                         add_axis("x", title = paste(input$choose, "Bootstrap")) %>%
+#                         add_axis("y", title="Density") %>%
+#                         bind_shiny("bootHist", "bootHist_ui")
+# 
+#   )
+#   )
 
-  )
-  )
+qqdata2 <- reactive({
+  n <- input$num
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(trials()$result, na.rm = T), sd(trials()$result, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$result))
+  colnames(qqdata1) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata1)
+})
+
+output$test <- renderPlot({
+  qplot(x=normal.quantiles, y=diffs, data=qqdata2())
+})
 
 output$hisDenPlot2 <- renderPlot ({
   qplot(result, data=trials(), xlab=input$choose, 

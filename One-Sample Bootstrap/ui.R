@@ -122,7 +122,8 @@ shinyUI(fluidPage(
                                             ),
                                             conditionalPanel(
                                               condition="input.plot2 != 'hisDen2'",
-                                              ggvisOutput("bootHist")
+                                              ggvisOutput("bootHist"),
+                                              plotOutput("test")
                                             ),
                                             h5("Bootstrap Summary Statistics"),
                                             h6("Estimate Five-Number Summary"),

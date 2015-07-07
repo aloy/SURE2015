@@ -6,77 +6,68 @@ library(mosaic)
 shinyServer(function(input, output, session) {
   # A reactive subset of mtcars
   
-  filedata <- reactive({
+  
+  theData <- reactive({
     if(input$chooseData=="uploadYes"){
       inFile <- input$file1
       if (is.null(inFile))
         return(NULL)
       return(      
-        read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+        d <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
       )
     }
-    else
-      read.csv("~/Desktop/SURE2015/Permutation Tests/data/CaffeineTaps.csv")
+    else(
+      d <- as.data.frame(CaffeineTaps)
+    )
+    d
   })
   
-  output$varChoose <- renderUI({
-    df <- filedata()
-    vars <- colnames(df)[sapply(df,is.factor)]
-    names(vars)=vars
-    if(input$chooseData=="uploadNo")
-      textInput("choose",label="Choose a categorical variable with two groups of equal size:", value="Group")
-    else
-      selectInput("choose",label="Choose a categorical variable with two groups of equal size:",vars)
+  observe({
+    data <- theData()
+    cvars <- colnames(data)[sapply(data,is.factor)]
+    qvars <- colnames(data)[sapply(data,is.numeric)]
+    updateSelectInput(session, 'group', choices = cvars)
+    updateSelectInput(session, 'response', choices = qvars)
+    
   })
   
-  output$varChoose2 <- renderUI({
-    df <- filedata()
-    vars2 <- colnames(df)[sapply(df,is.numeric)]
-    names(vars2)=vars2
-    if(input$chooseData=="uploadNo")
-      textInput("choose2",label="Choose a quantitative variable to examine between groups:", value="Taps")
-    else
-      selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars2)
+  filedata<-reactive({
+    data<-isolate(theData())
+    #if there is no input, make a dummy dataframe
+    if(input$chooseData=="uploadNo"){
+      if(is.null(data)){
+        data<-data.frame(group=0, response=0)
+      }
+      data <- CaffeineTaps[,c(input$group,input$response)]
+      names(data)<-c("group","response")
+    }else{
+      data <- data[,c(input$group,input$response)]
+      names(data)<-c("group","response")
+    }
+    data
   })
-  
-#   Category <- reactive({ 
-#     catName <- input$choose
-#     filedata()[,catName]
-#   })
-#   
-#   Quantitative <- reactive({ 
-#     quantName<-input$choose2
-#     filedata()[,quantName]
-#   })
-  
-  simdata <- reactive({
-    catName <- input$choose
-    Category <- filedata()[,catName]
-    quantName <- input$choose2
-    Quantitative <- filedata()[,quantName]
-    data.frame(Category, Quantitative)  
-  })
-  
-output$test <- renderTable({
-  head(simdata())
-})
 
-  trials <- reactive({
-    perms <- do(input$n) * diff(mean(Quantitative ~ shuffle(Category), data = simdata()))
+trials <- reactive({
+  if(input$goButton > 0) {
+    if(input$goButton2 < input$goButton){
+    perms <- do(input$n) * diff(mean(response ~ shuffle(group), data = filedata()))
     colnames(perms) <- "perms"
     data.frame(perms)
-  })
-  
-  input_width <- reactive(input$w)
-  
-  # A simple visualisation. In shiny apps, need to register observers
-  # and tell shiny where to put the controls
-  trials %>%
-    ggvis(~perms) %>%
-    layer_histograms(width = input_width) %>%
-    bind_shiny("plot", "plot_ui")
-  
-  output$stats <- renderTable({
-    favstats(~perms, data = trials())
-  })
+    }
+    else{
+      data.frame(perms=rep(0, input$n))
+    }
+  } 
+  else {
+    data.frame(perms = rep(0, 10))
+  }
+})
+
+output$trials <- renderDataTable(trials() %>% head)
+
+trials %>%
+  ggvis(~perms) %>%
+  layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
+  bind_shiny("plot", "plot_ui")
+
 })
