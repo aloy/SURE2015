@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyjs)
+library(ggvis)
 shinyUI(fluidPage(
   useShinyjs(),
   titlePanel("Two-Sample Bootstrapping"),
@@ -47,9 +48,9 @@ shinyUI(fluidPage(
         radioButtons("plot", label=h4("Plotting"),
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                        "Q-Q Plot" = "qq"), selected="his"),
-          numericInput("w", 
-                       label = h5("One-Variable Bin Width"), 
-                       value = 1.3, step=0.1, min = 0.1)
+          sliderInput("w", 
+                       label = h5("Histogram Bin Width"), 
+                      value = 1.2, step=0.1, min = 0.1, max=3)
         ),
       conditionalPanel(
         "$('li.active a').first().html()==='Bootstrap'",
@@ -65,12 +66,12 @@ shinyUI(fluidPage(
         radioButtons("plot2", label=h4("Plotting"),
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                        "Q-Q Plot" = "qq2"), selected="his2"),
-        h5("Bootstrap Bin Width"),
+        h5("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
           sliderInput("w2", 
                       label = "",
-                      value = 0.02, step=0.005, min = 0.005, max=0.1)
+                      value = 0.2, step=0.005, min = 0.005, max=0.3)
         ),
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",

@@ -4,6 +4,7 @@ shinyServer(function(input,output, session){
 library(mosaic)
 library(Lock5Data)
 library(dplyr)
+library(ggvis)
 
 tv <- read.csv("../data/TV.csv")
 
@@ -94,7 +95,7 @@ trials <- reactive({
       perms <- summarise(summarise(grouped_trials, mean=mean(response)), mean.ratio = mean[1]/mean[2])
       names(perms) <- c("index", "perms")
     }
-    if(input$stat=="bootMedianRatio"){
+    if(input$stat=="bootMedRatio"){
       perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
       grouped_trials <- group_by(perms0, .index, group)
       perms <- summarise(summarise(grouped_trials, median=median(response)), med.ratio = median[1]/median[2])
@@ -153,7 +154,7 @@ observed <- reactive({
                                stat=diff(median)),
          bootMeanRatio = summarise(summarise(group_by(filteredData(), group), mean=mean(response)), 
                         stat=mean[1]/mean[2]),
-         bootMedianRatio =  summarise(summarise(group_by(filteredData(), group), median=median(response)), 
+         bootMedRatio =  summarise(summarise(group_by(filteredData(), group), median=median(response)), 
                                       stat=median[1]/median[2]),
          bootSdRatio = summarise(summarise(group_by(filteredData(), group), sd=sd(response)), 
                                  stat=sd[1]/sd[2])
