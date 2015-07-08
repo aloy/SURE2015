@@ -9,16 +9,16 @@ data("CaffeineTaps")
 
 filedata <- reactive({
   if(input$chooseData=="uploadYes"){
-    inFile <- input$file1
-    if (is.null(inFile))
+    inFile1 <- input$file1
+    if (is.null(inFile1))
       return(NULL)
     return(      
-      read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+      read.csv(inFile1$datapath, header=input$header, sep=input$sep, quote=input$quote)
     )
   }
   else
-  data.frame(CaffeineTaps)
-  })
+    data.frame(CaffeineTaps)
+})
 output$contents <- renderTable({
   filedata()
 })
@@ -28,121 +28,108 @@ shinyjs::onclick("hideData",
 shinyjs::onclick("hideDataOptions",
                  shinyjs::toggle(id = "dataOptions", anim = TRUE))
 
-output$varChoose <- renderUI({
-  df <- filedata()
-  if (is.null(df)) 
-    return(NULL)
-  vars <- colnames(df)[sapply(df,is.factor)]
-  names(vars)=vars
-  if(input$chooseData=="uploadNo")
-    textInput("choose",label="Choose a categorical variable with two groups of equal size:", value="Group")
-  else
-    selectInput("choose",label="Choose a categorical variable with two groups of equal size:",vars)
-})
-
-output$varChoose2 <- renderUI({
-  df <- filedata()
-  if (is.null(df)) 
-    return(NULL)
-  vars2 <- colnames(df)[sapply(df,is.numeric)]
-  names(vars2)=vars2
-  if(input$chooseData=="uploadNo")
-    textInput("choose2",label="Choose a quantitative variable to examine between groups:", value="Taps")
-  else
-    selectInput("choose2",label="Choose a quantitative variable to examine between groups:",vars2)
+observe({
+  data <- filedata()
+  cvars <- colnames(data)[sapply(data,is.factor)]
+  qvars <- colnames(data)[sapply(data,is.numeric)]
+  updateSelectInput(session, 'group', choices = cvars)
+  updateSelectInput(session, 'response', choices = qvars)
 })
 
 
-Category <- reactive({
-  catName <- input$choose
-  filedata()[,catName]
-  })
-
-Quantitative <- reactive({
-  quantName <- input$choose2
-  filedata()[,quantName]
-})
-
-simdata <- reactive({
-  if (is.null(Category()))
-    return(NULL)
-  simdata0 <- data.frame(Category(), Quantitative())  
-  colnames(simdata0) <- c("Category", "Quantitative")
-  simdata0
+filteredData<-reactive({
+  data<-isolate(filedata())
+  #if there is no input, make a dummy dataframe
+  if(input$group=="group" && input$response=="response"){
+    if(is.null(data)){
+      data<-data.frame(group=0, response=0)
+    }
+  }else{
+    data <- data[,c(input$group,input$response)]
+    names(data)<-c("group","response")
+  }
+  data
 })
 
 output$summary <- renderTable({
-  if (is.null(simdata()))
-    return(NULL)
-  favstats(~Quantitative|Category, data = simdata())  
+  favstats(~response|group, data=filteredData())  
 })
 
 observedDiff <- reactive({
-  if (is.null(simdata()))
-    return(NULL)
-grouped<- group_by(simdata(), Category)
-summarise(summarise(grouped, mean = mean(Quantitative)), mean.diff=mean[1]-mean[2])
+  diff(mean(response, groups=group, data=filteredData()))
 })
 
 output$observedDiff <- renderText({
-observedDiff()$mean.diff
+  observedDiff()
 })
 
 
 trials <- reactive({
-perms <- do(input$num) * mean(Quantitative~shuffle(Category), data=simdata())
-perms$diff <- perms[,1]-perms[,2]
-colnames(perms) <- c("Group 1", "Group 2", "diff")
-data.frame(perms)
+  
+  if(input$goButton > 0) {
+    perms <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
+    colnames(perms) <- "perms"
+    data.frame(perms)
+  } else {
+    data.frame(perms = rep(0, 10))
+  }
 })
+
+output$trials <- renderDataTable(trials() %>% head)
 
 output$pval <- renderPrint({
 n <- input$num
+if(input$goButton > 0) {
 pvalSwitch <- switch(input$test, 
-                  tt = (sum(abs(trials()$diff) <= observedDiff()$mean.diff) +1)/(n+1),
-                  lt = (sum(trials()$diff <= observedDiff()$mean.diff) +1)/(n+1),
-                  ut = (sum(trials()$diff >= observedDiff()$mean.diff) +1)/(n+1)
+                  tt = (sum(abs(trials()$perms) <= observedDiff()) +1)/(n+1),
+                  lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
+                  ut = (sum(trials()$perms >= observedDiff()) +1)/(n+1)
 )
 pvalSwitch
+}
+else{
+  print(0)
+}
   })
 
 qqdata <- reactive({
   n <- input$num
   probabilities <- (1:n)/(1+n)
-  normal.quantiles <- qnorm(probabilities, mean(trials()[,"diff"], na.rm = T), sd(trials()[,"diff"], na.rm = T))
-  qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()[,"diff"]))
-  colnames(qqdata0) <- c("normal.quantiles", "diffs")
+  normal.quantiles <- qnorm(probabilities, mean(trials()[,"perms"], na.rm = T), sd(trials()[,"perms"], na.rm = T))
+  qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()[,"perms"]))
+  colnames(qqdata0) <- c("normal.quantiles", "perms")
   data.frame(qqdata0)
   })
 
-observe(
-ggSwitch <- switch(input$plot,
-  his = trials %>%
-    ggvis(~diff) %>%
-    layer_histograms(width = input_slider(0.1, 2, step=0.1, value=0.6)) %>%
-    add_axis("x", title = "Mean Difference") %>%
-    add_axis("y", title="Count") %>%
-    bind_shiny("trialsHist", "trialsHist_ui"),
-  den = trials %>% 
-    ggvis(~diff) %>% 
-    layer_densities() %>%
-    add_axis("x", title = "Mean Difference") %>%
-    add_axis("y", title="Density") %>%
-    bind_shiny("trialsHist", "trialsHist_ui"),
-  qq = qqdata %>% 
-    ggvis(~normal.quantiles, ~diffs) %>% 
-    layer_points() %>% 
-    add_axis("x", title="Theoretical") %>%
-    add_axis("y", title="Sample") %>%
-   bind_shiny("trialsHist", "trialsHist_ui")
-  )
-)
+observe({
+  if(input$plot=="his"){
+    trials %>%
+      ggvis(~perms) %>%
+      layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.2)) %>%
+      bind_shiny("trialsHist", "trialsHist_ui")
+  }
+  if(input$plot=="den"){
+    trials %>%
+      ggvis(~perms) %>%
+      layer_densities() %>%
+      add_axis("y", title="Density") %>%
+      bind_shiny("trialsHist", "trialsHist_ui")
+  }
+  if(input$plot=="qq"){
+    qqdata %>% 
+      ggvis(~normal.quantiles, ~perms) %>% 
+      layer_points() %>% 
+      add_axis("x", title="Theoretical") %>%
+      add_axis("y", title="Sample") %>%
+      bind_shiny("trialsHist", "trialsHist_ui")
+  }
+})
 output$summary2 <- renderTable({
-  favstats(trials()$diff) 
+  favstats(trials()$perms) 
 })
 
 output$hisDenPlot <- renderPlot ({
-  qplot(diff, data=trials(), ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
+  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
 })
 
 

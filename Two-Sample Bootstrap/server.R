@@ -9,7 +9,7 @@ library(ggvis)
 tv <- read.csv("../data/TV.csv")
 
 filedata <- reactive({
-  if(input$chooseData2=="uploadYes"){
+  if(input$chooseData=="uploadYes"){
     inFile1 <- input$file1
     if (is.null(inFile1))
       return(NULL)
@@ -113,11 +113,13 @@ trials <- reactive({
   }
 })
 
+output$trials <- renderDataTable(trials() %>% head)
+
 observe({
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~perms) %>%
-      layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.06)) %>%
+      layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.2)) %>%
       bind_shiny("bootHist", "bootHist_ui")
   }
   if(input$plot2=="den2"){

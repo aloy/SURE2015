@@ -7,6 +7,8 @@ shinyUI(bootstrapPage(
   titlePanel("Permutation Tests"),
   sidebarLayout(
     sidebarPanel(
+      conditionalPanel(
+        "$('li.active a').first().html()==='Input'",
       radioButtons("chooseData", label=h5("Choose data set"),
                    c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
                    selected = "uploadNo"),
@@ -34,13 +36,23 @@ shinyUI(bootstrapPage(
                               c(None='',
                                 'Double Quote'='"',
                                 'Single Quote'="'"),
-                              '"'),
-                 uiOutput("varChoose"),
-                 uiOutput("varChoose2")
+                              '"')      
         ),
         actionButton("hideDataOptions", "Show/hide data set options")
       ), #conditionalPanel
-      actionButton("hideData", "Show/hide data set"),
+      p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
+    the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
+    to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
+      p("If there is truly no difference between the groups, there would be no significant difference in the test statistic when 
+  we randomly assigning their values to the another group.")
+      ), #conditionalPanel
+      conditionalPanel(
+        "$('li.active a').first().html()==='Summaries'",
+      selectInput('group', 'Grouping variable:' ,'group'),
+      selectInput('response', 'Response variable:', 'response')
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Permutation Test'",
       h4("Resampling"),
       radioButtons("plot", label=h5("Plot Type"),
                    c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
@@ -59,34 +71,41 @@ shinyUI(bootstrapPage(
         condition="input.plot != 'hisDen'",
         uiOutput("trialsHist_ui")
       ),
+      actionButton("goButton", "Permute!"),
       radioButtons("test", label=h5("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
-                   selected="tt"),
-      p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
-    the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
-    to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
-      p("If there is truly no difference between the groups, there would be no significant difference in the test statistic when 
-  we randomly assigning their values to the another group.")
+                   selected="tt")
+      )
      ),#sidebarPanel
      mainPanel(
+       tabsetPanel(type="tabs",
+                   tabPanel("Input",
+                            actionButton("hideData", "Show/hide data set"),
+                            hidden(
+                              tableOutput("contents")
+                            )
+                   ), #tabPanel
+                   tabPanel("Summaries",
        h6("Summary of Original Data"),
        tableOutput("summary"),
       h6("Observed Mean Difference"),
-      verbatimTextOutput("observedDiff"),
+      verbatimTextOutput("observedDiff")
+                   ), #tabPanel
+      tabPanel("Permutation Test",
       conditionalPanel(
         condition="input.plot=='hisDen'",
         plotOutput("hisDenPlot")
       ),
       conditionalPanel(
         condition="input.plot != 'hisDen'",
-        ggvisOutput("trialsHist")
+        ggvisOutput("trialsHist")  
       ),
       h6("P-Value"),
       verbatimTextOutput("pval"),
       h6("Summary of Permutation Resampling"),
       tableOutput("summary2"),
-      hidden(
-        tableOutput("contents")
-        )
+      dataTableOutput("trials")
+      ) #tabPanel
+     ) #tabsetPanel
     ) #mainPanel
    )#sidebarLayout
 )

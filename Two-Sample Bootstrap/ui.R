@@ -8,7 +8,7 @@ shinyUI(fluidPage(
     sidebarPanel(
       conditionalPanel(
         "$('li.active a').first().html()==='Input'",
-        radioButtons("chooseData2", label=h5("Choose data set"),
+        radioButtons("chooseData", label=h5("Choose data set"),
                      c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
                      selected = "uploadNo"),
         conditionalPanel(
@@ -117,7 +117,8 @@ shinyUI(fluidPage(
                        h6("Estimate Bias"),
                        verbatimTextOutput("bootBias"),
                        h6("Estimate Standard Deviation"),
-                       verbatimTextOutput("bootSd")
+                       verbatimTextOutput("bootSd"),
+                       dataTableOutput("trials")
                     ),
                     tabPanel("Confidence Intervals",
                        conditionalPanel(
