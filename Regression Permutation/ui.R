@@ -62,6 +62,7 @@ shinyUI(bootstrapPage(
                   ), #tabPanel
     tabPanel("Permutation Test",
     ggvisOutput("hist"),
+    tableOutput("summary"),
     dataTableOutput("trials")
     ) #tabPanel
       ) #tabsetPanel

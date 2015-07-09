@@ -16,7 +16,10 @@ shinyServer(function(input, output, session) {
       )
     }
     else
-      data.frame(CaffeineTaps)
+    data.frame(CaffeineTaps)
+    # This is the cancer remission data set from more ideas.R:
+#       read.table("/var/folders/t3/tfcry0l52h3f4fv68_p_z7hh0000gn/T//RtmpGNhq0t/dataec832bfc97d", header=TRUE, 
+#                 quote="\"", colClasses=c('factor', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric'))
   })
   
   
@@ -39,7 +42,6 @@ shinyServer(function(input, output, session) {
   
   filteredData<-reactive({
     data<-isolate(theData())
-    #if there is no input, make a dummy dataframe
     if(input$group=="group" && input$response=="response"){
       if(is.null(data)){
         data<-data.frame(group=0, response=0)
@@ -70,5 +72,8 @@ shinyServer(function(input, output, session) {
     bind_shiny("hist", "hist_ui")
   })
   
+  output$summary <- renderTable({
+    favstats(trials()$perms)
+  })
   
 })
