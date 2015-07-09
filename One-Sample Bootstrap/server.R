@@ -30,7 +30,7 @@ shinyServer(function(input, output, session){
     updateSelectInput(session, 'response', choices = qvars)    
   })
   
-  output$contents <- renderDataTable(theData() %>% head)
+  output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
   
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
@@ -98,13 +98,13 @@ trials <- reactive({
   
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){
-    perms <- do(input$num) * mean(sample(filteredData(), replace = TRUE))
+    perms <- do(input$num) * mean(~ response, data = sample(filteredData(), replace = TRUE))
     }
     if(input$stat=="bootMedian"){
-    perms <- do(input$num) * median(sample(filteredData(), replace = TRUE))
+    perms <- do(input$num) * median(~ response, data = sample(filteredData(), replace = TRUE))
     }
     if(input$stat=="bootSd"){
-    perms <- do(input$num) * sd(sample(filteredData(), replace = TRUE))
+    perms <- do(input$num) * sd(~ response, data = sample(filteredData(), replace = TRUE))
     }
     names(perms) <- "perms"
     data.frame(perms)
