@@ -156,7 +156,7 @@ output$hisDenPlot2 <- renderPlot ({
   qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
-output$bootMean <- renderPrint({
+output$bootMean <- renderText({
 round(mean(trials()$perms), digits=3)
 })
 

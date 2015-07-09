@@ -39,24 +39,46 @@ shinyUI(bootstrapPage(
                               '"')      
         ),
         actionButton("hideDataOptions", "Show/hide data set options")
-      ),#conditionalPanel
-  selectInput('group', 'Grouping variable:' ,'group'),
-  selectInput('response', 'Response variable:', 'response')
-      ), #conditionalPanel
+      )#conditionalPanel
+ ), #conditionalPanel
+ conditionalPanel(
+   "$('li.active a').first().html()==='Summaries'",
+   selectInput('x', 'Variable 1:','x'),
+   selectInput('y', 'Variable 2:', 'y'),
+   hidden(
+     shiny::p(id = "warning", strong("Make sure you select different variables!"),  style = "color:red")
+   )
+   ),
   conditionalPanel(
     "$('li.active a').first().html()==='Permutation Test'",
+    h3("Resampling Control Panel"),
+    radioButtons("plot", label=h4("Plotting"), c("Histogram"="his", "Density"="den", "Q-Q Plot" = "qq"),
+                 selected="his"),
   numericInput("num", 
-               label = "Permutation samples:", 
+               label = h5("Permutation Samples"), 
                value = 1000, min = 1, max = 10000),
-  actionButton("goButton", "Permute!"),
+  actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
+  h5("Histogram Bin Width"),
   uiOutput("hist_ui")
-  ) #conditionalPanel
+  ), #conditionalPanel
+  conditionalPanel(
+    "$('li.active a').first().html()==='Confidence Intervals'",
+    radioButtons("ci", label = h5("Confidence Interval"),
+                 c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
+    numericInput("level", 
+                 label = h5("Confidence Level"), 
+                 value = 0.95, min = 0.01, max = 0.99, step=0.01)
+  )
     ), #sidebarPanel
   mainPanel(
       tabsetPanel(type="tabs",
                   tabPanel("Input",
      dataTableOutput("contents")
                   ), #tabPanel
+    tabPanel("Summaries",
+             ggvisOutput("origPlot"),
+             verbatimTextOutput("origSummary")
+             ),
     tabPanel("Permutation Test",
     ggvisOutput("hist"),
     tableOutput("summary"),
@@ -64,6 +86,26 @@ shinyUI(bootstrapPage(
     hidden(
     dataTableOutput("trials")
     )
+    ), #tabPanel
+    tabPanel("Confidence Intervals",
+             conditionalPanel(
+               condition = "input.ci == 'perc'",
+               h6("Two-Tailed Confidence Interval (Percentile)"),
+               verbatimTextOutput("ciPrint"),
+               h6("Lower Bound"),
+               verbatimTextOutput("percLower"),
+               h6("Upper Bound"),
+               verbatimTextOutput("percUpper")
+             ),
+             conditionalPanel(
+               condition = "input.ci == 'norm'",
+               h6("Two-Tailed Confidence Interval (Normal)"),
+               verbatimTextOutput("normPrint"),
+               h6("Lower Bound"),
+               verbatimTextOutput("normLower"),
+               h6("Upper Bound"),
+               verbatimTextOutput("normUpper")
+             )             
     ) #tabPanel
       ) #tabsetPanel
   ) #mainPanel

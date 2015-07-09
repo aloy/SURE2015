@@ -31,8 +31,8 @@ shinyServer(function(input, output, session) {
       }
     }else{
       data <- data[,c(input$group,input$response)]
-      names(data)<-c("group","response")
     }
+    names(data)<-c("group","response")
     data
   })
   
