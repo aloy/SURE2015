@@ -1,6 +1,6 @@
 library(shiny)
 library(shinyjs)
-shinyServer(function(input,output, session){
+shinyServer(function(input, output, session){
   
   ## One-Sample Bootstrap
   library(mosaic)
@@ -16,13 +16,12 @@ shinyServer(function(input,output, session){
       if (is.null(inFile))
         return(NULL)
       return(      
-        d <- read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
+        read.csv(inFile$datapath, header=input$header, sep=input$sep, quote=input$quote)
       )
     }
     else(
-      d <- as.data.frame(SleepStudy[,26, drop=FALSE])
+    as.data.frame(SleepStudy[,26, drop=FALSE])
     )
-    d
   })
   
   observe({
@@ -31,15 +30,12 @@ shinyServer(function(input,output, session){
     updateSelectInput(session, 'response', choices = qvars)    
   })
   
-  output$contents <- renderTable({
-    theData()
-  })
+  output$contents <- renderDataTable(theData() %>% head)
   
-  shinyjs::onclick("hideData",
-                   shinyjs::toggle(id = "contents", anim = TRUE))
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
-
+  shinyjs::onclick("hideData",
+                   shinyjs::toggle(id = "trials", anim = TRUE))
   filteredData<-reactive({
     data<-isolate(theData())
     #if there is no input, make a dummy dataframe
@@ -63,33 +59,28 @@ shinyServer(function(input,output, session){
     colnames(qqdata0) <- c("normal.quantiles", "diffs")
     data.frame(qqdata0)
   })
-
-observe({
-  if(input$plot=="his"){
-filteredData %>%
-  ggvis(~filteredData()$response) %>%
-  add_axis("x", title = input$response) %>%
-  layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
-  bind_shiny("origHist", "origHist_ui")
-}
-if(input$plot=="den"){
-  filteredData %>%
-    ggvis(~filteredData()$response) %>%
-    layer_densities() %>%
-    add_axis("x", title = input$choose) %>%
-    add_axis("y", title="Density") %>%
-    bind_shiny("origHist", "origHist_ui")
-}
-if(input$plot=="qq"){
-  qq = qqdata %>% 
-    ggvis(~normal.quantiles, ~diffs) %>% 
-    layer_points() %>% 
-    add_axis("x", title="Theoretical") %>%
-    add_axis("y", title="Sample") %>%
-    bind_shiny("origHist", "origHist_ui")
-}
-})
-
+  
+  observe({
+      switch(input$plot,
+                        his =filteredData %>%
+                          ggvis(~filteredData()$response) %>%
+                          add_axis("x", title = input$response) %>%
+                          layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
+                          bind_shiny("origHist", "origHist_ui"),
+                        den = filteredData %>%
+                          ggvis(~filteredData()$response) %>%
+                          layer_densities() %>%
+                          add_axis("x", title = input$choose) %>%
+                          add_axis("y", title="Density") %>%
+                          bind_shiny("origHist", "origHist_ui"),
+                        qq = qqdata %>% 
+                          ggvis(~normal.quantiles, ~diffs) %>% 
+                          layer_points() %>% 
+                          add_axis("x", title="Theoretical") %>%
+                          add_axis("y", title="Sample") %>%
+                          bind_shiny("origHist", "origHist_ui")
+      )
+  })
 output$summary <- renderTable({
   favstats(response, data=filteredData())
   })
@@ -101,6 +92,20 @@ output$summary <- renderTable({
 output$hisDenPlot <- renderPlot ({
   qplot(response, data=filteredData(), xlab=input$choose, 
   ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
+})
+
+
+ntext <- eventReactive(input$myButton, {
+  a <- c(1, 2, 3, 4, 5, 6, 7)
+})
+
+output$nText <- renderText({
+  if(input$myButton==1){
+    mean(ntext())
+  }
+    if(input$myButton==2){
+      sd(ntext())
+    }
 })
 
 trials <- reactive({
@@ -115,37 +120,41 @@ trials <- reactive({
     if(input$stat=="bootSd"){
     perms <- do(input$num) * sd(sample(filteredData(), replace = TRUE))
     }
-    colnames(perms) <- "perms"
+    names(perms) <- "perms"
     data.frame(perms)
-  } else {
+
+  }
+else {
     data.frame(perms = rep(0, 10))
   }  
 })
 
+
 output$trials <- renderDataTable(trials() %>% head)
 
 observe({
+  if(input$reset > 0 ){
+    trials <- data.frame(perms=rep(0, 10))
+    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+  }
   if(input$plot2=="his2"){
     trials %>%
-      ggvis(~perms) %>%
-      layer_histograms(width = input_slider(0.01, 0.1, step=0.01, value=0.06)) %>%
-      bind_shiny("bootHist", "bootHist_ui")
-  }
+           ggvis(~perms) %>%
+           layer_histograms(width = input_slider(0.01, 0.1, step=0.01, value=0.06)) %>%
+           bind_shiny("bootHist", "bootHist_ui")}
   if(input$plot2=="den2"){
     trials %>%
-      ggvis(~perms) %>%
-      layer_densities() %>%
-      add_axis("y", title="Density") %>%
-      bind_shiny("bootHist", "bootHist_ui")
-  }
+           ggvis(~perms) %>%
+           layer_densities() %>%
+           add_axis("y", title="Density") %>%
+           bind_shiny("bootHist", "bootHist_ui")}
   if(input$plot2=="qq2"){
     qqdata2 %>% 
-      ggvis(~normal.quantiles, ~diffs) %>% 
-      layer_points() %>% 
-      add_axis("x", title="Theoretical") %>%
-      add_axis("y", title="Sample") %>%
-      bind_shiny("bootHist", "bootHist_ui")
-  }
+           ggvis(~normal.quantiles, ~diffs) %>% 
+           layer_points() %>% 
+           add_axis("x", title="Theoretical") %>%
+           add_axis("y", title="Sample") %>%
+           bind_shiny("bootHist", "bootHist_ui")}
 })
 
 qqdata2 <- reactive({
@@ -161,8 +170,8 @@ output$hisDenPlot2 <- renderPlot ({
   qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
-output$bootSummary <- renderTable({
-favstats(~perms, data=trials())
+output$bootMean <- renderPrint({
+mean(trials()$perms)
 })
 
 observed <- reactive({

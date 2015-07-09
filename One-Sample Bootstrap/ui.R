@@ -48,16 +48,15 @@ shinyUI(fluidPage(
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                        "Q-Q Plot" = "qq"), 
                      selected="his"),
+        h5("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot=='hisDen'",
-          h5("Original Bin Width"),
           sliderInput("w", 
                        label = "", 
                        value = 0.7, step=0.1, min = 0.1, max=3)
         ),
         conditionalPanel(
           condition="input.plot != 'hisDen'",
-          h5("Original Bin Width"),
           uiOutput("origHist_ui")
         )
         ),
@@ -68,7 +67,7 @@ shinyUI(fluidPage(
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                        "Q-Q Plot" = "qq2"), 
                      selected="his2"),
-        h5("Bootstrap Bin Width"),
+        h5("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
           sliderInput("w2", 
@@ -86,7 +85,7 @@ shinyUI(fluidPage(
         radioButtons("stat", label = h5("Bootstrap Statistic"),
                      c("Mean" = "bootMean", "Median" = "bootMedian", 
                        "Standard Deviation" = "bootSd"), selected = "bootMean"),
-        actionButton("goButton", "Permute!")
+        actionButton("goButton", "Permute!"), actionButton("reset", "Reset")
         ),
         conditionalPanel(
           "$('li.active a').first().html()==='Confidence Intervals'",
@@ -100,11 +99,8 @@ shinyUI(fluidPage(
     mainPanel(
       tabsetPanel(type="tabs",  	     
                   tabPanel("Input",
-                           actionButton("hideData", "Show/hide data set"),
-                           hidden(
-                             tableOutput("contents")
-                           )
-                           ),
+                           dataTableOutput("contents")
+                  ),
                       tabPanel("Summaries",
                                   wellPanel(h3("Original Sample"),
                                             conditionalPanel(
@@ -133,13 +129,16 @@ shinyUI(fluidPage(
                                               ggvisOutput("bootHist")
                                             ),
                                             h5("Bootstrap Summary Statistics"),
-                                            h6("Estimate Five-Number Summary"),
-                                            tableOutput("bootSummary"),
+                                            h6("Mean"),
+                                            verbatimTextOutput("bootMean"),
                                             h6("Estimate Bias"),
                                             verbatimTextOutput("bootBias"),
                                             h6("Estimate Standard Deviation"),
                                             verbatimTextOutput("bootSd"),
+                                            hidden(
                                             dataTableOutput("trials")
+                                            ),
+                                            actionButton("hideData", "Show/hide data")
                                   ) #wellPanel
                   ),
                   tabPanel("Confidence Intervals",

@@ -40,7 +40,7 @@ shinyUI(pageWithSidebar(
                  value = 1000, min = 1, max = 10000),
     uiOutput("varChoose"),
     uiOutput("varChoose2"),
-    actionButton("goButton", "Permute!"), actionButton("goButton2", "Reset"),
+    actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
     uiOutput("plot_ui")
   ),
 

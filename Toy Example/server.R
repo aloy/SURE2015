@@ -49,28 +49,27 @@ shinyServer(function(input, output, session) {
 
 trials <- reactive({
   if(input$goButton > 0) {
-    if(input$goButton2 < input$goButton){
     perms <- do(input$n) * diff(mean(response ~ shuffle(group), data = filedata()))
     colnames(perms) <- "perms"
     data.frame(perms)
-    }
-    else{
-      data.frame(perms=rep(0, input$n))
-    }
-  } 
+  }
   else {
     data.frame(perms = rep(0, 10))
   }
 })
 
 output$trials <- renderDataTable(trials() %>% head)
-# observe({
-# if (input$type == "his"){ 
-# trials %>%
-#   ggvis(~perms) %>%
-#   layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
-#   bind_shiny("plot", "plot_ui")
-# }
+observe({
+  if(input$reset > 0 ){
+    trials <- data.frame(perms=rep(0, input$n))
+    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+  }
+if (input$type == "his"){ 
+trials %>%
+  ggvis(~perms) %>%
+  layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
+  bind_shiny("plot", "plot_ui")
+}
 # if (input$type == "den"){ 
 #   trials %>% 
 #     ggvis(~perms) %>% 
@@ -78,5 +77,5 @@ output$trials <- renderDataTable(trials() %>% head)
 #     add_axis("y", title="Density") %>%
 #     bind_shiny("plot", "plot_ui")
 # }
-# })
+})
 })

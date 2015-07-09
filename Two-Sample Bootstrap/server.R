@@ -3,7 +3,7 @@ library(shinyjs)
 shinyServer(function(input,output, session){
 library(mosaic)
 library(Lock5Data)
-library(dplyr)
+library(plyr)
 library(ggvis)
 
 tv <- read.csv("../data/TV.csv")
@@ -21,9 +21,7 @@ filedata <- reactive({
     as.data.frame(tv)
 })
 
-output$contents <- renderTable({
-  filedata()
-})
+output$contents <- renderDataTable(filteredData() %>% head)
 
 shinyjs::onclick("hideData",
                  shinyjs::toggle(id = "contents", anim = TRUE))
@@ -69,7 +67,6 @@ output$basicSummary <- renderTable({
   favstats(~response|group, data=filteredData())  
   })
 
-
 origStat <- reactive({ #Our original data frame, with all of the calculations we want (for bias)
   grouped_trials <- group_by(simdata(), catVals..)
   group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..), sd = sd(quantVals..))
@@ -91,20 +88,20 @@ trials <- reactive({
     }
     if(input$stat=="bootMeanRatio"){
       perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      grouped_trials <- group_by(perms0, .index, group)
-      perms <- summarise(summarise(grouped_trials, mean=mean(response)), mean.ratio = mean[1]/mean[2])
+      df <- ddply(perms0, .(.index, group), summarise, mean=mean(response))
+      perms <- ddply(df, .(.index), summarise, mean.ratio=mean[1]/mean[2])
       names(perms) <- c("index", "perms")
     }
     if(input$stat=="bootMedRatio"){
       perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      grouped_trials <- group_by(perms0, .index, group)
-      perms <- summarise(summarise(grouped_trials, median=median(response)), med.ratio = median[1]/median[2])
+      df <- ddply(perms0, .(.index, group), summarise, median=median(response))
+      perms <- ddply(df, .(.index), summarise, median.ratio=median[1]/median[2])
       names(perms) <- c("index", "perms")
     }
     if(input$stat=="bootSdRatio"){
       perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      grouped_trials <- group_by(perms0, .index, group)
-      perms <- summarise(summarise(grouped_trials, sd=sd(response)), sd.ratio = sd[1]/sd[2])
+      df <- ddply(perms0, .(.index, group), summarise, sd=sd(response))
+      perms <- ddply(df, .(.index), summarise, sd=sd[1]/sd[2])
       names(perms) <- c("index", "perms")
     }
     data.frame(perms)
@@ -116,6 +113,10 @@ trials <- reactive({
 output$trials <- renderDataTable(trials() %>% head)
 
 observe({
+    if(input$reset > 0 ){
+      trials <- data.frame(perms=rep(0, 10))
+      output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+    }
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~perms) %>%
@@ -150,16 +151,12 @@ qqdata2 <- reactive({
 
 observed <- reactive({
   switch(input$stat,
-         bootMean= summarise(summarise(group_by(filteredData(), group), mean=mean(response)), 
-                             stat=diff(mean)),
-         bootMedian= summarise(summarise(group_by(filteredData(), group), median=median(response)), 
-                               stat=diff(median)),
-         bootMeanRatio = summarise(summarise(group_by(filteredData(), group), mean=mean(response)), 
-                        stat=mean[1]/mean[2]),
-         bootMedRatio =  summarise(summarise(group_by(filteredData(), group), median=median(response)), 
-                                      stat=median[1]/median[2]),
-         bootSdRatio = summarise(summarise(group_by(filteredData(), group), sd=sd(response)), 
-                                 stat=sd[1]/sd[2])
+         bootMean= summarise(ddply(filteredData(), .(group), summarise, mean=mean(response)), stat=diff(mean)),
+         bootMedian= summarise(ddply(filteredData(), .(group), summarise, median=median(response)), stat=diff(median)),
+         bootMeanRatio = summarise(ddply(filteredData(), .(group), summarise, mean=mean(response)), stat=mean[1]/mean[2]),
+         bootMedRatio =  summarise(ddply(filteredData(), .(group), summarise, median=median(response)),
+                                   stat=median[1]/median[2]),
+         bootSdRatio = summarise(ddply(filteredData(), .(group), summarise, sd=sd(response)), stat=sd[1]/sd[2])
   )
 })
 
@@ -167,9 +164,10 @@ output$hisDenPlot2 <- renderPlot ({
   qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
-output$bootSummary <- renderTable({
-  favstats(~perms, data=trials())
-})
+    output$bootSummary <- renderPrint({ 
+      mean(trials()$perms)
+      })
+
 
 output$bootBias <- renderPrint({
   observed()$stat-mean(trials()$perms)

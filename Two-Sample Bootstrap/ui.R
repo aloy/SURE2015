@@ -1,6 +1,7 @@
 library(shiny)
 library(shinyjs)
 library(ggvis)
+
 shinyUI(fluidPage(
   useShinyjs(),
   titlePanel("Two-Sample Bootstrapping"),
@@ -12,7 +13,7 @@ shinyUI(fluidPage(
                      c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
                      selected = "uploadNo"),
         conditionalPanel(
-          condition= "input.chooseData2=='uploadYes'",
+          condition= "input.chooseData=='uploadYes'",
           tags$div(id="dataOptions",
                    fileInput('file1', 'Choose a file to upload. The data set will appear below the main panel.',
                              accept = c(
@@ -77,7 +78,7 @@ shinyUI(fluidPage(
           condition="input.plot2 != 'hisDen2'",
           uiOutput("bootHist_ui")
         ),
-        actionButton("goButton", "Permute!")
+        actionButton("goButton", "Permute!"),actionButton("reset", "Reset")
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Confidence Intervals'",
@@ -91,10 +92,7 @@ shinyUI(fluidPage(
     mainPanel(title="Two-Sample Bootstrap",
               tabsetPanel(type="tabs",
                           tabPanel("Input",
-                                   actionButton("hideData", "Show/hide data set"),
-                                   hidden(
-                                     tableOutput("contents")
-                                   )
+                                   dataTableOutput("contents")
                                    ),
                           tabPanel("Summaries",
                          h3("One-Variable Statistics"),
@@ -112,8 +110,8 @@ shinyUI(fluidPage(
                          condition="input.plot2 != 'hisDen2'",
                          ggvisOutput("bootHist")
                        ),
-                       h6("Estimate Five-Number Summary"),
-                       tableOutput("bootSummary"),
+                       h6("Mean"),
+                       verbatimTextOutput("bootSummary"),
                        h6("Estimate Bias"),
                        verbatimTextOutput("bootBias"),
                        h6("Estimate Standard Deviation"),
