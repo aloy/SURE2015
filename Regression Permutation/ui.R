@@ -55,15 +55,15 @@ shinyUI(bootstrapPage(
   mainPanel(
       tabsetPanel(type="tabs",
                   tabPanel("Input",
-    actionButton("hideData", "Show/hide data set"),
-    hidden(
-      tableOutput("contents")
-    )
+     dataTableOutput("contents")
                   ), #tabPanel
     tabPanel("Permutation Test",
     ggvisOutput("hist"),
     tableOutput("summary"),
+    actionButton("hideData", "Show/hide data set"),
+    hidden(
     dataTableOutput("trials")
+    )
     ) #tabPanel
       ) #tabsetPanel
   ) #mainPanel

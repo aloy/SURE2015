@@ -45,8 +45,7 @@ shinyUI(fluidPage(
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Summaries'",
-        h3("Bootstrap Control Panel"),
-        radioButtons("plot", label=h4("Plotting"),
+        radioButtons("plot", label=h3("Plotting"),
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                        "Q-Q Plot" = "qq"), selected="his"),
           sliderInput("w", 

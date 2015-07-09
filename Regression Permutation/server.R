@@ -17,20 +17,15 @@ shinyServer(function(input, output, session) {
     }
     else
     data.frame(CaffeineTaps)
-    # This is the cancer remission data set from more ideas.R:
-#       read.table("/var/folders/t3/tfcry0l52h3f4fv68_p_z7hh0000gn/T//RtmpGNhq0t/dataec832bfc97d", header=TRUE, 
-#                 quote="\"", colClasses=c('factor', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric', 'numeric'))
   })
   
   
   shinyjs::onclick("hideData",
-                   shinyjs::toggle(id = "contents", anim = TRUE))
+                   shinyjs::toggle(id = "trials", anim = TRUE))
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
-  output$contents <- renderTable({
-    theData()
-  })
+  output$contents <- renderDataTable({theData() %>%head})
   observe({
     data <- theData()
     cvars <- colnames(data)[sapply(data,is.factor)]

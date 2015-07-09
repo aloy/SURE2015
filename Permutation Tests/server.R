@@ -19,12 +19,11 @@ filedata <- reactive({
   else
     data.frame(CaffeineTaps)
 })
-output$contents <- renderTable({
-  filedata()
-})
+
+output$contents <- renderDataTable(filedata()%>%head)
 
 shinyjs::onclick("hideData",
-                 shinyjs::toggle(id = "contents", anim = TRUE))
+                 shinyjs::toggle(id = "trials", anim = TRUE))
 shinyjs::onclick("hideDataOptions",
                  shinyjs::toggle(id = "dataOptions", anim = TRUE))
 
@@ -49,6 +48,18 @@ filteredData<-reactive({
     names(data)<-c("group","response")
   }
   data
+})
+
+output$origHist <- renderPlot({
+  dataPlot <-switch(input$plot,
+                    his = qplot(data=filteredData(), x=response, facets=group~., binwidth=input$w, 
+                                main="Original Sample"),
+                    den = qplot(data=filteredData(), x=response, facets=group~., geom="density"),
+                    qq = qplot(sample=response, data=filteredData(), facets=group~.),
+                    hisDen = qplot(data=filteredData(), x=response, facets=group~., binwidth=input$w) 
+                    + aes(y=..density..)+geom_density()
+  )
+  dataPlot
 })
 
 output$summary <- renderTable({
@@ -77,7 +88,7 @@ trials <- reactive({
 
 output$trials <- renderDataTable(trials() %>% head)
 
-output$pval <- renderPrint({
+output$pval <- renderText({
 n <- input$num
 if(input$goButton > 0) {
 pvalSwitch <- switch(input$test, 
@@ -88,7 +99,7 @@ pvalSwitch <- switch(input$test,
 pvalSwitch
 }
 else{
-  print(0)
+  return(0)
 }
   })
 
@@ -102,20 +113,20 @@ qqdata <- reactive({
   })
 
 observe({
-  if(input$plot=="his"){
+  if(input$plot2=="his2"){
     trials %>%
       ggvis(~perms) %>%
-      layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.2)) %>%
+      layer_histograms(width = input_slider(0.01, 0.5, step=0.01, value=0.2)) %>%
       bind_shiny("trialsHist", "trialsHist_ui")
   }
-  if(input$plot=="den"){
+  if(input$plot2=="den2"){
     trials %>%
       ggvis(~perms) %>%
       layer_densities() %>%
       add_axis("y", title="Density") %>%
       bind_shiny("trialsHist", "trialsHist_ui")
   }
-  if(input$plot=="qq"){
+  if(input$plot2=="qq2"){
     qqdata %>% 
       ggvis(~normal.quantiles, ~perms) %>% 
       layer_points() %>% 
@@ -124,12 +135,21 @@ observe({
       bind_shiny("trialsHist", "trialsHist_ui")
   }
 })
-output$summary2 <- renderTable({
-  favstats(trials()$perms) 
+
+output$summary2 <- renderText({
+  mean(trials()$perms) 
+})
+
+output$bootBias <- renderText({
+  mean(trials()$perms)-mean(observedDiff())
+})
+
+output$bootSd <- renderText({
+ sd(trials()$perms)
 })
 
 output$hisDenPlot <- renderPlot ({
-  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
+  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
 

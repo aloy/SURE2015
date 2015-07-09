@@ -40,6 +40,8 @@ shinyUI(bootstrapPage(
         ),
         actionButton("hideDataOptions", "Show/hide data set options")
       ), #conditionalPanel
+      selectInput('group', 'Grouping variable:' ,'group'),
+      selectInput('response', 'Response variable:', 'response'),
       p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
     the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
     to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
@@ -48,27 +50,31 @@ shinyUI(bootstrapPage(
       ), #conditionalPanel
       conditionalPanel(
         "$('li.active a').first().html()==='Summaries'",
-      selectInput('group', 'Grouping variable:' ,'group'),
-      selectInput('response', 'Response variable:', 'response')
+        radioButtons("plot", label=h3("Plotting"),
+                     c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
+                       "Q-Q Plot" = "qq"), selected="his"),
+        sliderInput("w", 
+                    label = h5("Histogram Bin Width"), 
+                    value = 1.2, step=0.1, min = 0.1, max=3)
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Permutation Test'",
       h4("Resampling"),
-      radioButtons("plot", label=h5("Plot Type"),
-                   c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
-                     "Q-Q Plot" = "qq"), selected="his"),
+      radioButtons("plot2", label=h5("Plot Type"),
+                   c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
+                     "Q-Q Plot" = "qq2"), selected="his2"),
       numericInput("num", 
                    label = h5("Number of Permutation Resamples"), 
                    value = 1000, min = 1, max = 100000),
       h5("Permutation Histogram Bin Width"),
       conditionalPanel(
-        condition="input.plot=='hisDen'",
-        sliderInput("w", 
+        condition="input.plot2=='hisDen2'",
+        sliderInput("w2", 
                     label = "", 
                     value = 0.55, step=0.05, min = 0.05, max=1)
       ),
       conditionalPanel(
-        condition="input.plot != 'hisDen'",
+        condition="input.plot2 != 'hisDen2'",
         uiOutput("trialsHist_ui")
       ),
       actionButton("goButton", "Permute!"),
@@ -79,12 +85,10 @@ shinyUI(bootstrapPage(
      mainPanel(
        tabsetPanel(type="tabs",
                    tabPanel("Input",
-                            actionButton("hideData", "Show/hide data set"),
-                            hidden(
-                              tableOutput("contents")
-                            )
+                              dataTableOutput("contents")
                    ), #tabPanel
                    tabPanel("Summaries",
+        plotOutput("origHist"),
        h6("Summary of Original Data"),
        tableOutput("summary"),
       h6("Observed Mean Difference"),
@@ -92,18 +96,25 @@ shinyUI(bootstrapPage(
                    ), #tabPanel
       tabPanel("Permutation Test",
       conditionalPanel(
-        condition="input.plot=='hisDen'",
+        condition="input.plot2=='hisDen2'",
         plotOutput("hisDenPlot")
       ),
       conditionalPanel(
-        condition="input.plot != 'hisDen'",
+        condition="input.plot2 != 'hisDen2'",
         ggvisOutput("trialsHist")  
       ),
       h6("P-Value"),
       verbatimTextOutput("pval"),
-      h6("Summary of Permutation Resampling"),
-      tableOutput("summary2"),
+      h6("Mean"),
+      verbatimTextOutput("summary2"),
+      h6("Bias"),
+      verbatimTextOutput("bootBias"),
+      h6("Standard Deviation"),
+      verbatimTextOutput("bootSd"),
+      actionButton("hideData", "Show/hide data set"),
+      hidden(
       dataTableOutput("trials")
+      )
       ) #tabPanel
      ) #tabsetPanel
     ) #mainPanel
