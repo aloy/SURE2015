@@ -24,7 +24,7 @@ filedata <- reactive({
 output$contents <- renderDataTable(filteredData() %>% head)
 
 shinyjs::onclick("hideData",
-                 shinyjs::toggle(id = "contents", anim = TRUE))
+                 shinyjs::toggle(id = "trials", anim = TRUE))
 
 shinyjs::onclick("hideDataOptions",
                  shinyjs::toggle(id = "dataOptions", anim = TRUE))
@@ -165,16 +165,16 @@ output$hisDenPlot2 <- renderPlot ({
 })
 
     output$bootSummary <- renderPrint({ 
-      mean(trials()$perms)
+      round(mean(trials()$perms), digits=3)
       })
 
 
 output$bootBias <- renderPrint({
-  observed()$stat-mean(trials()$perms)
+  signif(observed()$stat-mean(trials()$perms), digits=3)
  })
 
 output$bootSd <- renderPrint({
-  sd(trials()$perms)
+  signif(sd(trials()$perms), digits=3)
 })
 
 level <- reactive(
@@ -190,28 +190,30 @@ SE <- reactive (
 )
 
 output$ciPrint <- renderPrint({
-  quantile(trials()$perms, 
-           probs=c(alpha()/2, 1-alpha()/2))
+  round(quantile(trials()$perms, 
+           probs=c(alpha()/2, 1-alpha()/2)), digits=3)
 })
 
 output$percLower <- renderPrint({
-  quantile(trials()$perms, probs = c(alpha()))
+  round(quantile(trials()$perms, probs = c(alpha())), digits=3)
 })
 
 output$percUpper <- renderPrint({
-  quantile(trials()$perms, probs = c(1-alpha()))
+  round(quantile(trials()$perms, probs = c(1-alpha())), digits=3)
 })
 
 output$normPrint <- renderText({
-  c(mean(trials()$perms) - qnorm(1-alpha()/2)*SE(), observed()$stat + qnorm(1-(alpha()/2)) * SE())
+  c(round(mean(trials()$perms) - qnorm(1-alpha()/2)*SE(), digits=3),
+     round(observed()$stat + qnorm(1-(alpha()/2)) * SE(), digits=3))
 })
 
 output$normLower <- renderText({
-  c(paste(100*alpha(),'%'), observed()$stat - qnorm(1-alpha()) * SE())
+  c(paste(100*alpha(),'%'), 
+    round(observed()$stat - qnorm(1-alpha()) * SE(),  digits=3))
 })
 
 output$normUpper <- renderText({
-  c(paste(100*level(),'%'), observed()$stat + qnorm(1-alpha()) * SE())
+  c(paste(100*level(),'%'), round(observed()$stat + qnorm(1-alpha()) * SE(), digits=3))
   
 })
 

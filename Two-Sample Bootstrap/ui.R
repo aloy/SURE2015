@@ -115,7 +115,10 @@ shinyUI(fluidPage(
                        verbatimTextOutput("bootBias"),
                        h6("Estimate Standard Deviation"),
                        verbatimTextOutput("bootSd"),
+                       actionButton("hideData", "Show/hide data set"),
+                       hidden(
                        dataTableOutput("trials")
+                       )
                     ),
                     tabPanel("Confidence Intervals",
                        conditionalPanel(

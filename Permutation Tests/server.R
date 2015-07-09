@@ -96,7 +96,7 @@ pvalSwitch <- switch(input$test,
                   lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
                   ut = (sum(trials()$perms >= observedDiff()) +1)/(n+1)
 )
-pvalSwitch
+signif(pvalSwitch, 3)
 }
 else{
   return(0)
@@ -113,6 +113,10 @@ qqdata <- reactive({
   })
 
 observe({
+  if(input$reset > 0 ){
+    trials <- data.frame(perms=rep(0, 10))
+    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+  }
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~perms) %>%
@@ -137,15 +141,15 @@ observe({
 })
 
 output$summary2 <- renderText({
-  mean(trials()$perms) 
+  round(mean(trials()$perms), 3)
 })
 
 output$bootBias <- renderText({
-  mean(trials()$perms)-mean(observedDiff())
+  signif(mean(trials()$perms)-mean(observedDiff()), 3)
 })
 
 output$bootSd <- renderText({
- sd(trials()$perms)
+  signif(sd(trials()$perms), 3)
 })
 
 output$hisDenPlot <- renderPlot ({

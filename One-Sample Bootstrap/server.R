@@ -86,26 +86,12 @@ output$summary <- renderTable({
   })
   
   output$sd <- renderText({
-    sd(filteredData())
+    round(sd(filteredData()), digits=3)
   })
 
 output$hisDenPlot <- renderPlot ({
   qplot(response, data=filteredData(), xlab=input$choose, 
   ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
-})
-
-
-ntext <- eventReactive(input$myButton, {
-  a <- c(1, 2, 3, 4, 5, 6, 7)
-})
-
-output$nText <- renderText({
-  if(input$myButton==1){
-    mean(ntext())
-  }
-    if(input$myButton==2){
-      sd(ntext())
-    }
 })
 
 trials <- reactive({
@@ -171,7 +157,7 @@ output$hisDenPlot2 <- renderPlot ({
 })
 
 output$bootMean <- renderPrint({
-mean(trials()$perms)
+round(mean(trials()$perms), digits=3)
 })
 
 observed <- reactive({
@@ -188,11 +174,11 @@ observed <- reactive({
            bootMedian= observed()-median(trials()$perms),
            bootSd=observed()-sd(trials()$perms)
            )
-   biasStat
+   signif(biasStat, digits=3)
   })
   
   output$bootSd <- renderText({
-    sd(trials()$perms)
+    signif(sd(trials()$perms), digits=3)
   })
   
   level <- reactive({
@@ -208,27 +194,27 @@ observed <- reactive({
   })
 
   output$percPrint <- renderText({
-    quantile(trials()$perms, probs = c(alpha()/2, 1-alpha()/2))
+    round(quantile(trials()$perms, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
   })
   
   output$percLower <- renderText({
-    c(paste(100*alpha(),'%'), quantile(trials()$perms, probs = c(alpha())))
+    c(paste(100*alpha(),'%'), round(quantile(trials()$perms, probs = c(alpha())), digits=3))
   })
   
   output$percUpper <- renderText({
-    c(paste(100*level(),'%'), quantile(trials()$perms, probs = c(1-alpha())))
+    c(paste(100*level(),'%'), round(quantile(trials()$perms, probs = c(1-alpha())),digits=3))
   })
 
 output$normPrint <- renderText({
-  c(observed() - qnorm(1-alpha()/2) *  SE(),
-    observed() + qnorm(1-alpha()/2) * SE())
+  c(round(observed() - qnorm(1-alpha()/2) *  SE(), digits=3),
+    round(observed() + qnorm(1-alpha()/2) * SE(), digits=3))
 })
 
 output$normLower <- renderText({
-  c(paste(100*alpha(),'%'), observed()- qnorm(1-alpha()) * SE())
+  c(paste(100*alpha(),'%'), round(observed()- qnorm(1-alpha()) * SE(), digits=3))
 })
   output$normUpper <- renderText({
-    c(paste(100*level(),'%'), observed() + qnorm(1-alpha()) * SE())
+    c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
   })
  
 })

@@ -77,7 +77,7 @@ shinyUI(bootstrapPage(
         condition="input.plot2 != 'hisDen2'",
         uiOutput("trialsHist_ui")
       ),
-      actionButton("goButton", "Permute!"),
+      actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
       radioButtons("test", label=h5("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
                    selected="tt")
       )
