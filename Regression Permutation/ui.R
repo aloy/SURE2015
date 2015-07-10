@@ -77,7 +77,8 @@ shinyUI(bootstrapPage(
                   ), #tabPanel
     tabPanel("Summaries",
              ggvisOutput("origPlot"),
-             verbatimTextOutput("origSummary")
+             verbatimTextOutput("origSummary"),
+             tableOutput("test")
              ),
     tabPanel("Permutation Test",
     ggvisOutput("hist"),

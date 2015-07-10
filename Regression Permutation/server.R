@@ -50,21 +50,41 @@ shinyServer(function(input, output, session) {
     data
   })
   
+#   observe({
+#    slope <- summary(lm(formula = y ~ x, data = filteredData))$coefficients[2,1]
+#    yint <- summary(lm(formula = y ~ x, data = filteredData))$coefficients[1,1]
+#    lineData <- data.frame(x=c(0,max(filteredData$x)), 
+#                           y=c(yint, yint+slope*max(filteredData$x)))
+#   })
+ 
+lineData <- reactive({
+  slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
+  yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
+  max <- max(unclass(filteredData()$x))
+  ycor <- yint + slope*max
+  data.frame(x=c(0, max), y=c(yint, ycor))
+})
+  
+output$test<- renderTable({
+  lineData()
+})
 
-    filteredData %>%
+  observe({
+    filteredData() %>%
       ggvis(x=~x, y=~y) %>% 
       layer_points() %>%
-#       scale_numeric("x", domain = c(NA, 5), nice = FALSE) %>% This works in the console but not in Shiny
-#       scale_numeric("y", domain = c(NA, 500), nice = FALSE) %>%
+      add_axis("x") %>%
+      add_axis("y") %>% 
+#       layer_paths(x=~x, y=~y, data=lineData())%>%
       bind_shiny("origPlot")
-
+})
 
 # output$origPlot <- renderPlot({
 #   qplot(x, y, data=filteredData())
 # })
 
 output$origSummary <- renderPrint({
-  lm(y~x, data=filteredData())
+  summary(lm(formula = y ~ x, data = filteredData()))
 })
 
   trials <- reactive({
