@@ -50,13 +50,6 @@ shinyServer(function(input, output, session) {
     data
   })
   
-#   observe({
-#    slope <- summary(lm(formula = y ~ x, data = filteredData))$coefficients[2,1]
-#    yint <- summary(lm(formula = y ~ x, data = filteredData))$coefficients[1,1]
-#    lineData <- data.frame(x=c(0,max(filteredData$x)), 
-#                           y=c(yint, yint+slope*max(filteredData$x)))
-#   })
- 
 lineData <- reactive({
   slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
   yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
@@ -64,18 +57,19 @@ lineData <- reactive({
   ycor <- yint + slope*max
   data.frame(x=c(0, max), y=c(yint, ycor))
 })
-  
-output$test<- renderTable({
-  lineData()
-})
+#   #This should also work 
+# output$test<- renderTable({
+#   lineData()
+# })
 
   observe({
     filteredData() %>%
       ggvis(x=~x, y=~y) %>% 
       layer_points() %>%
-      add_axis("x") %>%
-      add_axis("y") %>% 
-#       layer_paths(x=~x, y=~y, data=lineData())%>%
+      add_axis("x", title=input$x) %>%
+      add_axis("y", title=input$y) %>% 
+#       layer_model_predictions(model = "lm", stroke="lm") %>%
+      layer_paths(x=~x, y=~y, data=lineData())%>% #This works in console but not in Shiny
       bind_shiny("origPlot")
 })
 
