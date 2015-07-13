@@ -4,7 +4,6 @@ library(Lock5Data)
 library(shinyjs)
 library(ggvis)
 data(InkjetPrinters)
-data(mtcars)
 
 shinyServer(function(input, output, session) {
   theData <- reactive({
@@ -141,17 +140,36 @@ qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_densit
   observed <- reactive({
     obs <-summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
   })
-  level <- reactive(
+  level <- reactive({
   input$level
-)
+})
 
-alpha <- reactive(
+alpha <- reactive({
   1 - level()
-)
+})
 
 SE <- reactive (
   sd(trials()$perms)
 )
+
+
+SE2 <- reactive (
+  sd(yhatDF())
+)
+
+observed2 <- reactive({
+  printer.lm <- lm(y~x, data=filteredData())
+  predict(printer.lm, data.frame(x = input$xval))
+})
+level <- reactive(
+  input$level
+)
+
+
+observe({
+updateNumericInput(session, "xval", label=paste("Value of", input$x))
+})
+
 
 output$ciPrint <- renderPrint({
   round(quantile(trials()$perms, 
@@ -172,13 +190,49 @@ output$normPrint <- renderText({
 })
 
 output$normLower <- renderText({
-  c(paste(100*alpha(),'%'), 
+  c(paste(round(100*(1-level()), digits=2),'%'), 
     round(observed() - qnorm(1-alpha()) * SE(),  digits=3))
 })
 
 output$normUpper <- renderText({
   c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
   
+})
+
+yhatDF <- reactive({
+  trials1 <- data.frame(trials())
+  yhat <- function(trials1, c1, c2, xval){trials1[c1]+(xval*trials1[c2])}
+  df <-apply(trials1, 1, yhat, c1="yint", c2="perms", xval=input$xval)
+  data.frame(df)
+})
+
+
+output$yhatCIPrint <- renderPrint({
+  round(quantile(yhatDF()$df, 
+                 probs=c(alpha()/2, 1-alpha()/2)), digits=3)
+})
+
+output$yhatPercLower <- renderPrint({
+  round(quantile(yhatDF()$df, probs = c(alpha())), digits=3)
+#   round(quantile(trials()$perms, probs = c(alpha())), digits=3)
+})
+
+output$yhatPercUpper <- renderPrint({
+  round(quantile(yhatDF()$df, probs = c(1-alpha())), digits=3)
+})
+
+output$yhatNormPrint <- renderText({
+  c(round(observed2() - qnorm(1-alpha()/2)*SE2(), digits=3),
+    round(observed2() + qnorm(1-(alpha()/2)) * SE2(), digits=3))
+})
+
+output$yhatNormLower <- renderText({
+  c(paste(round(100*(1-level()), digits=2),'%'), 
+    round(observed2() - qnorm(1-alpha()) * SE2(),  digits=3))
+})
+
+output$yhatNormUpper <- renderText({
+  c(paste(100*level(),'%'), round(observed2() + qnorm(1-alpha()) * SE2(), digits=3))
 })
 
 
