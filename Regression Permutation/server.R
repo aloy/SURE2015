@@ -138,7 +138,7 @@ qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_densit
   })
   
   observed <- reactive({
-    obs <-summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
+    summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
   })
   level <- reactive({
   input$level
@@ -153,13 +153,12 @@ SE <- reactive (
 )
 
 
-SE2 <- reactive (
+SE2 <- reactive ({
   sd(yhatDF())
-)
-
+})
 observed2 <- reactive({
-  printer.lm <- lm(y~x, data=filteredData())
-  predict(printer.lm, data.frame(x = input$xval))
+  original.lm <- lm(y~x, data=filteredData())
+  predict(original.lm, data.frame(x = input$xval))
 })
 level <- reactive(
   input$level
@@ -185,7 +184,7 @@ output$percUpper <- renderPrint({
 })
 
 output$normPrint <- renderText({
-  c(round(mean(trials()$perms) - qnorm(1-alpha()/2)*SE(), digits=3),
+  c(round(observed() - qnorm(1-alpha()/2)*SE(), digits=3),
     round(observed() + qnorm(1-(alpha()/2)) * SE(), digits=3))
 })
 
@@ -208,14 +207,12 @@ yhatDF <- reactive({
 
 
 output$yhatCIPrint <- renderPrint({
-  round(quantile(yhatDF()$df, 
-                 probs=c(alpha()/2, 1-alpha()/2)), digits=3)
+  round(quantile(yhatDF()$df, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
 })
 
 output$yhatPercLower <- renderPrint({
-  round(quantile(yhatDF()$df, probs = c(alpha())), digits=3)
-#   round(quantile(trials()$perms, probs = c(alpha())), digits=3)
-})
+  round(quantile(yhatDF()$df, probs = c(alpha())), digits=3) 
+  })
 
 output$yhatPercUpper <- renderPrint({
   round(quantile(yhatDF()$df, probs = c(1-alpha())), digits=3)
@@ -235,5 +232,26 @@ output$yhatNormUpper <- renderText({
   c(paste(100*level(),'%'), round(observed2() + qnorm(1-alpha()) * SE2(), digits=3))
 })
 
+S <- reactive({ #Residual standard error for prediction interval
+  original.lm <- lm(y~x, data=filteredData())
+  summary(original.lm)[[6]]
+})
+
+
+output$yhatPredLower <- renderText({
+  c(paste(round(100*(1-level()), digits=3),"%"), 
+    round(observed2() - qnorm(1-alpha()) *S() * 
+      sqrt(1+(1/nrow(yhatDF()))-(input$xval-mean(yhatDF()$df))^2/(nrow(yhatDF())*sd(yhatDF()$df)^2)), digits=3)
+    )
+  
+})
+
+output$yhatPredUpper <- renderText({
+  c(paste(round(100*level(), digits=3),"%"), 
+    round(observed2() + qnorm(1-alpha())* S() * 
+    sqrt(1+(1/nrow(yhatDF()))+(input$xval-mean(yhatDF()$df))^2/(nrow(yhatDF())*sd(yhatDF()$df)^2)), digits=3)
+    )
+  
+})
 
 })
