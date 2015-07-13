@@ -3,7 +3,7 @@ library(mosaic)
 library(Lock5Data)
 library(shinyjs)
 library(ggvis)
-data(InkjetPrinters)
+data(mtcars)
 
 shinyServer(function(input, output, session) {
   theData <- reactive({
@@ -51,19 +51,6 @@ shinyServer(function(input, output, session) {
     names(data)<-c("x","y")
     data
   })
-  
-
-# lineData <- reactive({
-#   slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
-#   yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
-#   max <- max(unclass(filteredData()$x))
-#   ycor <- yint + slope*max
-#   data.frame(x=c(0, max), y=c(yint, ycor))
-# })
-#   #This should also work 
-# output$test<- renderTable({
-#   lineData()
-# })
 
 filteredData %>%
   ggvis(x=~x, y=~y) %>% 
@@ -71,13 +58,8 @@ filteredData %>%
   layer_model_predictions(model = 'lm') %>%
   bind_shiny("origPlot")
 
-
-# output$origPlot <- renderPlot({
-#   qplot(x, y, data=filteredData())
-# })
-
 output$origSummary <- renderPrint({
-  summary(lm(formula = y ~ x, data = filteredData()))
+  summary(original.lm())
 })
 
   trials <- reactive({
@@ -137,121 +119,135 @@ qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_densit
     favstats(trials()$perms)
   })
   
-  observed <- reactive({
-    summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
-  })
-  level <- reactive({
-  input$level
-})
+#   observed <- reactive({
+#     summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
+#   })
+#   level <- reactive({
+#   input$level
+# })
 
 alpha <- reactive({
   1 - level()
 })
+# 
+# SE <- reactive (
+#   sd(trials()$perms)
+# )
 
-SE <- reactive (
-  sd(trials()$perms)
-)
-
-
-SE2 <- reactive ({
-  sd(yhatDF())
-})
-observed2 <- reactive({
-  original.lm <- lm(y~x, data=filteredData())
-  predict(original.lm, data.frame(x = input$xval))
-})
+# 
+# SE2 <- reactive ({
+#   sd(yhatDF())
+# })
+# observed2 <- reactive({
+#   original.lm <- lm(y~x, data=filteredData())
+#   predict(original.lm, data.frame(x = input$xval))
+# })
 level <- reactive(
   input$level
 )
 
+original.lm <- reactive({
+  data2 <- data.frame(theData()[,c(input$x,input$y)])
+  names(data2) <- c("x","y")
+  lm(y~x, data=data2)
+})
 
 observe({
 updateNumericInput(session, "xval", label=paste("Value of", input$x))
 })
 
+data.boot <- reactive({
+  R <- input$R
+  Boot(original.lm(), R=R, method="case")
+})
 
 output$ciPrint <- renderPrint({
-  round(quantile(trials()$perms, 
-                 probs=c(alpha()/2, 1-alpha()/2)), digits=3)
+  ciPrint <- switch(input$stat,
+  slope = confint(data.boot(), level=level(), type="perc")[2,]
+  )
+  ciPrint
 })
 
-output$percLower <- renderPrint({
-  round(quantile(trials()$perms, probs = c(alpha())), digits=3)
+output$percOneTail <- renderPrint({
+  percOneTail <- switch(input$stat,
+                    slope =confint(data.boot(), level=level()-alpha(),type="perc")[2,]
+  )
+  percOneTail
 })
 
-output$percUpper <- renderPrint({
-  round(quantile(trials()$perms, probs = c(1-alpha())), digits=3)
+output$bootHist <- renderPlot({
+  hist(data.boot(), col = "gray", level=level())
 })
 
-output$normPrint <- renderText({
-  c(round(observed() - qnorm(1-alpha()/2)*SE(), digits=3),
-    round(observed() + qnorm(1-(alpha()/2)) * SE(), digits=3))
+output$normPrint <- renderPrint({
+  normPrint <- switch(input$stat,
+                    slope = confint(data.boot(), level=level(), type="norm")[2,]
+  )
+  normPrint
 })
 
-output$normLower <- renderText({
-  c(paste(round(100*(1-level()), digits=2),'%'), 
-    round(observed() - qnorm(1-alpha()) * SE(),  digits=3))
+output$normOneTail <- renderPrint({
+  normOneTail <- switch(input$stat,
+                        slope =confint(data.boot(), level=level()-alpha(),type="norm")[2,]
+  )
+  normOneTail
 })
 
-output$normUpper <- renderText({
-  c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
-  
-})
-
-yhatDF <- reactive({
-  trials1 <- data.frame(trials())
-  yhat <- function(trials1, c1, c2, xval){trials1[c1]+(xval*trials1[c2])}
-  df <-apply(trials1, 1, yhat, c1="yint", c2="perms", xval=input$xval)
-  data.frame(df)
-})
-
-
-output$yhatCIPrint <- renderPrint({
-  round(quantile(yhatDF()$df, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
-})
-
-output$yhatPercLower <- renderPrint({
-  round(quantile(yhatDF()$df, probs = c(alpha())), digits=3) 
-  })
-
-output$yhatPercUpper <- renderPrint({
-  round(quantile(yhatDF()$df, probs = c(1-alpha())), digits=3)
-})
-
-output$yhatNormPrint <- renderText({
-  c(round(observed2() - qnorm(1-alpha()/2)*SE2(), digits=3),
-    round(observed2() + qnorm(1-(alpha()/2)) * SE2(), digits=3))
-})
-
-output$yhatNormLower <- renderText({
-  c(paste(round(100*(1-level()), digits=2),'%'), 
-    round(observed2() - qnorm(1-alpha()) * SE2(),  digits=3))
-})
-
-output$yhatNormUpper <- renderText({
-  c(paste(100*level(),'%'), round(observed2() + qnorm(1-alpha()) * SE2(), digits=3))
-})
-
-S <- reactive({ #Residual standard error for prediction interval
-  original.lm <- lm(y~x, data=filteredData())
-  summary(original.lm)[[6]]
-})
-
-
-output$yhatPredLower <- renderText({
-  c(paste(round(100*(1-level()), digits=3),"%"), 
-    round(observed2() - qnorm(1-alpha()) *S() * 
-      sqrt(1+(1/nrow(yhatDF()))-(input$xval-mean(yhatDF()$df))^2/(nrow(yhatDF())*sd(yhatDF()$df)^2)), digits=3)
-    )
-  
-})
-
-output$yhatPredUpper <- renderText({
-  c(paste(round(100*level(), digits=3),"%"), 
-    round(observed2() + qnorm(1-alpha())* S() * 
-    sqrt(1+(1/nrow(yhatDF()))+(input$xval-mean(yhatDF()$df))^2/(nrow(yhatDF())*sd(yhatDF()$df)^2)), digits=3)
-    )
-  
-})
+# 
+# yhatDF <- reactive({
+#   trials1 <- data.frame(trials())
+#   yhat <- function(trials1, c1, c2, xval){trials1[c1]+(xval*trials1[c2])}
+#   df <-apply(trials1, 1, yhat, c1="yint", c2="perms", xval=input$xval)
+#   data.frame(df)
+# })
+# 
+# 
+# output$yhatCIPrint <- renderPrint({
+#   round(quantile(yhatDF()$df, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
+# })
+# 
+# output$yhatPercLower <- renderPrint({
+#   round(quantile(yhatDF()$df, probs = c(alpha())), digits=3) 
+#   })
+# 
+# output$yhatPercUpper <- renderPrint({
+#   round(quantile(yhatDF()$df, probs = c(1-alpha())), digits=3)
+# })
+# 
+# output$yhatNormPrint <- renderText({
+#   c(round(observed2() - qnorm(1-alpha()/2)*SE2(), digits=3),
+#     round(observed2() + qnorm(1-(alpha()/2)) * SE2(), digits=3))
+# })
+# 
+# output$yhatNormLower <- renderText({
+#   c(paste(round(100*(1-level()), digits=2),'%'), 
+#     round(observed2() - qnorm(1-alpha()) * SE2(),  digits=3))
+# })
+# 
+# output$yhatNormUpper <- renderText({
+#   c(paste(100*level(),'%'), round(observed2() + qnorm(1-alpha()) * SE2(), digits=3))
+# })
+# 
+# S <- reactive({ #Residual standard error for prediction interval
+#   original.lm <- lm(y~x, data=filteredData())
+#   summary(original.lm)[[6]]
+# })
+# 
+# 
+# output$yhatPredLower <- renderText({
+#   c(paste(round(100*(1-level()), digits=3),"%"), 
+#     round(observed2() - qnorm(1-alpha()) *S() * 
+#       sqrt(1+(1/nrow(yhatDF()))-(input$xval-mean(yhatDF()$df))^2/(nrow(yhatDF())*sd(yhatDF()$df)^2)), digits=3)
+#     )
+#   
+# })
+# 
+# output$yhatPredUpper <- renderText({
+#   c(paste(round(100*level(), digits=3),"%"), 
+#     round(observed2() + qnorm(1-alpha())* S() * 
+#     sqrt(1+(1/nrow(yhatDF()))+(input$xval-mean(yhatDF()$df))^2/(nrow(yhatDF())*sd(yhatDF()$df)^2)), digits=3)
+#     )
+#   
+# })
 
 })

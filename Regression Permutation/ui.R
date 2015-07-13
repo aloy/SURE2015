@@ -77,13 +77,18 @@ shinyUI(bootstrapPage(
   ), #conditionalPanel
   conditionalPanel(
     "$('li.active a').first().html()==='Confidence Intervals'",
+    radioButtons("stat", label=h5("Statistic"), c("Slope (β̂)"="slope", "ŷ"="yhat"), selected="slope"),
     radioButtons("ci", label = h5("Type of Interval"),
                  c("Percentile Confidence" = "perc", "Normal-Based Confidence" = "norm",
                    "Prediction Interval for ŷ" = "pred"), selected = "perc"),
+    numericInput("R", label="Number of bootstrap samples", value=1999),
     numericInput("level", 
                  label = h5("Confidence Level"), 
                  value = 0.95, min = 0.01, max = 0.99, step=0.01),
+    conditionalPanel(
+      condition="input.stat=='yhat'",
     numericInput("xval", "Value of X", value=0)
+    )
   )
     ), #sidebarPanel
   mainPanel(
@@ -94,7 +99,6 @@ shinyUI(bootstrapPage(
     tabPanel("Summaries",
              ggvisOutput("origPlot"),
              verbatimTextOutput("origSummary")
-#              tableOutput("test")
              ),
     tabPanel("Permutation Test",
              conditionalPanel(
@@ -117,35 +121,18 @@ shinyUI(bootstrapPage(
                h4("Slope"),
                h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("ciPrint"),
-               h6("Lower Bound"),
-               verbatimTextOutput("percLower"),
-               h6("Upper Bound"),
-               verbatimTextOutput("percUpper"),
-               h4("ŷ"),
-               h6("Two-Tailed Confidence Interval for ŷ"),
-               verbatimTextOutput("yhatCIPrint"),
-               h6("Lower Bound"),
-               verbatimTextOutput("yhatPercLower"),
-               h6("Upper Bound"),
-               verbatimTextOutput("yhatPercUpper")
+               h6("One-Tailed Confidence Intervals (Lower, Upper)"),
+               verbatimTextOutput("percOneTail"),
+               plotOutput("bootHist")
                
              ),
              conditionalPanel(
                condition = "input.ci == 'norm'",
                h4("Slope"),
-               h6("Two-Tailed Confidence Interval for Slope (Normal)"),
+               h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("normPrint"),
-               h6("Lower Bound"),
-               verbatimTextOutput("normLower"),
-               h6("Upper Bound"),
-               verbatimTextOutput("normUpper"),
-               h4("ŷ"),
-               h6("Two-Tailed Confidence Interval for ŷ"),
-               verbatimTextOutput("yhatNormPrint"),
-               h6("Lower Bound"),
-               verbatimTextOutput("yhatNormLower"),
-               h6("Upper Bound"),
-               verbatimTextOutput("yhatNormUpper")
+               h6("One-Tailed Confidence Intervals (Lower, Upper)"),
+               verbatimTextOutput("normOneTail")
              ),
              conditionalPanel(
                condition = "input.ci == 'pred'",
