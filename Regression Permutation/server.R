@@ -17,7 +17,7 @@ shinyServer(function(input, output, session) {
       )
     }
     else
-    data.frame(InkjetPrinters)
+    data.frame(mtcars)
   })
   
   shiny::observe({
@@ -29,7 +29,7 @@ shinyServer(function(input, output, session) {
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
-  output$contents <- renderDataTable({theData() %>%head})
+  output$contents <- renderDataTable(theData())
   observe({
     data <- theData()
     qvars <- colnames(data)[sapply(data,is.numeric)]
@@ -41,7 +41,7 @@ shinyServer(function(input, output, session) {
     data<-isolate(theData())
     if(input$x=="x" && input$y=="y"){
       if(is.null(data)){
-        data<-data.frame(x=0, y=0)
+        data<-data.frame(x = rep(0, 10), y = rep(0, 10))
       }
     }else{
       data <- data[,c(input$x,input$y)]
@@ -50,28 +50,23 @@ shinyServer(function(input, output, session) {
     data
   })
   
-lineData <- reactive({
-  slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
-  yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
-  max <- max(unclass(filteredData()$x))
-  ycor <- yint + slope*max
-  data.frame(x=c(0, max), y=c(yint, ycor))
-})
+# lineData <- reactive({
+#   slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
+#   yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
+#   max <- max(unclass(filteredData()$x))
+#   ycor <- yint + slope*max
+#   data.frame(x=c(0, max), y=c(yint, ycor))
+# })
 #   #This should also work 
 # output$test<- renderTable({
 #   lineData()
 # })
 
-  observe({
-    filteredData() %>%
-      ggvis(x=~x, y=~y) %>% 
-      layer_points() %>%
-      add_axis("x", title=input$x) %>%
-      add_axis("y", title=input$y) %>% 
-#       layer_model_predictions(model = "lm", stroke="lm") %>%
-      layer_paths(x=~x, y=~y, data=lineData())%>% #This works in console but not in Shiny
-      bind_shiny("origPlot")
-})
+filteredData %>%
+  ggvis(x=~x, y=~y) %>% 
+  layer_points() %>%
+  layer_model_predictions(model = 'lm') %>%
+  bind_shiny("origPlot")
 
 # output$origPlot <- renderPlot({
 #   qplot(x, y, data=filteredData())
