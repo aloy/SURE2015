@@ -23,6 +23,9 @@ shinyServer(function(input, output, session) {
   shiny::observe({
     toggle(id = "warning", condition = input$x==input$y)
   })
+  shiny::observe({
+    toggle(id = "warning2", condition = input$x==input$y)
+  })
   
   shinyjs::onclick("hideData",
                    shinyjs::toggle(id = "trials", anim = TRUE))
@@ -46,10 +49,11 @@ shinyServer(function(input, output, session) {
     }else{
       data <- data[,c(input$x,input$y)]
     }
-    colnames(data)<-c("x","y")
+    names(data)<-c("x","y")
     data
   })
   
+
 # lineData <- reactive({
 #   slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
 #   yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
@@ -68,6 +72,7 @@ filteredData %>%
   layer_model_predictions(model = 'lm') %>%
   bind_shiny("origPlot")
 
+
 # output$origPlot <- renderPlot({
 #   qplot(x, y, data=filteredData())
 # })
@@ -79,8 +84,8 @@ output$origSummary <- renderPrint({
   trials <- reactive({
     
     if(input$goButton > 0) {
-      perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[2,1]
-      colnames(perms) <- "perms"
+      perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[,1]
+      colnames(perms) <- c("yint", "perms")
       data.frame(perms)
     } else {
       data.frame(perms = rep(0, 10))
@@ -124,7 +129,11 @@ output$origSummary <- renderPrint({
     colnames(qqdata0) <- c("normal.quantiles", "diffs")
     data.frame(qqdata0)
   })
-  
+
+output$hisDen <- renderPlot({
+qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_density()
+})
+
   output$summary <- renderTable({
     favstats(trials()$perms)
   })
@@ -171,5 +180,6 @@ output$normUpper <- renderText({
   c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
   
 })
-  
+
+
 })
