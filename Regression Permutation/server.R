@@ -23,6 +23,9 @@ shinyServer(function(input, output, session) {
   shiny::observe({
     toggle(id = "warning", condition = input$x==input$y)
   })
+  shiny::observe({
+    toggle(id = "warning2", condition = input$x==input$y)
+  })
   
   shinyjs::onclick("hideData",
                    shinyjs::toggle(id = "trials", anim = TRUE))
@@ -46,21 +49,21 @@ shinyServer(function(input, output, session) {
     }else{
       data <- data[,c(input$x,input$y)]
     }
-    colnames(data)<-c("x","y")
+    names(data)<-c("x","y")
     data
   })
   
-lineData <- reactive({
-  slope <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
+lineData <- reactive({      #See below in ggvis observe
+  perms <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
   yint <- summary(lm(formula = y ~ x, data = filteredData()))$coefficients[1,1]
-  max <- max(unclass(filteredData()$x))
-  ycor <- yint + slope*max
+  max <- max(unclass(filteredData()$x)) 
+  ycor <- yint + perms*max
   data.frame(x=c(0, max), y=c(yint, ycor))
 })
-#   #This should also work 
-# output$test<- renderTable({
-#   lineData()
-# })
+  
+output$test<- renderTable({
+  lineData()
+})
 
   observe({
     filteredData() %>%
@@ -68,8 +71,9 @@ lineData <- reactive({
       layer_points() %>%
       add_axis("x", title=input$x) %>%
       add_axis("y", title=input$y) %>% 
-#       layer_model_predictions(model = "lm", stroke="lm") %>%
-      layer_paths(x=~x, y=~y, data=lineData())%>% #This works in console but not in Shiny
+#     layer_paths(x=~x, y=~y, data=lineData())%>% #This works in console but not in Shiny
+    #   layer_model_predictions(model="lm", formula=y~x) #This line is a potential substitute
+    # and also doesn't work
       bind_shiny("origPlot")
 })
 
@@ -84,8 +88,8 @@ output$origSummary <- renderPrint({
   trials <- reactive({
     
     if(input$goButton > 0) {
-      perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[2,1]
-      colnames(perms) <- "perms"
+      perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[,1]
+      colnames(perms) <- c("yint", "perms")
       data.frame(perms)
     } else {
       data.frame(perms = rep(0, 10))
@@ -129,7 +133,11 @@ output$origSummary <- renderPrint({
     colnames(qqdata0) <- c("normal.quantiles", "diffs")
     data.frame(qqdata0)
   })
-  
+
+output$hisDen <- renderPlot({
+qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_density()
+})
+
   output$summary <- renderTable({
     favstats(trials()$perms)
   })
@@ -176,5 +184,6 @@ output$normUpper <- renderText({
   c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
   
 })
-  
+
+
 })
