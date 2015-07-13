@@ -161,6 +161,15 @@ data.boot <- reactive({
   Boot(original.lm(), R=R, method="case")
 })
 
+# yhat.boot <- reactive({
+# yhat.fn <- function(filteredData(), index){
+#   yhat.resample <- yhat[index,]
+#   yhat.lm <- lm(y~x, data=yhat.resample)
+#   predict(yhat.lm, newdata=data.frame(x=input$xval))
+# }
+# boot(filteredData(), R=input$R, statistic=yhat)
+# 
+# })
 output$ciPrint <- renderPrint({
   ciPrint <- switch(input$stat,
   slope = confint(data.boot(), level=level(), type="perc")[2,]
@@ -177,6 +186,11 @@ output$percOneTail <- renderPrint({
 
 output$bootHist <- renderPlot({
   hist(data.boot(), col = "gray", level=level())
+})
+
+
+output$percBootHist <- renderPlot({
+  hist(data.boot(), col = "gray", level=level(), ci="percentile")
 })
 
 output$normPrint <- renderPrint({

@@ -79,8 +79,7 @@ shinyUI(bootstrapPage(
     "$('li.active a').first().html()==='Confidence Intervals'",
     radioButtons("stat", label=h5("Statistic"), c("Slope (β̂)"="slope", "ŷ"="yhat"), selected="slope"),
     radioButtons("ci", label = h5("Type of Interval"),
-                 c("Percentile Confidence" = "perc", "Normal-Based Confidence" = "norm",
-                   "Prediction Interval for ŷ" = "pred"), selected = "perc"),
+                 c("Percentile Confidence" = "perc", "Normal-Based Confidence" = "norm"), selected = "perc"),
     numericInput("R", label="Number of bootstrap samples", value=1999),
     numericInput("level", 
                  label = h5("Confidence Level"), 
@@ -123,7 +122,7 @@ shinyUI(bootstrapPage(
                verbatimTextOutput("ciPrint"),
                h6("One-Tailed Confidence Intervals (Lower, Upper)"),
                verbatimTextOutput("percOneTail"),
-               plotOutput("bootHist")
+               plotOutput("percBootHist")
                
              ),
              conditionalPanel(
@@ -132,14 +131,8 @@ shinyUI(bootstrapPage(
                h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("normPrint"),
                h6("One-Tailed Confidence Intervals (Lower, Upper)"),
-               verbatimTextOutput("normOneTail")
-             ),
-             conditionalPanel(
-               condition = "input.ci == 'pred'",
-               h6("Lower Bound"),
-               verbatimTextOutput("yhatPredLower"),
-               h6("Upper Bound"),
-               verbatimTextOutput("yhatPredUpper")
+               verbatimTextOutput("normOneTail"),
+               plotOutput("bootHist")
              )
     ) #tabPanel
       ) #tabsetPanel
