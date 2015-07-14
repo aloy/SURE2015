@@ -86,7 +86,7 @@ trials <- reactive({
   }
 })
 
-output$trials <- renderDataTable(trials() %>% head)
+output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
 
 output$pval <- renderText({
 n <- input$num

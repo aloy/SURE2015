@@ -74,7 +74,7 @@ output$origSummary <- renderPrint({
       data.frame(perms = rep(0, 10))
     }
   })
-  output$trials <- renderDataTable(trials() %>% head)
+  output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
   
   observe({
     if(input$reset > 0 ){
@@ -121,6 +121,22 @@ qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_densit
     favstats(trials()$perms)
   })
   
+output$pval <- renderText({
+  observedSlope <- summary(lm(y~x, data=filteredData()))$coefficients[2]
+  n <- input$num
+  if(input$goButton > 0) {
+    pvalSwitch <- switch(input$test, 
+                         tt = (sum(abs(trials()$perms) <= observedSlope) +1)/(n+1),
+                         lt = (sum(trials()$perms <= observedSlope) +1)/(n+1),
+                         ut = (sum(trials()$perms >= observedSlope) +1)/(n+1)
+    )
+    signif(pvalSwitch, 3)
+  }
+  else{
+    return(0)
+  }
+})
+
 #   observed <- reactive({
 #     summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
 #   })
@@ -175,6 +191,15 @@ data2<-data.frame(isolate(filteredData()))
 boot(data2, R=input$R, statistic=yhat.fn())
 })
 
+pred <- reactive({
+data2<-data.frame(isolate(filteredData()))
+  pred0.fn <- function(data2, index){
+    yhat.resample <- data2[index,]
+    lm(y~x, data=yhat.resample
+    )}
+pred0.fn(data2)
+})
+
 percPrintFunction <- function(list, double){
   c(paste(round(100*(double),digits=2),'%'), round(list$percent[4], digits=3),
     paste(round(100*(1-(double)),digits=2),'%'), round(list$percent[5], digits=3))
@@ -215,6 +240,14 @@ output$normOneTail <- renderText({
                         yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm")
   )
   normPrintFunction(normOneTail, alpha())
+})
+
+output$predInt <- renderPrint({
+predict(pred(), newdata=data.frame(x=input$xval), interval="predict", level=level())
+})
+
+output$predOneTail <- renderPrint({
+  predict(pred(), newdata=data.frame(x=input$xval), interval="predict", level=level()-alpha())
 })
 
 })
