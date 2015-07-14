@@ -141,17 +141,25 @@ alpha <- reactive({
 #   original.lm <- lm(y~x, data=filteredData())
 #   predict(original.lm, data.frame(x = input$xval))
 # })
-level <- reactive(
+level <- reactive({
   input$level
-)
+})
 
 observe({
 updateNumericInput(session, "xval", label=paste("Value of", input$x))
 })
 
+data.fn <- reactive({
+  function(data1, index){
+   slope.resample <- data1[index,]
+    slope.lm <- lm(y~x, data=slope.resample) 
+    slope.lm$coefficients[2]
+  }
+})
+
 data.boot <- reactive({
-  original.lm <- lm(y~x, data=filteredData())
-  Boot(original.lm, R=input$R, method="case")
+  data1<-data.frame(isolate(filteredData()))
+  boot(data1, R=input$R, statistic=data.fn())
 })
 
 yhat.fn <- reactive({
@@ -167,45 +175,46 @@ data2<-data.frame(isolate(filteredData()))
 boot(data2, R=input$R, statistic=yhat.fn())
 })
 
-output$ciPrint <- renderPrint({
+percPrintFunction <- function(list, double){
+  c(paste(round(100*(double),digits=2),'%'), round(list$percent[4], digits=3),
+    paste(round(100*(1-(double)),digits=2),'%'), round(list$percent[5], digits=3))
+}
+
+normPrintFunction <- function(list, double){
+  c(paste(round(100*(double),digits=2),'%'), round(list$normal[2], digits=3),
+    paste(round(100*(1-(double)),digits=2),'%'), round(list$normal[3], digits=3))
+}
+
+output$ciPrint <- renderText({
   ciPrint <- switch(input$stat,
-  slope = confint(data.boot(), level=level(), type="perc")[2,],
-  yhat =  confint(yhat.boot(), level=level(), type="perc")[1,]
+  slope = boot.ci(data.boot(), conf=level(), type="perc"),
+  yhat =  boot.ci(yhat.boot(), conf=level(), type="perc")
   )
-  ciPrint
+  percPrintFunction(ciPrint, alpha()/2)
 })
 
-output$percOneTail <- renderPrint({
+output$percOneTail <- renderText({
   percOneTail <- switch(input$stat,
-                    slope =confint(data.boot(), level=level()-alpha(),type="perc")[2,],
-                      yhat =  confint(yhat.boot(), level=level()-alpha(), type="perc")[1,]
+                    slope =boot.ci(data.boot(), conf=level()-alpha(),type="perc"),
+                      yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
   )
-  percOneTail
+  percPrintFunction(percOneTail, alpha())
 })
 
-output$bootHist <- renderPlot({
-  hist(data.boot(), col = "gray", level=level())
-})
-
-
-output$percBootHist <- renderPlot({
-  hist(data.boot(), col = "gray", level=level(), ci="percentile")
-})
-
-output$normPrint <- renderPrint({
+output$normPrint <- renderText({
   normPrint <- switch(input$stat,
-                    slope = confint(data.boot(), level=level(), type="norm")[2,],
-                    yhat =  confint(yhat.boot(), level=level(), type="norm")[1,]
+                    slope = boot.ci(data.boot(), conf=level(), type="norm"),
+                    yhat =  boot.ci(yhat.boot(), conf=level(), type="norm")
   )
-  normPrint
+  normPrintFunction(normPrint, alpha()/2)
 })
 
-output$normOneTail <- renderPrint({
+output$normOneTail <- renderText({
   normOneTail <- switch(input$stat,
-                        slope =confint(data.boot(), level=level()-alpha(),type="norm")[2,],
-                        yhat =  confint(yhat.boot(), level=level()-alpha(), type="norm")[1,]
+                        slope =boot.ci(data.boot(), conf=level()-alpha(),type="norm"),
+                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm")
   )
-  normOneTail
+  normPrintFunction(normOneTail, alpha())
 })
 
 })

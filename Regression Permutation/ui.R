@@ -121,9 +121,7 @@ shinyUI(bootstrapPage(
                h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("ciPrint"),
                h6("One-Tailed Confidence Intervals (Lower, Upper)"),
-               verbatimTextOutput("percOneTail"),
-               tableOutput("percBootHist")
-               
+               verbatimTextOutput("percOneTail")          
              ),
              conditionalPanel(
                condition = "input.ci == 'norm'",
@@ -131,8 +129,7 @@ shinyUI(bootstrapPage(
                h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("normPrint"),
                h6("One-Tailed Confidence Intervals (Lower, Upper)"),
-               verbatimTextOutput("normOneTail"),
-               plotOutput("bootHist")
+               verbatimTextOutput("normOneTail")
              )
     ) #tabPanel
       ) #tabsetPanel
