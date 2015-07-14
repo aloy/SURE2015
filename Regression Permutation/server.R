@@ -33,7 +33,7 @@ shinyServer(function(input, output, session) {
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
-  output$contents <- renderDataTable(theData())
+  output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
   observe({
     data <- theData()
     qvars <- colnames(data)[sapply(data,is.numeric)]
@@ -124,9 +124,6 @@ qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_densit
 #   observed <- reactive({
 #     summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
 #   })
-#   level <- reactive({
-#   input$level
-# })
 
 alpha <- reactive({
   1 - level()
@@ -153,7 +150,8 @@ updateNumericInput(session, "xval", label=paste("Value of", input$x))
 })
 
 data.boot <- reactive({
-  Boot(lm(y~x, data=filteredData()), R=input$R, method="case")
+  original.lm <- lm(y~x, data=filteredData())
+  Boot(original.lm, R=input$R, method="case")
 })
 
 yhat.fn <- reactive({
@@ -171,7 +169,7 @@ boot(data2, R=input$R, statistic=yhat.fn())
 
 output$ciPrint <- renderPrint({
   ciPrint <- switch(input$stat,
-#   slope = confint(data.boot(), level=level(), type="perc")[2,],
+  slope = confint(data.boot(), level=level(), type="perc")[2,],
   yhat =  confint(yhat.boot(), level=level(), type="perc")[1,]
   )
   ciPrint
@@ -179,7 +177,7 @@ output$ciPrint <- renderPrint({
 
 output$percOneTail <- renderPrint({
   percOneTail <- switch(input$stat,
-#                     slope =confint(data.boot(), level=level()-alpha(),type="perc")[2,],
+                    slope =confint(data.boot(), level=level()-alpha(),type="perc")[2,],
                       yhat =  confint(yhat.boot(), level=level()-alpha(), type="perc")[1,]
   )
   percOneTail
@@ -196,7 +194,7 @@ output$percBootHist <- renderPlot({
 
 output$normPrint <- renderPrint({
   normPrint <- switch(input$stat,
-#                     slope = confint(data.boot(), level=level(), type="norm")[2,],
+                    slope = confint(data.boot(), level=level(), type="norm")[2,],
                     yhat =  confint(yhat.boot(), level=level(), type="norm")[1,]
   )
   normPrint
@@ -204,7 +202,7 @@ output$normPrint <- renderPrint({
 
 output$normOneTail <- renderPrint({
   normOneTail <- switch(input$stat,
-#                         slope =confint(data.boot(), level=level()-alpha(),type="norm")[2,],
+                        slope =confint(data.boot(), level=level()-alpha(),type="norm")[2,],
                         yhat =  confint(yhat.boot(), level=level()-alpha(), type="norm")[1,]
   )
   normOneTail

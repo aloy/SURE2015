@@ -7,7 +7,7 @@ library(dplyr)
 library(Lock5Data)
 data("CaffeineTaps")
 
-filedata <- reactive({
+theData <- reactive({
   if(input$chooseData=="uploadYes"){
     inFile1 <- input$file1
     if (is.null(inFile1))
@@ -20,7 +20,7 @@ filedata <- reactive({
     data.frame(CaffeineTaps)
 })
 
-output$contents <- renderDataTable(filedata()%>%head)
+output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
 
 shinyjs::onclick("hideData",
                  shinyjs::toggle(id = "trials", anim = TRUE))
@@ -28,7 +28,7 @@ shinyjs::onclick("hideDataOptions",
                  shinyjs::toggle(id = "dataOptions", anim = TRUE))
 
 observe({
-  data <- filedata()
+  data <- theData()
   cvars <- colnames(data)[sapply(data,is.factor)]
   qvars <- colnames(data)[sapply(data,is.numeric)]
   updateSelectInput(session, 'group', choices = cvars)
@@ -37,7 +37,7 @@ observe({
 
 
 filteredData<-reactive({
-  data<-isolate(filedata())
+  data<-isolate(theData())
   #if there is no input, make a dummy dataframe
   if(input$group=="group" && input$response=="response"){
     if(is.null(data)){

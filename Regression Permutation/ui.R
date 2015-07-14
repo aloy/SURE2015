@@ -122,7 +122,7 @@ shinyUI(bootstrapPage(
                verbatimTextOutput("ciPrint"),
                h6("One-Tailed Confidence Intervals (Lower, Upper)"),
                verbatimTextOutput("percOneTail"),
-               plotOutput("percBootHist")
+               tableOutput("percBootHist")
                
              ),
              conditionalPanel(
