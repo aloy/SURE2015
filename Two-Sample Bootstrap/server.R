@@ -80,34 +80,34 @@ trials <- reactive({
   
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){
-      perms <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
-      colnames(perms) <- "perms"
+      result <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
+      colnames(result) <- "result"
     }
     if(input$stat=="bootMedian"){
-      perms <- do(input$num) * diff(median(response ~ shuffle(group), data = filteredData()))
-      colnames(perms) <- "perms"
+      result <- do(input$num) * diff(median(response ~ shuffle(group), data = filteredData()))
+      colnames(result) <- "result"
     }
     if(input$stat=="bootMeanRatio"){
-      perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      df <- ddply(perms0, .(.index, group), summarise, mean=mean(response))
-      perms <- ddply(df, .(.index), summarise, mean.ratio=mean[1]/mean[2])
-      names(perms) <- c("index", "perms")
+      result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      df <- ddply(result0, .(.index, group), summarise, mean=mean(response))
+      result <- ddply(df, .(.index), summarise, mean.ratio=mean[1]/mean[2])
+      names(result) <- c("index", "result")
     }
     if(input$stat=="bootMedRatio"){
-      perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      df <- ddply(perms0, .(.index, group), summarise, median=median(response))
-      perms <- ddply(df, .(.index), summarise, median.ratio=median[1]/median[2])
-      names(perms) <- c("index", "perms")
+      result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      df <- ddply(result0, .(.index, group), summarise, median=median(response))
+      result <- ddply(df, .(.index), summarise, median.ratio=median[1]/median[2])
+      names(result) <- c("index", "result")
     }
     if(input$stat=="bootSdRatio"){
-      perms0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      df <- ddply(perms0, .(.index, group), summarise, sd=sd(response))
-      perms <- ddply(df, .(.index), summarise, sd=sd[1]/sd[2])
-      names(perms) <- c("index", "perms")
+      result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      df <- ddply(result0, .(.index, group), summarise, sd=sd(response))
+      result <- ddply(df, .(.index), summarise, sd=sd[1]/sd[2])
+      names(result) <- c("index", "result")
     }
-    data.frame(perms)
+    data.frame(result)
   } else {
-    data.frame(perms = rep(0, 10))
+    data.frame(result = rep(0, 10))
   }
 })
 
@@ -115,18 +115,18 @@ output$trials <- renderDataTable(trials() %>% head)
 
 observe({
     if(input$reset > 0 ){
-      trials <- data.frame(perms=rep(0, 10))
-      output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+      trials <- data.frame(result=rep(0, 10))
+      output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
     }
   if(input$plot2=="his2"){
     trials %>%
-      ggvis(~perms) %>%
+      ggvis(~result) %>%
       layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.2)) %>%
       bind_shiny("bootHist", "bootHist_ui")
   }
   if(input$plot2=="den2"){
     trials %>%
-      ggvis(~perms) %>%
+      ggvis(~result) %>%
       layer_densities() %>%
       add_axis("y", title="Density") %>%
       bind_shiny("bootHist", "bootHist_ui")
@@ -144,8 +144,8 @@ observe({
 qqdata2 <- reactive({
   n <- input$num
   probabilities <- (1:n)/(1+n)
-  normal.quantiles <- qnorm(probabilities, mean(trials()$perms, na.rm = T), sd(trials()$perms, na.rm = T))
-  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$perms))
+  normal.quantiles <- qnorm(probabilities, mean(trials()$result, na.rm = T), sd(trials()$result, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$result))
   colnames(qqdata1) <- c("normal.quantiles", "diffs")
   data.frame(qqdata1)
 })
@@ -162,20 +162,20 @@ observed <- reactive({
 })
 
 output$hisDenPlot2 <- renderPlot ({
-  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+  qplot(result, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
     output$bootSummary <- renderPrint({ 
-      round(mean(trials()$perms), digits=3)
+      round(mean(trials()$result), digits=3)
       })
 
 
 output$bootBias <- renderPrint({
-  signif(observed()$stat-mean(trials()$perms), digits=3)
+  signif(observed()$stat-mean(trials()$result), digits=3)
  })
 
 output$bootSd <- renderPrint({
-  signif(sd(trials()$perms), digits=3)
+  signif(sd(trials()$result), digits=3)
 })
 
 level <- reactive(
@@ -187,24 +187,24 @@ alpha <- reactive(
 )
 
 SE <- reactive (
-  sd(trials()$perms)
+  sd(trials()$result)
 )
 
 output$ciPrint <- renderPrint({
-  round(quantile(trials()$perms, 
+  round(quantile(trials()$result, 
            probs=c(alpha()/2, 1-alpha()/2)), digits=3)
 })
 
 output$percLower <- renderPrint({
-  round(quantile(trials()$perms, probs = c(alpha())), digits=3)
+  round(quantile(trials()$result, probs = c(alpha())), digits=3)
 })
 
 output$percUpper <- renderPrint({
-  round(quantile(trials()$perms, probs = c(1-alpha())), digits=3)
+  round(quantile(trials()$result, probs = c(1-alpha())), digits=3)
 })
 
 output$normPrint <- renderText({
-  c(round(mean(trials()$perms) - qnorm(1-alpha()/2)*SE(), digits=3),
+  c(round(mean(trials()$result) - qnorm(1-alpha()/2)*SE(), digits=3),
      round(observed()$stat + qnorm(1-(alpha()/2)) * SE(), digits=3))
 })
 

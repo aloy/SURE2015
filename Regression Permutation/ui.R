@@ -9,12 +9,13 @@ shinyUI(bootstrapPage(
     sidebarPanel(
       conditionalPanel(
         "$('li.active a').first().html()==='Input'",
-      radioButtons("chooseData", label=h5("Choose data set"),
+      radioButtons("chooseData", label=h4("Choose data set"),
                    c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
                    selected = "uploadNo"),
       conditionalPanel(
         condition= "input.chooseData=='uploadYes'",
         tags$div(id="dataOptions",
+                 h4("Data Set Options"),
                  fileInput('file1', 'Choose a file to upload.',
                            accept = c(
                              'text/csv',
@@ -25,7 +26,6 @@ shinyUI(bootstrapPage(
                              '.tsv'
                            )
                  ),
-                 h5("Data Set Options"),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
                               c(Comma=',',
@@ -43,27 +43,24 @@ shinyUI(bootstrapPage(
  ), #conditionalPanel
  conditionalPanel(
    "$('li.active a').first().html()==='Summaries'",
-   selectInput('x', 'Variable 1:','x'),
-   selectInput('y', 'Variable 2:', 'y'),
+   selectInput('x', label=h4('Variable 1'),'x'),
+   selectInput('y', label=h4('Variable 2'), 'y'),
    hidden(
      shiny::p(id = "warning", strong("Make sure you select different variables!"),  style = "color:red")
    )
    ),
   conditionalPanel(
     "$('li.active a').first().html()==='Permutation Test'",
-    h3("Resampling Control Panel"),
+    radioButtons("test", label=h4("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
+                 selected="tt"),
+    numericInput("num", 
+                 label = h4("Permutation Resamples"), 
+                 value = 1000, min = 1, max = 10000),
+    actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
     radioButtons("plot", label=h4("Plotting"), c("Histogram"="his", "Density"="den", 
                 "Histogram and Kernel Density" = "hisDen","Q-Q Plot" = "qq"),
                  selected="his"),
-  numericInput("num", 
-               label = h5("Permutation Samples"), 
-               value = 1000, min = 1, max = 10000),
-  hidden(
-    shiny::p(id = "warning2", strong("Make sure you select different variables on the Summaries tab!"),  
-             style = "color:red")
-  ),
-  actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
-  h5("Histogram Bin Width"),
+  h4("Histogram Bin Width"),
   conditionalPanel(
     condition="input.plot=='hisDen'",
     sliderInput("w", 
@@ -74,22 +71,24 @@ shinyUI(bootstrapPage(
     condition="input.plot != 'hisDen'",
     uiOutput("hist_ui")
   ),
-  radioButtons("test", label=h5("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
-               selected="tt")
+  hidden(
+    shiny::p(id = "warning2", strong("Make sure you select different variables on the Summaries tab!"),  
+             style = "color:red")
+  )
   ), #conditionalPanel
   conditionalPanel(
     "$('li.active a').first().html()==='Confidence Intervals'",
-    radioButtons("stat", label=h5("Statistic"), c("Slope (β̂)"="slope", "ŷ"="yhat"), selected="slope"),
-    radioButtons("ci", label = h5("Type of Interval"),
+    radioButtons("stat", label=h4("Statistic"), c("Slope (β̂)"="slope", "ŷ"="yhat"), selected="slope"),
+    radioButtons("ci", label = h4("Type of Interval"),
                  c("Percentile Confidence" = "perc", "Normal-Based Confidence" = "norm",
                    "Prediction Interval for ŷ" = "ypred"), selected = "perc"),
-    numericInput("R", label="Number of bootstrap samples", value=1999),
+    numericInput("R", label=h4("Bootstrap Samples"), value=1999),
     numericInput("level", 
-                 label = h5("Confidence Level"), 
+                 label = h4("Confidence Level"), 
                  value = 0.95, min = 0.01, max = 0.99, step=0.01),
     conditionalPanel(
       condition="input.stat=='yhat'",
-    numericInput("xval", "Value of X", value=0)
+    numericInput("xval", label="Value of X", value=0)
     )
   )
     ), #sidebarPanel

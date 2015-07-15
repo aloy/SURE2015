@@ -98,20 +98,20 @@ trials <- reactive({
   
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){
-    perms <- do(input$num) * mean(~ response, data = sample(filteredData(), replace = TRUE))
+    result <- do(input$num) * mean(~ response, data = sample(filteredData(), replace = TRUE))
     }
     if(input$stat=="bootMedian"){
-    perms <- do(input$num) * median(~ response, data = sample(filteredData(), replace = TRUE))
+    result <- do(input$num) * median(~ response, data = sample(filteredData(), replace = TRUE))
     }
     if(input$stat=="bootSd"){
-    perms <- do(input$num) * sd(~ response, data = sample(filteredData(), replace = TRUE))
+    result <- do(input$num) * sd(~ response, data = sample(filteredData(), replace = TRUE))
     }
-    names(perms) <- "perms"
-    data.frame(perms)
+    names(result) <- "result"
+    data.frame(result)
 
   }
 else {
-    data.frame(perms = rep(0, 10))
+    data.frame(result = rep(0, 10))
   }  
 })
 
@@ -120,17 +120,17 @@ output$trials <- renderDataTable(trials() %>% head)
 
 observe({
   if(input$reset > 0 ){
-    trials <- data.frame(perms=rep(0, 10))
-    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+    trials <- data.frame(result=rep(0, 10))
+    output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
   }
   if(input$plot2=="his2"){
     trials %>%
-           ggvis(~perms) %>%
+           ggvis(~result) %>%
            layer_histograms(width = input_slider(0.01, 0.1, step=0.01, value=0.06)) %>%
            bind_shiny("bootHist", "bootHist_ui")}
   if(input$plot2=="den2"){
     trials %>%
-           ggvis(~perms) %>%
+           ggvis(~result) %>%
            layer_densities() %>%
            add_axis("y", title="Density") %>%
            bind_shiny("bootHist", "bootHist_ui")}
@@ -146,18 +146,18 @@ observe({
 qqdata2 <- reactive({
   n <- input$num
   probabilities <- (1:n)/(1+n)
-  normal.quantiles <- qnorm(probabilities, mean(trials()$perms, na.rm = T), sd(trials()$perms, na.rm = T))
-  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$perms))
+  normal.quantiles <- qnorm(probabilities, mean(trials()$result, na.rm = T), sd(trials()$result, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$result))
   colnames(qqdata1) <- c("normal.quantiles", "diffs")
   data.frame(qqdata1)
 })
 
 output$hisDenPlot2 <- renderPlot ({
-  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+  qplot(result, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
 })
 
 output$bootMean <- renderText({
-round(mean(trials()$perms), digits=3)
+round(mean(trials()$result), digits=3)
 })
 
 observed <- reactive({
@@ -170,15 +170,15 @@ observed <- reactive({
 
   output$bootBias <- renderText({
     biasStat <- switch(input$stat,
-           bootMean = observed()-mean(trials()$perms),
-           bootMedian= observed()-median(trials()$perms),
-           bootSd=observed()-sd(trials()$perms)
+           bootMean = observed()-mean(trials()$result),
+           bootMedian= observed()-median(trials()$result),
+           bootSd=observed()-sd(trials()$result)
            )
    signif(biasStat, digits=3)
   })
   
   output$bootSd <- renderText({
-    signif(sd(trials()$perms), digits=3)
+    signif(sd(trials()$result), digits=3)
   })
   
   level <- reactive({
@@ -190,19 +190,19 @@ observed <- reactive({
   })
   
   SE <- reactive({
-    sd(trials()$perms)
+    sd(trials()$result)
   })
 
   output$percPrint <- renderText({
-    round(quantile(trials()$perms, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
+    round(quantile(trials()$result, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
   })
   
   output$percLower <- renderText({
-    c(paste(100*alpha(),'%'), round(quantile(trials()$perms, probs = c(alpha())), digits=3))
+    c(paste(100*alpha(),'%'), round(quantile(trials()$result, probs = c(alpha())), digits=3))
   })
   
   output$percUpper <- renderText({
-    c(paste(100*level(),'%'), round(quantile(trials()$perms, probs = c(1-alpha())),digits=3))
+    c(paste(100*level(),'%'), round(quantile(trials()$result, probs = c(1-alpha())),digits=3))
   })
 
 output$normPrint <- renderText({

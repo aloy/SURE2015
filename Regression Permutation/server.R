@@ -114,7 +114,11 @@ output$origSummary <- renderPrint({
   })
 
 output$hisDen <- renderPlot({
-qplot(data=trials(), x=perms, binwidth=input$w) + aes(y=..density..)+geom_density()
+qplot(data=trials(), x=perms, binwidth=input$w) + geom_histogram(colour="grey") + 
+  aes(y=..density..)+geom_density() + theme(panel.grid.minor = element_line(colour = "grey"),
+                                            panel.background = element_rect(fill = "white"),
+                                            axis.line = element_line(colour="black"),
+                                            axis.text = element_text(colour = "black"))
 })
 
   output$summary <- renderTable({
@@ -126,9 +130,10 @@ output$pval <- renderText({
   n <- input$num
   if(input$goButton > 0) {
     pvalSwitch <- switch(input$test, 
-                         tt = (sum(abs(trials()$perms) <= observedSlope) +1)/(n+1),
+                         tt = min((sum(trials()$perms>=observedSlope)+1)/(n+1),
+                                  (sum(trials()$perms<=observedSlope)+1)/(n+1))*2,
                          lt = (sum(trials()$perms <= observedSlope) +1)/(n+1),
-                         ut = (sum(trials()$perms >= observedSlope) +1)/(n+1)
+                         ut = (sum(trials()$perms>=observedSlope)+1)/(n+1)
     )
     signif(pvalSwitch, 3)
   }
@@ -137,26 +142,11 @@ output$pval <- renderText({
   }
 })
 
-#   observed <- reactive({
-#     summary(lm(formula = y ~ x, data = filteredData()))$coefficients[2,1]
-#   })
+
 
 alpha <- reactive({
   1 - level()
-})
-# 
-# SE <- reactive (
-#   sd(trials()$perms)
-# )
-
-# 
-# SE2 <- reactive ({
-#   sd(yhatDF())
-# })
-# observed2 <- reactive({
-#   original.lm <- lm(y~x, data=filteredData())
-#   predict(original.lm, data.frame(x = input$xval))
-# })
+}) 
 level <- reactive({
   input$level
 })

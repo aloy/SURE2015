@@ -91,12 +91,13 @@ output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
 output$pval <- renderText({
 n <- input$num
 if(input$goButton > 0) {
-pvalSwitch <- switch(input$test, 
-                  tt = (sum(abs(trials()$perms) <= observedDiff()) +1)/(n+1),
-                  lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
-                  ut = (sum(trials()$perms >= observedDiff()) +1)/(n+1)
-)
-signif(pvalSwitch, 3)
+  pvalSwitch <- switch(input$test, 
+                       tt = min((sum(trials()$perms>=observedDiff())+1)/(n+1),
+                                (sum(trials()$perms<=observedDiff())+1)/(n+1))*2,
+                       lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
+                       ut = (sum(trials()$perms>=observedDiff())+1)/(n+1)
+  )
+signif(pvalSwitch, 4)
 }
 else{
   return(0)
@@ -140,16 +141,8 @@ observe({
   }
 })
 
-output$summary2 <- renderText({
-  round(mean(trials()$perms), 3)
-})
-
-output$bootBias <- renderText({
-  signif(mean(trials()$perms)-mean(observedDiff()), 3)
-})
-
-output$bootSd <- renderText({
-  signif(sd(trials()$perms), 3)
+output$summary2 <- renderTable({
+  favstats(~perms, data=trials())  
 })
 
 output$hisDenPlot <- renderPlot ({

@@ -8,12 +8,13 @@ shinyUI(fluidPage(
     sidebarPanel(
       conditionalPanel(
         "$('li.active a').first().html()==='Input'",
-      radioButtons("chooseData", label=h5("Choose data set"),
+      radioButtons("chooseData", label=h4("Choose data set"),
                    c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
                    selected = "uploadNo"),
       conditionalPanel(
         condition= "input.chooseData=='uploadYes'",
         tags$div(id="dataOptions",
+                 h4("Data Set Options"),
                  fileInput('file1', 'Choose a file to upload.',
                            accept = c(
                              'text/csv',
@@ -24,7 +25,6 @@ shinyUI(fluidPage(
                              '.tsv'
                            )
                  ),
-                 h5("Data Set Options"),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
                               c(Comma=',',
@@ -39,16 +39,15 @@ shinyUI(fluidPage(
         ),
         actionButton("hideDataOptions", "Show/hide data set options")
       ),
-      selectInput('response', 'Response variable:', 'response')
+      selectInput('response', label=h4('Response variable'), 'response')
       ),
         conditionalPanel(
           "$('li.active a').first().html()==='Summaries'",
-          h3("Control Panel"),
         radioButtons("plot", label=h4("Plotting"),
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                        "Q-Q Plot" = "qq"), 
                      selected="his"),
-        h5("Histogram Bin Width"),
+        h4("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot=='hisDen'",
           sliderInput("w", 
@@ -62,12 +61,18 @@ shinyUI(fluidPage(
         ),
         conditionalPanel(
         "$('li.active a').first().html()==='Bootstrap'",
-        h3("Control Panel"),
+        numericInput("num", 
+                     label = h4("Number of Bootstraps"), 
+                     value = 1000, min = 1, max = 100000),
+        radioButtons("stat", label = h4("Bootstrap Statistic"),
+                     c("Mean" = "bootMean", "Median" = "bootMedian", 
+                       "Standard Deviation" = "bootSd"), selected = "bootMean"),
+        actionButton("goButton", "Bootstrap!"), actionButton("reset", "Reset"),
         radioButtons("plot2", label=h4("Plotting"),
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                        "Q-Q Plot" = "qq2"), 
                      selected="his2"),
-        h5("Histogram Bin Width"),
+        h4("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
           sliderInput("w2", 
@@ -77,22 +82,14 @@ shinyUI(fluidPage(
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",
           uiOutput("bootHist_ui")
-        ),
-        h4("Resampling"),
-        numericInput("num", 
-                     label = h5("Number of Bootstraps"), 
-                     value = 1000, min = 1, max = 100000),
-        radioButtons("stat", label = h5("Bootstrap Statistic"),
-                     c("Mean" = "bootMean", "Median" = "bootMedian", 
-                       "Standard Deviation" = "bootSd"), selected = "bootMean"),
-        actionButton("goButton", "Permute!"), actionButton("reset", "Reset")
+        )
         ),
         conditionalPanel(
           "$('li.active a').first().html()==='Confidence Intervals'",
-        radioButtons("ci", label = h5("Confidence Interval"),
+        radioButtons("ci", label = h4("Confidence Interval"),
                      c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
         numericInput("level", 
-                     label = h5("Confidence Level"), 
+                     label = h4("Confidence Level"), 
                      value = 0.95, min = 0.01, max = 0.99, step=0.01)
         )
     ), #sidebarPanel
@@ -102,7 +99,7 @@ shinyUI(fluidPage(
                            dataTableOutput("contents")
                   ),
                       tabPanel("Summaries",
-                                  wellPanel(h3("Original Sample"),
+                                  
                                             conditionalPanel(
                                               condition="input.plot=='hisDen'",
                                               plotOutput("hisDenPlot")
@@ -116,10 +113,9 @@ shinyUI(fluidPage(
                                             tableOutput("summary"),
                                             h6("Standard Deviation"),
                                             verbatimTextOutput("sd")
-                                            )
+                                            
                            ),
                   tabPanel("Bootstrap",
-                                  wellPanel(h3("Bootstrap Samples"),
                                             conditionalPanel(
                                               condition="input.plot2=='hisDen2'",
                                               plotOutput("hisDenPlot2")
@@ -139,7 +135,7 @@ shinyUI(fluidPage(
                                             dataTableOutput("trials")
                                             ),
                                             actionButton("hideData", "Show/hide data")
-                                  ) #wellPanel
+                                 
                   ),
                   tabPanel("Confidence Intervals",
                            conditionalPanel(
