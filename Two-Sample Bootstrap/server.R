@@ -58,10 +58,13 @@ filteredData<-reactive({
 #   df
 # })
 # 
-# grouped_df() %>%
+# observe({
+#   grouped_df %>%
 #   ggvis(~group1.response) %>% 
 #   layer_histograms() %>%
 #   bind_shiny("group1Hist")
+# })
+
 
 output$origHist <- renderPlot({
   dataPlot <-switch(input$plot,

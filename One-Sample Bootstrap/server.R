@@ -95,6 +95,17 @@ output$hisDenPlot <- renderPlot ({
   panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
+observe({
+  range <- diff(range(filteredData()))
+  updateSliderInput(session, 'w', min=round(range/100, digits=2), max=round(range/8, digits=2), value=round(range/10, digits=2), step=round(range/100, digits=2))
+})
+
+observe({
+  range2 <- diff(range(trials()))
+  updateSliderInput(session, 'w2', min=signif(range2/100, digits=2), max=signif(range2/2, digits=2), value=signif(range2/10, digits=2), 
+                    step=signif(range2/100, digits=2))
+})
+
 trials <- reactive({
   
   if(input$goButton > 0) {
@@ -117,7 +128,7 @@ else {
 })
 
 
-output$trials <- renderDataTable(trials() %>% head)
+output$trials <-  renderDataTable(trials(), options = list(pageLength = 10))
 
 observe({
   if(input$reset > 0 ){
