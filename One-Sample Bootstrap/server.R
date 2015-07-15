@@ -90,8 +90,9 @@ output$summary <- renderTable({
   })
 
 output$hisDenPlot <- renderPlot ({
-  qplot(response, data=filteredData(), xlab=input$choose, 
-  ylab = "Density", binwidth=input$w) + aes(y=..density..) + geom_density()
+  ggplot(data=filteredData(), aes(x=response)) + geom_histogram(colour="black", fill="grey19", 
+   binwidth=input$w, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
+  panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
 trials <- reactive({
@@ -153,7 +154,9 @@ qqdata2 <- reactive({
 })
 
 output$hisDenPlot2 <- renderPlot ({
-  qplot(result, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+  ggplot(data=trials(), aes(x=result)) + geom_histogram(colour="black", fill="grey19", 
+  binwidth=input$w2, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
+ panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
 output$bootMean <- renderText({

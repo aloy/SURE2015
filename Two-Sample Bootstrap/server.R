@@ -51,18 +51,29 @@ filteredData<-reactive({
   data
 })
 
+# grouped_df <- reactive({
+#   df0 <- split(filteredData(), filteredData()$group)
+#   df <- data.frame(df0)
+#   names(df) <- c("group1", "group1.response","group2", "group2.response")
+#   df
+# })
+# 
+# grouped_df() %>%
+#   ggvis(~group1.response) %>% 
+#   layer_histograms() %>%
+#   bind_shiny("group1Hist")
+
 output$origHist <- renderPlot({
   dataPlot <-switch(input$plot,
-                    his = qplot(data=filteredData(), x=response, facets=group~., binwidth=input$w, 
-                                 main="Original Sample"),
+                    his = qplot(data=filteredData(), x=response, binwidth=input$w, main="Original Sample")
+                    +  facet_grid(group~.),
                     den = qplot(data=filteredData(), x=response, facets=group~., geom="density"),
                     qq = qplot(sample=response, data=filteredData(), facets=group~.),
                     hisDen = qplot(data=filteredData(), x=response, facets=group~., 
-                                   binwidth=input$w) + aes(y=..density..)+geom_density()
+                                   binwidth=input$w) + aes(y=..density..)+geom_density(colour="blue")
   )
   dataPlot
 })
-
 
 output$basicSummary <- renderTable({
   favstats(~response|group, data=filteredData())  
@@ -162,7 +173,9 @@ observed <- reactive({
 })
 
 output$hisDenPlot2 <- renderPlot ({
-  qplot(result, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+  ggplot(data=trials(), aes(x=result)) + geom_histogram(colour="black", fill="grey19",
+ binwidth=input$w2, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
+panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
     output$bootSummary <- renderPrint({ 

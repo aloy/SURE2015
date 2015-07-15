@@ -57,7 +57,7 @@ output$origHist <- renderPlot({
                     den = qplot(data=filteredData(), x=response, facets=group~., geom="density"),
                     qq = qplot(sample=response, data=filteredData(), facets=group~.),
                     hisDen = qplot(data=filteredData(), x=response, facets=group~., binwidth=input$w) 
-                    + aes(y=..density..)+geom_density()
+                    + aes(y=..density..)+geom_density(colour="blue")
   )
   dataPlot
 })
@@ -146,7 +146,9 @@ output$summary2 <- renderTable({
 })
 
 output$hisDenPlot <- renderPlot ({
-  qplot(perms, data=trials(), ylab = "Density", binwidth=input$w2) + aes(y=..density..) + geom_density()
+  ggplot(data=trials(), aes(x=perms)) + geom_histogram(colour="black", fill="grey19", 
+  binwidth=input$w2, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
+   panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
 
