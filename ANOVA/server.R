@@ -25,6 +25,7 @@ shinyServer(function(input,output, session){
   
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
+
   
   observe({
     data <- theData()
@@ -49,26 +50,53 @@ shinyServer(function(input,output, session){
   })
   
   observe({
+   if(input$plot=="box"){
    filteredData() %>%
     ggvis(x=~group, y=~response) %>%
     layer_boxplots() %>%
+     layer_points() %>%
     bind_shiny("origBox")
+   }
+   if(input$plot=="qq"){
+   qqdata %>% 
+     ggvis(~normal.quantiles, ~diffs) %>% 
+     layer_points() %>% 
+     add_axis("x", title="Theoretical") %>%
+     add_axis("y", title="Sample") %>%
+     bind_shiny("origBox")
+   }
 })
 
 output$origPlot <- renderPlot({
 plotType <- switch(input$plot,
   his =                 
-    ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19") +
+    ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w) +
     facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"),
     axis.line = element_line(colour="black"), axis.text = element_text(colour = "black")),
   hisDen = 
-    ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", aes(y=..density..)) +
+    ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +
     geom_density(colour="blue") + facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"),
    panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
    axis.text = element_text(colour = "black"))
 )
 plotType
-  
+})
+
+qqdata <- reactive({
+  n <- nrow(filteredData())
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(filteredData()$response, na.rm = T), 
+                            sd(filteredData()$response, na.rm = T))
+  qqdata0 <- data.frame(sort(normal.quantiles), sort(filteredData()$response))
+  colnames(qqdata0) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata0)
+})
+
+
+observe({
+  range <- diff(range(filteredData()$response))
+  updateSliderInput(session, "w", min=round(range/100, digits=2), 
+          max=round(range/5, digits=2), step=round(range/100, digits=2), value=round(range/10, digits=2))
 })
 
 output$summary <- renderTable({

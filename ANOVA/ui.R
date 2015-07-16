@@ -45,7 +45,8 @@ sidebarLayout(
     conditionalPanel(
       "$('li.active a').first().html()==='Summaries'",
     radioButtons("plot", label=h4("Plotting"), c("Boxplot" = "box", "Facetted Histograms"="his",
-                             "Facetted Histograms with Kernel Density"="hisDen"), selected="box")
+       "Facetted Histograms with Kernel Density"="hisDen", "Q-Q Plot"="qq"), selected="box"),
+    sliderInput("w", label=h4("Histogram Bin Width"), min=0.1, max=1, step=0.1, value=0.5)
       )
     ), #sidebarPanel
   mainPanel(
@@ -55,11 +56,11 @@ sidebarLayout(
         ), #tabPanel
         tabPanel("Summaries",
                  conditionalPanel(
-                   condition='input.plot=="box"',
+                   condition='input.plot=="box" || "qq"',
                  ggvisOutput("origBox")
                  ),
                  conditionalPanel(
-                   condition='input.plot != "box"',
+                   condition='input.plot == "his" || "hisDen"',
                    plotOutput("origPlot")
                    ),
                  tableOutput("summary")
