@@ -26,7 +26,6 @@ shinyServer(function(input,output, session){
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
 
-  
   observe({
     data <- theData()
     cvars <- colnames(data)
@@ -50,6 +49,9 @@ shinyServer(function(input,output, session){
   })
   
   observe({
+    fit <- lm(response~factor(group), data=filteredData())
+    hii <- hatvalues(fit)
+    res <- fit$res 
    if(input$plot=="box"){
    filteredData() %>%
     ggvis(x=~group, y=~response) %>%
@@ -65,21 +67,25 @@ shinyServer(function(input,output, session){
      add_axis("y", title="Sample") %>%
      bind_shiny("origBox")
    }
+   if(input$plot=="resid"){
+   data.frame(filteredData(), leverage=hii, residual=res) %>%
+     ggvis(~group, ~response)  %>%
+     layer_points(size=~abs(residual)) %>%
+     bind_shiny("origBox")
+   }
 })
 
 output$origPlot <- renderPlot({
-plotType <- switch(input$plot,
-  his =                 
-    ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w) +
+plot <- switch(input$plot,
+   his= ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w) +
     facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"),
     axis.line = element_line(colour="black"), axis.text = element_text(colour = "black")),
-  hisDen = 
-    ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +
+  hisDen=  ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +
     geom_density(colour="blue") + facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"),
    panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
    axis.text = element_text(colour = "black"))
 )
-plotType
+plot
 })
 
 qqdata <- reactive({
@@ -100,9 +106,25 @@ observe({
 })
 
 output$summary <- renderTable({
-  favstats(response~factor(group), data=filteredData())
+  summarise(group_by(filteredData(), factor(group)), min=min(response), median=median(response), max=max(response),
+            mean=mean(response), sd=sd(response), var=var(response), Fstat=summary(model)$fstatistic[1],
+            n=length(response))
 })
 
+output$anova <- renderPrint({
+  model <- lm(response~factor(group), data=filteredData())
+  model2 <- lm(response~factor(group) -1, data=filteredData())
+  print <- switch(input$stat,
+printANOVA = anova(model),
+individualCI = confint(model2, level=input$level),
+multCI = confint(model2, level=(1-input$level)/nlevels(as.factor(filteredData()$group)))
+)
+print
+  })
 
+output$f <- renderPrint({
+  model <- lm(response~factor(group), data=filteredData())
+  summary(model)$fstatistic[1]
+})
 
 })
