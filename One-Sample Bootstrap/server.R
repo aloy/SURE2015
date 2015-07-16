@@ -61,11 +61,13 @@ shinyServer(function(input, output, session){
   })
   
   observe({
+    range <-diff(range(filteredData()))
       switch(input$plot,
                         his =filteredData %>%
                           ggvis(~filteredData()$response) %>%
                           add_axis("x", title = input$response) %>%
-                          layer_histograms(width = input_slider(0.1, 1.6, step=0.1, value=0.6)) %>%
+                          layer_histograms(width = input_slider(round(range/100, digits=2), 
+                          round(range/5, digits=2), step=round(range/100, digits=2), value=round(range/10, digits=2))) %>%
                           bind_shiny("origHist", "origHist_ui"),
                         den = filteredData %>%
                           ggvis(~filteredData()$response) %>%
@@ -97,26 +99,27 @@ output$hisDenPlot <- renderPlot ({
 
 observe({
   range <- diff(range(filteredData()))
-  updateSliderInput(session, 'w', min=round(range/100, digits=2), max=round(range/8, digits=2), value=round(range/10, digits=2), step=round(range/100, digits=2))
+  updateSliderInput(session, 'w', min=round(range/100, digits=2), max=round(range/5, digits=2), 
+                    value=round(range/10, digits=2), step=round(range/100, digits=2))
 })
 
 observe({
-  range2 <- diff(range(trials()))
-  updateSliderInput(session, 'w2', min=signif(range2/100, digits=2), max=signif(range2/2, digits=2), value=signif(range2/10, digits=2), 
-                    step=signif(range2/100, digits=2))
+  range2 <- diff(range(trials()$result))
+  updateSliderInput(session, 'w2', min=signif(range2/100, digits=2), max=signif(range2/2, digits=2), 
+                    value=signif(range2/10, digits=2), step=signif(range2/100, digits=2))
 })
 
 trials <- reactive({
   
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){
-    result <- do(input$num) * mean(~ response, data = sample(filteredData(), replace = TRUE))
+    result <- do(input$num) * mean(response, data = sample(filteredData(), replace = TRUE))
     }
     if(input$stat=="bootMedian"){
-    result <- do(input$num) * median(~ response, data = sample(filteredData(), replace = TRUE))
+    result <- do(input$num) * median(response, data = sample(filteredData(), replace = TRUE))
     }
     if(input$stat=="bootSd"){
-    result <- do(input$num) * sd(~ response, data = sample(filteredData(), replace = TRUE))
+    result <- do(input$num) * sd(response, data = sample(filteredData(), replace = TRUE))
     }
     names(result) <- "result"
     data.frame(result)
@@ -135,24 +138,27 @@ observe({
     trials <- data.frame(result=rep(0, 10))
     output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
   }
-  if(input$plot2=="his2"){
-    trials %>%
+  range3 <-diff(range(trials()))
+  switch(input$plot2,
+   his2= trials %>%
            ggvis(~result) %>%
-           layer_histograms(width = input_slider(0.01, 0.1, step=0.01, value=0.06)) %>%
-           bind_shiny("bootHist", "bootHist_ui")}
-  if(input$plot2=="den2"){
+           layer_histograms(width = input_slider(signif(range3/100, digits=2), 
+                    signif(range3/2, digits=2), step=0.001, value=0.06)) %>%
+           bind_shiny("bootHist", "bootHist_ui"),
+ den2=
     trials %>%
            ggvis(~result) %>%
            layer_densities() %>%
            add_axis("y", title="Density") %>%
-           bind_shiny("bootHist", "bootHist_ui")}
-  if(input$plot2=="qq2"){
+           bind_shiny("bootHist", "bootHist_ui"),
+  qq2=
     qqdata2 %>% 
            ggvis(~normal.quantiles, ~diffs) %>% 
            layer_points() %>% 
            add_axis("x", title="Theoretical") %>%
            add_axis("y", title="Sample") %>%
-           bind_shiny("bootHist", "bootHist_ui")}
+           bind_shiny("bootHist", "bootHist_ui")
+  )
 })
 
 qqdata2 <- reactive({
@@ -192,8 +198,8 @@ observed <- reactive({
   })
   
   output$bootSd <- renderText({
-    signif(sd(trials()$result), digits=3)
-  })
+    signif(sd(trials()$result), digits=3)    
+    })
   
   level <- reactive({
     input$level
