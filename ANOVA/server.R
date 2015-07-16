@@ -127,4 +127,59 @@ output$f <- renderPrint({
   summary(model)$fstatistic[1]
 })
 
+trials <- reactive({
+  if(input$goButton > 0) {
+perms <-do(input$num) * summary(lm(formula = response ~ shuffle(factor(group)), data = filteredData()))$fstatistic[1]
+colnames(perms) <- c("perms")
+data.frame(perms)
+  } else {
+    data.frame(perms = rep(0, 10))
+  }
+})
+
+output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
+
+observe({
+  if(input$reset > 0 ){
+    trials <- data.frame(perms=rep(0, 10))
+    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+  }
+  if(input$plot2=="his2"){
+    trials %>%
+      ggvis(~perms) %>%
+      layer_histograms(width = input_slider(0.01, 7.5, step=0.01, value=2.5)) %>%
+      bind_shiny("hist", "hist_ui")
+  }
+  if(input$plot2=="den2"){
+    trials %>%
+      ggvis(~perms) %>%
+      layer_densities() %>%
+      add_axis("y", title="Density") %>%
+      bind_shiny("hist", "hist_ui")
+  }
+  if(input$plot2=="qq2"){
+    qqdata2 %>% 
+      ggvis(~normal.quantiles, ~diffs) %>% 
+      layer_points() %>% 
+      add_axis("x", title="Theoretical") %>%
+      add_axis("y", title="Sample") %>%
+      bind_shiny("hist", "hist_ui")
+  }
+})
+
+qqdata2 <- reactive({
+  n <- input$num
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(trials()$perms, na.rm = T), sd(trials()$perms, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$perms))
+  colnames(qqdata1) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata1)
+})
+
+output$hisDen2 <- renderPlot({
+  ggplot(data=trials(), aes(x=perms)) + geom_histogram(colour="black", fill="grey19", 
+    binwidth=input$w2, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
+                                                                                                                                   panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+})
+
 })

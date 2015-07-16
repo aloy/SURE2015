@@ -57,7 +57,26 @@ sidebarLayout(
         condition='input.stat !="ANOVA"',
         numericInput("level", label="Confidence Level", min=0.01, max=0.99, step=0.01, value=0.95)
       )
-    )
+    ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Permutation F-Test'",
+        numericInput("num", label="Number of Permutations", min=1, max=100000, step=1, value=1000),
+        actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
+        radioButtons("plot2", label=h4("Plotting"), c("Histogram"="his2", "Density"="den2", 
+                     "Histogram and Kernel Density" = "hisDen2","Q-Q Plot" = "qq2"),
+                     selected="his2"),
+        h4("Histogram Bin Width"),
+        conditionalPanel(
+          condition="input.plot2=='hisDen2'",
+          sliderInput("w2", 
+                      label = "",
+                      value =3.5, step=0.01, min = 0.01, max=7.5)
+        ),
+        conditionalPanel(
+          condition="input.plot2 != 'hisDen2'",
+          uiOutput("hist_ui")
+        )
+      )
     ), #sidebarPanel
   mainPanel(
     tabsetPanel(type="tabs",
@@ -80,9 +99,18 @@ sidebarLayout(
                  ),
         tabPanel("ANOVA",
               verbatimTextOutput("anova")
-              )
-#         tabPanel("Permutation F-Test",
-#                  )
+              ),
+        tabPanel("Permutation F-Test",
+                 conditionalPanel(
+                   condition="input.plot2=='hisDen2'",
+                   plotOutput("hisDen2")
+                 ),
+                 conditionalPanel(
+                   condition="input.plot2 != 'hisDen2'",
+                   ggvisOutput("hist")
+                 ),
+                 dataTableOutput("trials")
+                 )
     ) #tabsetPanel
     ) #mainPanel
   ) #sidebarLayout
