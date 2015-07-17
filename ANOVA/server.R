@@ -112,11 +112,13 @@ favstats(~response|group, data=filteredData())
 output$anova <- renderPrint({
   model <- lm(response~factor(group), data=filteredData())
   model2 <- lm(response~factor(group) -1, data=filteredData())
+  alpha <- 1- input$level
   print <- switch(input$stat,
 printANOVA = anova(model),
 individualCI = confint(model2, level=input$level),
-multCI = confint(model2, level=(1-input$level)/nlevels(as.factor(filteredData()$group)))
+multCI = confint(model2, level=1-(alpha/(2*nlevels(as.factor(filteredData()$group)))))
 )
+
 print
   })
 
