@@ -5,6 +5,10 @@ library(dplyr)
 shinyUI(bootstrapPage(
   useShinyjs(),
   titlePanel("Permutation Tests"),
+  tags$div(class = "header", 
+           p("This app was created by Alex Damisch ",a(href="mailto:damischa@lawrence.edu","(damischa@lawrence.edu)"),
+             "and Adam Loy ",a(href="mailto:loya@lawrence.edu","(loya@lawrence.edu)."))
+  ),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -26,6 +30,8 @@ shinyUI(bootstrapPage(
                              '.tsv'
                            )
                  ),
+                 p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                  You can upload text, .csv, or .tsv files."),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
                               c(Comma=',',
@@ -41,12 +47,12 @@ shinyUI(bootstrapPage(
         actionButton("hideDataOptions", "Show/hide data set options")
       ), #conditionalPanel
       selectInput('group', label=h4('Grouping variable') ,'group'),
-      selectInput('response', label=h4('Response variable'), 'response'),
-      p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
-    the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
-    to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
-      p("If there is truly no difference between the groups, there would be no significant difference in the test statistic when 
-  we randomly assigning their values to the another group.")
+      selectInput('response', label=h4('Response variable'), 'response')
+#       p("Permutation tests compare whether or not there is a significant difference between two experimental groups performing 
+#     the same task. We resample without replacement from the pooled data set of both groups, assigning the first half of resamples 
+#     to the first group and the second half to the second group, and then calculate the statistic we're interested in."), 
+#       p("If there is truly no difference between the groups, there would be no significant difference in the test statistic when 
+#   we randomly assigning their values to the another group.")
       ), #conditionalPanel
       conditionalPanel(
         "$('li.active a').first().html()==='Summaries'",

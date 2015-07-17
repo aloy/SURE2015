@@ -51,9 +51,10 @@ shinyServer(function(input,output, session){
   })
   
   observe({
-    fit <- lm(response~factor(group), data=filteredData())
-    hii <- hatvalues(fit)
-    res <- fit$res 
+    model <- lm(response~factor(group), data=filteredData())
+    data <- data.frame(isolate(filteredData()))
+    data$resid <- resid(model)
+    
    if(input$plot=="box"){
    filteredData() %>%
     ggvis(x=~group, y=~response) %>%
@@ -69,9 +70,9 @@ shinyServer(function(input,output, session){
      bind_shiny("origBox")
    }
    if(input$plot=="resid"){
-   data.frame(filteredData(), leverage=hii, residual=res) %>%
-     ggvis(~group, ~response)  %>%
-     layer_points(size=~abs(residual)) %>%
+   data %>%
+     ggvis(x=~group, y=~resid)  %>%
+     layer_points() %>%
      bind_shiny("origBox")
    }
 })
@@ -111,26 +112,32 @@ observe({
 })
 
 output$summary <- renderTable({
-favstats(~response|factor(group), data=filteredData())
-})
-
-output$anova <- renderPrint({
-  model <- lm(response~factor(group), data=filteredData())
-  model2 <- lm(response~factor(group) -1, data=filteredData())
-  alpha <- 1- input$level
-  print <- switch(input$stat,
-printANOVA = anova(model),
-individualCI = confint(model2, level=input$level),
-multCI = confint(model2, level=1-(alpha/(2*nlevels(as.factor(filteredData()$group)))))
-)
-
-print
+  favstats(~response|factor(group), data=filteredData())
   })
 
 output$f <- renderPrint({
   model <- lm(response~factor(group), data=filteredData())
   summary(model)$fstatistic[1]
 })
+
+output$pval <- renderText({
+  anova(lm(response~factor(group) -1, data=filteredData()))[,"Pr(>F)"][1]
+})
+
+output$anova <- renderTable({
+  model <- lm(response~factor(group), data=filteredData())
+  anova(model)
+})
+
+output$anova2 <- renderPrint({
+  model2 <- lm(response~factor(group) -1, data=filteredData())
+  alpha <- 1- input$level
+  print <- switch(input$stat,
+individualCI = confint(model2, level=input$level),
+multCI = confint(model2, level= 1-(alpha/(2*nlevels(factor(filteredData()$group)))))
+)
+print
+  })
 
 trials <- reactive({
   if(input$goButton > 0) {

@@ -5,6 +5,10 @@ library(ggvis)
 shinyUI(fluidPage(
   useShinyjs(),
   titlePanel("Two-Sample Bootstrapping"),
+  tags$div(class = "header", 
+           p("This app was created by Alex Damisch ",a(href="mailto:damischa@lawrence.edu","(damischa@lawrence.edu)"),
+             "and Adam Loy ",a(href="mailto:loya@lawrence.edu","(loya@lawrence.edu)."))
+  ),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -16,7 +20,7 @@ shinyUI(fluidPage(
           condition= "input.chooseData=='uploadYes'",
           tags$div(id="dataOptions",
                    h4("Data Set Options"),
-                   fileInput('file1', 'Choose a file to upload. The data set will appear below the main panel.',
+                   fileInput('file1', 'Choose a file to upload.',
                              accept = c(
                                'text/csv',
                                'text/comma-separated-values',
@@ -26,6 +30,8 @@ shinyUI(fluidPage(
                                '.tsv'
                              )
                    ),
+                   p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                  You can upload text, .csv, or .tsv files."),
                    checkboxInput('header', 'Header', TRUE),
                    radioButtons('sep', 'Separator',
                                 c(Comma=',',
@@ -50,7 +56,7 @@ shinyUI(fluidPage(
                        "Q-Q Plot" = "qq"), selected="his"),
           sliderInput("w", 
                        label = h4("Histogram Bin Width"), 
-                      value = 1.2, step=0.1, min = 0.1, max=3)
+                      min = 0.1, max=3, value = 1.2, step=0.1)
         ),
       conditionalPanel(
         "$('li.active a').first().html()==='Bootstrap'",
@@ -61,7 +67,8 @@ shinyUI(fluidPage(
         numericInput("num", 
                      label = h4("Number of Bootstraps"), 
                      value = 1000, min = 1, max = 100000),
-        actionButton("goButton", "Bootstrap!"),actionButton("reset", "Reset"),
+        actionButton("goButton", "Bootstrap!"),
+#         actionButton("reset", "Reset"),
         radioButtons("plot2", label=h4("Plotting"),
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                        "Q-Q Plot" = "qq2"), selected="his2"),
@@ -95,7 +102,7 @@ shinyUI(fluidPage(
                                   plotOutput("origHist"),
 #                                     ggvisOutput("group1Hist"),
                                   h5("Original Summary Statistics"),
-                                  verbatimTextOutput("basicSummary")
+                                  tableOutput("basicSummary")
                     ), #tabPanel
                     tabPanel("Bootstrap",
                        conditionalPanel(

@@ -80,7 +80,7 @@ output$origHist <- renderPlot({
   dataPlot
 })
 
-output$basicSummary <- renderPrint({
+output$basicSummary <- renderTable({
   favstats(~response|group, data=filteredData())  
   })
 
@@ -130,10 +130,10 @@ trials <- reactive({
 output$trials <- renderDataTable(trials() %>% head)
 
 observe({
-    if(input$reset > 0 ){
-      trials <- data.frame(result=rep(0, 10))
-      output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
-    }
+#     if(input$reset > 0 ){
+#       trials <- data.frame(result=rep(0, 10))
+#       output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
+#     }
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~result) %>%

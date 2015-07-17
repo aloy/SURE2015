@@ -4,6 +4,10 @@ library(ggvis)
 shinyUI(fluidPage(
   useShinyjs(),
   titlePanel("One-Sample Bootstrap"),
+  tags$div(class = "header", 
+        p("This app was created by Alex Damisch ",a(href="mailto:damischa@lawrence.edu","(damischa@lawrence.edu)"),
+        "and Adam Loy ",a(href="mailto:loya@lawrence.edu","(loya@lawrence.edu)."))
+        ),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -25,6 +29,8 @@ shinyUI(fluidPage(
                              '.tsv'
                            )
                  ),
+                 p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                  You can upload text, .csv, or .tsv files."),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
                               c(Comma=',',
@@ -67,7 +73,8 @@ shinyUI(fluidPage(
         radioButtons("stat", label = h4("Bootstrap Statistic"),
                      c("Mean" = "bootMean", "Median" = "bootMedian", 
                        "Standard Deviation" = "bootSd"), selected = "bootMean"),
-        actionButton("goButton", "Bootstrap!"), actionButton("reset", "Reset"),
+        actionButton("goButton", "Bootstrap!"), 
+#         actionButton("reset", "Reset"),
         radioButtons("plot2", label=h4("Plotting"),
                      c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                        "Q-Q Plot" = "qq2"), 

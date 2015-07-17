@@ -4,6 +4,10 @@ library(ggvis)
 shinyUI(bootstrapPage(
   useShinyjs(),
   titlePanel("ANOVA"),
+  tags$div(class = "header", 
+           p("This app was created by Alex Damisch ",a(href="mailto:damischa@lawrence.edu","(damischa@lawrence.edu)"),
+             "and Adam Loy ",a(href="mailto:loya@lawrence.edu","(loya@lawrence.edu)."))
+  ),
 sidebarLayout(
   sidebarPanel(
     conditionalPanel(
@@ -25,6 +29,8 @@ sidebarLayout(
                              '.tsv'
                            )
                  ),
+                 p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                  You can upload text, .csv, or .tsv files."),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
                               c(Comma=',',
@@ -54,7 +60,7 @@ sidebarLayout(
                    "Multiple Comparison Confidence Intervals" = "multCI"), 
                    selected="printANOVA"),
       conditionalPanel(
-        condition='input.stat !="ANOVA"',
+        condition='input.stat !="printANOVA"',
         sliderInput("level", label="Confidence Level", min=0.01, max=0.99, step=0.01, value=0.95)
       )
     ),
@@ -95,10 +101,19 @@ sidebarLayout(
                  h6("Summary"),
                  tableOutput("summary"),
                  h6("Observed F-Statistic"),
-                 verbatimTextOutput("f")
+                 verbatimTextOutput("f"),
+                 h6("P-Value"),
+                 verbatimTextOutput("pval")
                  ),
         tabPanel("ANOVA",
-              verbatimTextOutput("anova")
+                 conditionalPanel(
+                   condition='input.stat == "printANOVA"',
+                 tableOutput("anova")
+                 ),
+                 conditionalPanel(
+                   condition='input.stat != "printANOVA"',
+              verbatimTextOutput("anova2")
+                 )
               ),
         tabPanel("Permutation F-Test",
                  conditionalPanel(

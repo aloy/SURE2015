@@ -5,6 +5,10 @@ library(ggvis)
 shinyUI(bootstrapPage(
   useShinyjs(),
   titlePanel("Permutation for Regression"),
+  tags$div(class = "header", 
+           p("This app was created by Alex Damisch ",a(href="mailto:damischa@lawrence.edu","(damischa@lawrence.edu)"),
+             "and Adam Loy ",a(href="mailto:loya@lawrence.edu","(loya@lawrence.edu)."))
+  ),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -26,6 +30,8 @@ shinyUI(bootstrapPage(
                              '.tsv'
                            )
                  ),
+                 p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                  You can upload text, .csv, or .tsv files."),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
                               c(Comma=',',

@@ -61,17 +61,22 @@ shinyServer(function(input, output, session){
   })
   
   observe({
-    range <-diff(range(filteredData()))
+      if (round(diff(range(filteredData()))/100, digits=2) == 0){
+        range.100 <- 0.01
+    }
+    else(
+      range.100 <- round(diff(range(filteredData()))/100, digits=2)
+    )
       switch(input$plot,
                         his =filteredData %>%
                           ggvis(~filteredData()$response) %>%
                           add_axis("x", title = input$response) %>%
-                          layer_histograms(width = input_slider(round(range/100, digits=2), 
-                          round(range/5, digits=2), step=round(range/100, digits=2), value=round(range/10, digits=2))) %>%
+                          layer_histograms(width = input_slider(range.100, 
+                          range.100*20, step=range.100, value=range.100*10)) %>%
                           bind_shiny("origHist", "origHist_ui"),
                         den = filteredData %>%
                           ggvis(~filteredData()$response) %>%
-                          layer_densities() %>%
+                          layer_densities(fill := "dodgerblue") %>%
                           add_axis("x", title = input$choose) %>%
                           add_axis("y", title="Density") %>%
                           bind_shiny("origHist", "origHist_ui"),
@@ -98,15 +103,14 @@ output$hisDenPlot <- renderPlot ({
 })
 
 observe({
-  range <- diff(range(filteredData()))
-  updateSliderInput(session, 'w', min=round(range/100, digits=2), max=round(range/5, digits=2), 
-                    value=round(range/10, digits=2), step=round(range/100, digits=2))
-})
-
-observe({
-  range2 <- diff(range(trials()$result))
-  updateSliderInput(session, 'w2', min=signif(range2/100, digits=2), max=signif(range2/2, digits=2), 
-                    value=signif(range2/10, digits=2), step=signif(range2/100, digits=2))
+  if (round(diff(range(filteredData()))/100, digits=2) == 0){
+    range.100 <- 0.01
+  }
+  else(
+    range.100 <- round(diff(range(filteredData()))/100, digits=2)
+  )
+  updateSliderInput(session, 'w', min=range.100, max=range.100*20, 
+                    value=range.100*10, step=range.100)
 })
 
 trials <- reactive({
@@ -133,22 +137,27 @@ else {
 
 output$trials <-  renderDataTable(trials(), options = list(pageLength = 10))
 
+
 observe({
-  if(input$reset > 0 ){
-    trials <- data.frame(result=rep(0, 10))
-    output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
+  
+  if(input$goButton > 0){
+    range2.100 <- round(diff(range(trials()$result))/100, digits=3)
+    if (round(diff(range(trials()$result))/100, digits=3) == 0)
+      range2.100 <- 0.001
   }
-  range3 <-diff(range(trials()))
+  else(
+    range2.100 <- 0.001
+    )
   switch(input$plot2,
    his2= trials %>%
            ggvis(~result) %>%
-           layer_histograms(width = input_slider(signif(range3/100, digits=2), 
-                    signif(range3/2, digits=2), step=0.001, value=0.06)) %>%
+     layer_histograms(width = input_slider(range2.100, range2.100*50,
+                      value=range2.100*10, step=range2.100)) %>%
            bind_shiny("bootHist", "bootHist_ui"),
  den2=
     trials %>%
            ggvis(~result) %>%
-           layer_densities() %>%
+           layer_densities(fill := "dodgerblue") %>%
            add_axis("y", title="Density") %>%
            bind_shiny("bootHist", "bootHist_ui"),
   qq2=
@@ -168,6 +177,20 @@ qqdata2 <- reactive({
   qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$result))
   colnames(qqdata1) <- c("normal.quantiles", "diffs")
   data.frame(qqdata1)
+})
+
+observe({
+  if(input$goButton > 0){
+    range2.100 <- round(diff(range(trials()$result))/100, digits=3)
+    if (round(diff(range(trials()$result))/100, digits=3) == 0)
+      range2.100 <- 0.001
+  }
+  else(
+    range2.100 <- 0.001
+  )
+  
+  updateSliderInput(session, 'w2', min=range2.100, max=range2.100*50, 
+                    value=range2.100*10, step=range2.100)
 })
 
 output$hisDenPlot2 <- renderPlot ({
