@@ -106,9 +106,7 @@ observe({
 })
 
 output$summary <- renderTable({
-  summarise(group_by(filteredData(), factor(group)), min=min(response), median=median(response), max=max(response),
-            mean=mean(response), sd=sd(response), var=var(response), Fstat=summary(model)$fstatistic[1],
-            n=length(response))
+favstats(~response|group, data=filteredData())
 })
 
 output$anova <- renderPrint({
