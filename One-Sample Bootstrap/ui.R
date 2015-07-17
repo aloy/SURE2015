@@ -88,7 +88,7 @@ shinyUI(fluidPage(
           "$('li.active a').first().html()==='Confidence Intervals'",
         radioButtons("ci", label = h4("Confidence Interval"),
                      c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
-        numericInput("level", 
+        sliderInput("level", 
                      label = h4("Confidence Level"), 
                      value = 0.95, min = 0.01, max = 0.99, step=0.01)
         )

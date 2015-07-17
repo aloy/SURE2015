@@ -90,7 +90,7 @@ output$origSummary <- renderPrint({
     if(input$plot=="den"){
       trials %>%
         ggvis(~perms) %>%
-        layer_densities() %>%
+        layer_densities(fill := "dodgerblue") %>%
         add_axis("y", title="Density") %>%
         bind_shiny("hist", "hist_ui")
     }
@@ -115,7 +115,7 @@ output$origSummary <- renderPrint({
 
 output$hisDen <- renderPlot({
   ggplot(data=trials(), aes(x=perms)) + geom_histogram(colour="black", fill="grey19", 
-   binwidth=input$w, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
+   binwidth=input$w, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.6)  + theme(panel.grid.minor = element_line(colour = "grey"), 
     panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 

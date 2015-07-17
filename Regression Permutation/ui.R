@@ -57,7 +57,7 @@ shinyUI(bootstrapPage(
                  label = h4("Permutation Resamples"), 
                  value = 1000, min = 1, max = 10000),
     actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
-    radioButtons("plot", label=h4("Plotting"), c("Histogram"="his", "Density"="den", 
+    radioButtons("plot", label=h4("Plotting"), c("Histogram"="his", "Kernel Density"="den", 
                 "Histogram and Kernel Density" = "hisDen","Q-Q Plot" = "qq"),
                  selected="his"),
   h4("Histogram Bin Width"),
@@ -83,7 +83,7 @@ shinyUI(bootstrapPage(
                  c("Percentile Confidence" = "perc", "Normal-Based Confidence" = "norm",
                    "Prediction Interval for ŷ" = "ypred"), selected = "perc"),
     numericInput("R", label=h4("Bootstrap Samples"), value=1999),
-    numericInput("level", 
+    sliderInput("level", 
                  label = h4("Confidence Level"), 
                  value = 0.95, min = 0.01, max = 0.99, step=0.01),
     conditionalPanel(

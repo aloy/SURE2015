@@ -44,8 +44,8 @@ sidebarLayout(
     ), #conditionalPanel
     conditionalPanel(
       "$('li.active a').first().html()==='Summaries'",
-    radioButtons("plot", label=h4("Plotting"), c("Boxplot" = "box", "Facetted Histograms"="his",
-       "Facetted Histograms with Kernel Density"="hisDen", "Q-Q Plot"="qq", "Residual Plots" = "resid"), selected="box"),
+    radioButtons("plot", label=h4("Plotting"), c("Boxplot" = "box", "Histogram"="his", "Kernel Density" = "den",
+       "Histogram with Kernel Density"="hisDen", "Q-Q Plot"="qq", "Residual Plot" = "resid"), selected="box"),
     sliderInput("w", label=h4("Histogram Bin Width"), min=0.1, max=1, step=0.1, value=0.5)
       ),
     conditionalPanel(
@@ -55,7 +55,7 @@ sidebarLayout(
                    selected="printANOVA"),
       conditionalPanel(
         condition='input.stat !="ANOVA"',
-        numericInput("level", label="Confidence Level", min=0.01, max=0.99, step=0.01, value=0.95)
+        sliderInput("level", label="Confidence Level", min=0.01, max=0.99, step=0.01, value=0.95)
       )
     ),
       conditionalPanel(
@@ -89,10 +89,10 @@ sidebarLayout(
                  ggvisOutput("origBox")
                  ),
                  conditionalPanel(
-                   condition='input.plot == "his" || input.plot=="hisDen"',
+                   condition='input.plot == "his" || input.plot== "den" || input.plot=="hisDen"',
                    plotOutput("origPlot")
                  ),
-                 h6("Summary Statistics"),
+                 h6("Summary"),
                  tableOutput("summary"),
                  h6("Observed F-Statistic"),
                  verbatimTextOutput("f")
@@ -109,7 +109,12 @@ sidebarLayout(
                    condition="input.plot2 != 'hisDen2'",
                    ggvisOutput("hist")
                  ),
+                 h6("Summary"),
+                 tableOutput("summary2"),
+                 actionButton("hideData", "Show/hide data set"),
+                 hidden(
                  dataTableOutput("trials")
+                 )
                  )
     ) #tabsetPanel
     ) #mainPanel

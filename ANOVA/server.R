@@ -25,6 +25,8 @@ shinyServer(function(input,output, session){
   
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
+  shinyjs::onclick("hideData",
+                   shinyjs::toggle(id = "trials", anim = TRUE))
 
   observe({
     data <- theData()
@@ -56,7 +58,6 @@ shinyServer(function(input,output, session){
    filteredData() %>%
     ggvis(x=~group, y=~response) %>%
     layer_boxplots() %>%
-     layer_points() %>%
     bind_shiny("origBox")
    }
    if(input$plot=="qq"){
@@ -80,8 +81,12 @@ plot <- switch(input$plot,
    his= ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w) +
     facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"),
     axis.line = element_line(colour="black"), axis.text = element_text(colour = "black")),
+   den = ggplot(filteredData(), aes(response)) +
+     geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group) + 
+     theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"),
+     axis.line = element_line(colour="black"), axis.text = element_text(colour = "black")),
   hisDen=  ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +
-    geom_density(colour="blue") + facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"),
+    geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"),
    panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
    axis.text = element_text(colour = "black"))
 )
@@ -106,7 +111,7 @@ observe({
 })
 
 output$summary <- renderTable({
-favstats(~response|group, data=filteredData())
+favstats(~response|factor(group), data=filteredData())
 })
 
 output$anova <- renderPrint({
@@ -153,7 +158,7 @@ observe({
   if(input$plot2=="den2"){
     trials %>%
       ggvis(~perms) %>%
-      layer_densities() %>%
+      layer_densities(fill := "dodgerblue") %>%
       add_axis("y", title="Density") %>%
       bind_shiny("hist", "hist_ui")
   }
@@ -178,8 +183,13 @@ qqdata2 <- reactive({
 
 output$hisDen2 <- renderPlot({
   ggplot(data=trials(), aes(x=perms)) + geom_histogram(colour="black", fill="grey19", 
-    binwidth=input$w2, aes(y=..density..)) + geom_density(colour="blue") + theme(panel.grid.minor = element_line(colour = "grey"), 
-                                                                                                                                   panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+    binwidth=input$w2, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + 
+    theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"), 
+    axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+})
+
+output$summary2 <- renderTable({
+favstats(perms, data=trials())
 })
 
 })
