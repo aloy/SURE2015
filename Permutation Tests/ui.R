@@ -59,9 +59,7 @@ shinyUI(bootstrapPage(
         radioButtons("plot", label=h4("Plotting"),
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                        "Q-Q Plot" = "qq"), selected="his"),
-        sliderInput("w", 
-                    label = h4("Histogram Bin Width"), 
-                    value = 1.2, step=0.1, min = 0.1, max=3)
+        uiOutput("slider")
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Permutation Test'",
@@ -70,16 +68,14 @@ shinyUI(bootstrapPage(
       numericInput("num", 
                    label = h4("Permutation Resamples"), 
                    value = 1000, min = 1, max = 100000),
-      actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
+      actionButton("goButton", "Permute!"), 
       radioButtons("plot2", label=h4("Plotting"),
                    c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",
                      "Q-Q Plot" = "qq2"), selected="his2"),
       h4("Histogram Bin Width"),
       conditionalPanel(
         condition="input.plot2=='hisDen2'",
-        sliderInput("w2", 
-                    label = "", 
-                    value = 0.55, step=0.05, min = 0.05, max=1)
+        uiOutput("slider2")
       ),
       conditionalPanel(
         condition="input.plot2 != 'hisDen2'",

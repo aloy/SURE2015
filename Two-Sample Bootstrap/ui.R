@@ -54,9 +54,10 @@ shinyUI(fluidPage(
         radioButtons("plot", label=h4("Plotting"),
                      c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen",
                        "Q-Q Plot" = "qq"), selected="his"),
-          sliderInput("w", 
-                       label = h4("Histogram Bin Width"), 
-                      min = 0.1, max=3, value = 1.2, step=0.1)
+#           sliderInput("w", 
+#                        label = h4("Histogram Bin Width"), 
+#                       min = 0.01, max=3, value = 1.2, step=0.01)
+              uiOutput("slider")
         ),
       conditionalPanel(
         "$('li.active a').first().html()==='Bootstrap'",
@@ -75,9 +76,7 @@ shinyUI(fluidPage(
         h4("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
-          sliderInput("w2", 
-                      label = "",
-                      value = 0.2, step=0.005, min = 0.005, max=0.3)
+          uiOutput("slider2")
         ),
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",

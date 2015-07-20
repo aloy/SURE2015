@@ -7,6 +7,8 @@ library(dplyr)
 library(Lock5Data)
 data("CaffeineTaps")
 
+#Permutation Tests
+
 theData <- reactive({
   if(input$chooseData=="uploadYes"){
     inFile1 <- input$file1
@@ -56,12 +58,24 @@ output$origHist <- renderPlot({
                       geom_histogram(colour="black", fill="grey19", binwidth=input$w) + facet_grid(.~group), 
                     den = ggplot(filteredData(), aes(response)) +
                       geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group),
-                    qq = ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free"),
+                    qq = ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free") + theme(aspect.ratio=1),
                     hisDen = ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +  
                       geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group) 
   )
   dataPlot
 })
+
+output$slider <- renderUI({
+  if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
+    range.100 <- 0.01
+  }
+  else(
+    range.100 <- round(diff(range(filteredData()$response))/100, digits=2)
+  )
+  sliderInput("w", "Histogram Bin Width", min=range.100, max=range.100*20, value=range.100*10, step=.01)
+})
+
+
 output$summary <- renderTable({
   favstats(~response|group, data=filteredData())  
 })
@@ -114,14 +128,23 @@ qqdata <- reactive({
   })
 
 observe({
-  if(input$reset > 0 ){
-    trials <- data.frame(perms=rep(0, 10))
-    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+#   if(input$reset > 0 ){
+#     trials <- data.frame(perms=rep(0, 10))
+#     output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+#   }
+  if(input$goButton > 0){
+    range2.100 <- round(diff(range(trials()$perms))/100, digits=3)
+    if (round(diff(range(trials()$perms))/100, digits=3) == 0)
+      range2.100 <- 0.001
   }
+  else(
+    range2.100 <- 0.001
+  )
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~perms) %>%
-      layer_histograms(width = input_slider(0.01, 0.5, step=0.01, value=0.2)) %>%
+      layer_histograms(width = input_slider(range2.100, range2.100*50,
+                                            value=range2.100*10, step=0.001)) %>%
       bind_shiny("trialsHist", "trialsHist_ui")
   }
   if(input$plot2=="den2"){
@@ -151,5 +174,14 @@ output$hisDenPlot <- renderPlot ({
    panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
+output$slider2 <- renderUI({
+  if (round(diff(range(trials()$perms))/100, digits=3) == 0){
+    range2.100 <- 0.01
+  }
+  else{
+    range2.100 <- round(diff(range(trials()$perms))/100, digits=3)
+  }
+  sliderInput("w2", "", min=range2.100, max=range2.100*50, value=range2.100*10, step=.001)
+})
 
 })

@@ -1,10 +1,12 @@
 library(shiny)
 library(shinyjs)
-shinyServer(function(input,output, session){
+shinyServer(function(input, output, session){
 library(mosaic)
 library(Lock5Data)
 library(plyr)
 library(ggvis)
+
+#Two-Sample Bootstrap
 
 tv <- read.csv("../data/TV.csv")
 
@@ -72,12 +74,41 @@ output$origHist <- renderPlot({
                       geom_histogram(colour="black", fill="grey19", binwidth=input$w) + facet_grid(.~group), 
                     den = ggplot(filteredData(), aes(response)) +
                       geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group),
-                    qq = ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free"),
-#                       qplot(sample=response, data=filteredData(), facets=group~.),
+                    qq = ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free") + theme(aspect.ratio=1),
                     hisDen = ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +  
                       geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group) 
   )
   dataPlot
+})
+
+# range.100 <- reactive({
+# if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
+#   range.100 <- 0.01
+# }
+# else(
+#   range.100 <- round(diff(range(filteredData()$response))/100, digits=2)
+# )
+# range
+# })
+# 
+# maxval <- reactive({
+# val()*50  
+#   
+# })
+# 
+# val <- reactive({
+#   range.100()*10
+# })
+
+
+output$slider <- renderUI({
+  if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
+    range.100 <- 0.01
+  }
+  else(
+    range.100 <- round(diff(range(filteredData()$response))/100, digits=2)
+  )
+sliderInput("w", "Histogram Bin Width", min=range.100, max=range.100*20, value=range.100*10, step=.01)
 })
 
 output$basicSummary <- renderTable({
@@ -134,10 +165,20 @@ observe({
 #       trials <- data.frame(result=rep(0, 10))
 #       output$trials <- renderDataTable(data.frame(result = rep(0, 10)))
 #     }
+  
+  if(input$goButton > 0){
+    range2.100 <- round(diff(range(trials()$result))/100, digits=3)
+    if (round(diff(range(trials()$result))/100, digits=3) == 0)
+      range2.100 <- 0.001
+  }
+  else(
+    range2.100 <- 0.001
+  )
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~result) %>%
-      layer_histograms(width = input_slider(0.001, 0.5, step=0.001, value=0.2)) %>%
+      layer_histograms(width = input_slider(range2.100, range2.100*50,
+       value=range2.100*10, step=0.001))  %>%
       bind_shiny("bootHist", "bootHist_ui")
   }
   if(input$plot2=="den2"){
@@ -183,6 +224,16 @@ output$hisDenPlot2 <- renderPlot ({
 panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
 })
 
+output$slider2 <- renderUI({
+  if (round(diff(range(trials()$result))/100, digits=3) == 0){
+    range2.100 <- 0.01
+  }
+  else{
+    range2.100 <- round(diff(range(trials()$result))/100, digits=3)
+  }
+  sliderInput("w2", "", min=range2.100, max=range2.100*50, value=range2.100*10, step=.001)
+})
+
     output$bootSummary <- renderPrint({ 
       round(mean(trials()$result), digits=3)
       })
@@ -211,6 +262,7 @@ SE <- reactive (
 output$ciPrint <- renderPrint({
   round(quantile(trials()$result, 
            probs=c(alpha()/2, 1-alpha()/2)), digits=3)
+#   range.100()
 })
 
 output$percLower <- renderPrint({

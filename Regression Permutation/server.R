@@ -64,8 +64,7 @@ output$origSummary <- renderPrint({
   summary(lm(y~x, data=filteredData()))
 })
 
-  trials <- reactive({
-    
+  trials <- reactive({    
     if(input$goButton > 0) {
       perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[,1]
       colnames(perms) <- c("yint", "perms")
@@ -77,14 +76,23 @@ output$origSummary <- renderPrint({
   output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
   
   observe({
-    if(input$reset > 0 ){
-      trials <- data.frame(perms=rep(0, 10))
-      output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+#     if(input$reset > 0 ){
+#       trials <- data.frame(perms=rep(0, 10))
+#       output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+#     }
+    if(input$goButton > 0){
+      range.100 <- round(diff(range(trials()$perms))/100, digits=3)
+      if (round(diff(range(trials()$perms))/100, digits=3) == 0)
+        range.100 <- 0.001
     }
+    else(
+      range.100 <- 0.001
+    )
     if(input$plot=="his"){
       trials %>%
         ggvis(~perms) %>%
-        layer_histograms(width = input_slider(0.01, 7.5, step=0.01, value=2.5)) %>%
+        layer_histograms(width = input_slider(range.100, range.100*50,
+                                              value=range.100*10, step=0.001)) %>%
         bind_shiny("hist", "hist_ui")
     }
     if(input$plot=="den"){
@@ -117,6 +125,16 @@ output$hisDen <- renderPlot({
   ggplot(data=trials(), aes(x=perms)) + geom_histogram(colour="black", fill="grey19", 
    binwidth=input$w, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.6)  + theme(panel.grid.minor = element_line(colour = "grey"), 
     panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+})
+
+output$slider <- renderUI({
+  if (round(diff(range(trials()$perms))/100, digits=3) == 0){
+    range.100 <- 0.01
+  }
+  else{
+    range.100 <- round(diff(range(trials()$perms))/100, digits=3)
+  }
+  sliderInput("w", "", min=range.100, max=range.100*50, value=range.100*10, step=.001)
 })
 
   output$summary <- renderTable({

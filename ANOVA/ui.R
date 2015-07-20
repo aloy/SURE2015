@@ -52,8 +52,8 @@ sidebarLayout(
       "$('li.active a').first().html()==='Summaries'",
     radioButtons("plot", label=h4("Plotting"), c("Boxplot" = "box", "Histogram"="his", "Kernel Density" = "den",
        "Histogram with Kernel Density"="hisDen", "Q-Q Plot"="qq", "Residual Plot" = "resid"), selected="box"),
-    sliderInput("w", label=h4("Histogram Bin Width"), min=0.1, max=1, step=0.1, value=0.5)
-      ),
+    uiOutput("slider")
+    ),
     conditionalPanel(
       "$('li.active a').first().html()==='ANOVA'",
       radioButtons("stat", label="", c("ANOVA" = "printANOVA", "Individual Confidence Intervals" = "individualCI",
@@ -66,7 +66,7 @@ sidebarLayout(
     ),
       conditionalPanel(
         "$('li.active a').first().html()==='Permutation F-Test'",
-        numericInput("num", label="Number of Permutations", min=1, max=100000, step=1, value=1000),
+        numericInput("num", label=h4("Number of Permutations"), min=1, max=100000, step=1, value=1000),
         actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
         radioButtons("plot2", label=h4("Plotting"), c("Histogram"="his2", "Density"="den2", 
                      "Histogram and Kernel Density" = "hisDen2","Q-Q Plot" = "qq2"),
@@ -74,9 +74,7 @@ sidebarLayout(
         h4("Histogram Bin Width"),
         conditionalPanel(
           condition="input.plot2=='hisDen2'",
-          sliderInput("w2", 
-                      label = "",
-                      value =3.5, step=0.01, min = 0.01, max=7.5)
+          uiOutput("slider2")
         ),
         conditionalPanel(
           condition="input.plot2 != 'hisDen2'",
@@ -91,11 +89,12 @@ sidebarLayout(
         ), #tabPanel
         tabPanel("Summaries",
                  conditionalPanel(
-                   condition='input.plot=="box" || input.plot== "qq" || input.plot== "resid"',
+                   condition='input.plot=="box" || input.plot== "resid"',
                  ggvisOutput("origBox")
                  ),
                  conditionalPanel(
-                   condition='input.plot == "his" || input.plot== "den" || input.plot=="hisDen"',
+                   condition='input.plot == "his" || input.plot== "den" || input.plot== "qq"
+                   || input.plot=="hisDen"',
                    plotOutput("origPlot")
                  ),
                  h6("Summary"),

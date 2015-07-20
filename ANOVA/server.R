@@ -61,14 +61,14 @@ shinyServer(function(input,output, session){
     layer_boxplots() %>%
     bind_shiny("origBox")
    }
-   if(input$plot=="qq"){
-   qqdata %>% 
-     ggvis(~normal.quantiles, ~diffs) %>% 
-     layer_points() %>% 
-     add_axis("x", title="Theoretical") %>%
-     add_axis("y", title="Sample") %>%
-     bind_shiny("origBox")
-   }
+#    if(input$plot=="qq"){
+#    qqdata %>% 
+#      ggvis(~normal.quantiles, ~diffs) %>% 
+#      layer_points() %>% 
+#      add_axis("x", title="Theoretical") %>%
+#      add_axis("y", title="Sample") %>%
+#      bind_shiny("origBox")
+#    }
    if(input$plot=="resid"){
    data %>%
      ggvis(x=~group, y=~resid)  %>%
@@ -76,6 +76,16 @@ shinyServer(function(input,output, session){
      bind_shiny("origBox")
    }
 })
+
+# qqdata <- reactive({
+#   n <- nrow(filteredData())
+#   probabilities <- (1:n)/(1+n)
+#   normal.quantiles <- qnorm(probabilities, mean(filteredData()$response, na.rm = T), 
+#                             sd(filteredData()$response, na.rm = T))
+#   qqdata0 <- data.frame(sort(normal.quantiles), sort(filteredData()$response))
+#   colnames(qqdata0) <- c("normal.quantiles", "diffs")
+#   data.frame(qqdata0)
+# })
 
 output$origPlot <- renderPlot({
 plot <- switch(input$plot,
@@ -89,26 +99,28 @@ plot <- switch(input$plot,
   hisDen=  ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +
     geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"),
    panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-   axis.text = element_text(colour = "black"))
+   axis.text = element_text(colour = "black")),
+  qq= ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free") + theme(aspect.ratio=1),
+  hisDen = ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +  
+    geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group)
 )
 plot
 })
-
-qqdata <- reactive({
-  n <- nrow(filteredData())
-  probabilities <- (1:n)/(1+n)
-  normal.quantiles <- qnorm(probabilities, mean(filteredData()$response, na.rm = T), 
-                            sd(filteredData()$response, na.rm = T))
-  qqdata0 <- data.frame(sort(normal.quantiles), sort(filteredData()$response))
-  colnames(qqdata0) <- c("normal.quantiles", "diffs")
-  data.frame(qqdata0)
-})
-
 
 observe({
   range <- diff(range(filteredData()$response))
   updateSliderInput(session, "w", min=round(range/100, digits=2), 
           max=round(range/5, digits=2), step=round(range/100, digits=2), value=round(range/10, digits=2))
+})
+
+output$slider <- renderUI({
+  if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
+    range.100 <- 0.01
+  }
+  else(
+    range.100 <- round(diff(range(filteredData()$response))/100, digits=2)
+  )
+  sliderInput("w", "Histogram Bin Width", min=range.100, max=range.100*20, value=range.100*10, step=.01)
 })
 
 output$summary <- renderTable({
@@ -152,14 +164,23 @@ data.frame(perms)
 output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
 
 observe({
-  if(input$reset > 0 ){
-    trials <- data.frame(perms=rep(0, 10))
-    output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+#   if(input$reset > 0 ){
+#     trials <- data.frame(perms=rep(0, 10))
+#     output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
+#   }
+  if(input$goButton > 0){
+    range2.100 <- round(diff(range(trials()$perms))/100, digits=3)
+    if (round(diff(range(trials()$perms))/100, digits=3) == 0)
+      range2.100 <- 0.001
   }
+  else(
+    range2.100 <- 0.001
+  )
   if(input$plot2=="his2"){
     trials %>%
       ggvis(~perms) %>%
-      layer_histograms(width = input_slider(0.01, 7.5, step=0.01, value=2.5)) %>%
+      layer_histograms(width = input_slider(range2.100, range2.100*50,
+                                            value=range2.100*10, step=0.001)) %>%
       bind_shiny("hist", "hist_ui")
   }
   if(input$plot2=="den2"){
@@ -193,6 +214,16 @@ output$hisDen2 <- renderPlot({
     binwidth=input$w2, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + 
     theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"), 
     axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+})
+
+output$slider2 <- renderUI({
+  if (round(diff(range(trials()$perms))/100, digits=3) == 0){
+    range2.100 <- 0.01
+  }
+  else{
+    range2.100 <- round(diff(range(trials()$perms))/100, digits=3)
+  }
+  sliderInput("w2", "", min=range2.100, max=range2.100*50, value=range2.100*10, step=.001)
 })
 
 output$summary2 <- renderTable({
