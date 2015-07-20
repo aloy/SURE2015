@@ -6,6 +6,8 @@ library(ggvis)
 library(ggplot2)
 data(FishGills3)
 
+# ANOVA
+
 shinyServer(function(input,output, session){
 
   theData <- reactive({
