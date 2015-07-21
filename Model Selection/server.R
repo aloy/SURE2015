@@ -26,35 +26,47 @@ shinyServer(function(input,output, session){
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
+  shinyjs::onclick("hideSelectOptions",
+                   shinyjs::toggle(id = "selectOptions", anim = TRUE))
+  
   observe({
     data <- theData()
     qvars <- colnames(data)[sapply(data,is.numeric)]
-    updateSelectInput(session, 'response', choices = qvars)
+    updateSelectInput(session, 'responseVar', choices = qvars)
   })
   
   filteredData <-reactive({
     data<-isolate(theData())
-    response0 <- input$response
-    if(input$response=="response"){
+    response0 <- input$responseVar
+    if(input$responseVar=="responseVar"){
       if(is.null(data)){
         data<-data.frame(response=0)
       }
-    }else{
+    }
+    else{
       colnames(data)[colnames(data) == response0] <- "response"
     }
-    data.frame(data)
+    data
+  })
+  
+  factorData <- reactive({
+    if(is.null(input$factCols)==FALSE){
+      data <- isolate(filteredData())
+      factCols0 <- c(input$factCols)
+      data[,factCols0] <- as.factor(data[,factCols0])
+      data
+    }
+    else{
+      filteredData()
+    }
   })
   
   full.lm <- reactive({
-    lm(response~., data=filteredData())
+    lm(response~., data=factorData())
   })
   
   null.lm <- reactive({
-    lm(response~1, data=filteredData())
-  })
-  
-  output$fullModel <- renderPrint({
-    summary(full.lm())
+    lm(response~1, data=factorData())
   })
   
   output$anovaNull <- renderTable({
@@ -66,49 +78,83 @@ shinyServer(function(input,output, session){
   })
   
   output$select <- renderUI({
-    cols <- colnames(subset(filteredData(), select=-response))
+    cols <- colnames(subset(factorData(), select=-response))
     checkboxGroupInput("cols", "Choose Variables", cols)
   })
   
+output$factorSelect <- renderUI({  
+  sub <- subset(filteredData(), select=-response)
+    qvars <- names(sub[sapply(sub, is.numeric)])
+    checkboxGroupInput("factCols", "Select Numeric Variables as Factors", qvars)
+  })
+  
+  output$yint <- renderUI({
+    if(is.null(input$cols)){
+      return(NULL)
+    }
+    else{
+      checkboxInput("yint", "Include Y-Intercept", value=TRUE)
+    }
+  })
+
   newData <-  reactive({
     vars <- input$cols
     if(is.null(input$cols)){
-      newData0 <- data.frame(filteredData())
+      newData0 <- data.frame(factorData()[,"response"])
+      names(newData0) <- "response"
     }else{
-newdata0 <- data.frame(filteredData()[,c(vars, "response")])
+newData0 <- data.frame(factorData()[,c(vars, "response")])
 }
-switch(input$mod,
-       full=filteredData(),
-       other=newdata0
-) 
+newData0
 })
   
   new.lm <- reactive({
     if(is.null(input$cols)){
-      lm(response~1, data=filteredData())
+      lm(response~1, data=newData())
+    }
+    if(is.null(input$cols)==FALSE && input$yint==FALSE){
+      lm(response~.-1, data=newData())
     }
     else{
       lm(response~., data=newData())
     }
   })
-  
+
 output$summary <- renderPrint({
-  summary(new.lm())
-})  
+summary(test.lm())
+})
 
   test.lm <- reactive({
-    switch(input$mod,
+   test <- switch(input$mod,
            full=full.lm(),
            other=new.lm()
            ) 
+   test
     })
 
+testData <- reactive({
+ data <- switch(input$mod,
+         full=factorData(),
+         other=newData()
+  )
+  data.frame(data)
+})
+
+output$warn <- renderUI({
+  if(input$mod == "other" && is.null(input$cols)==TRUE){
+    p(strong("Please select an alternative model on the Model Selection tab."),  style = "color:red")
+  }
+  else{
+    return(NULL)
+  }
+})
+
 output$corrPlot <- renderPlot({
-  plot(newData(), pch = 16)
+  plot(testData()[sapply(testData(), is.numeric)], pch = 16)
 })
 
 output$corrTable <- renderTable({
-  cor(newData())
+  cor(testData()[sapply(testData(), is.numeric)])
 })
 
 output$vif <- renderPrint({
@@ -120,23 +166,23 @@ output$av <- renderPlot({
 })
 
 output$hat <- renderTable({
-  hatinf <- as.numeric(which(hatvalues(test.lm())> (2*ncol(newData()))/nrow(newData())))
-  data.frame(newData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
+  hatinf <- as.numeric(which(hatvalues(test.lm())> (2*ncol(testData()))/nrow(testData())))
+  data.frame(testData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
 })
 
 output$cooks <- renderTable({
   cooks <- as.numeric(which(cooks.distance(test.lm())>1))
-  data.frame(newData()[cooks,], Cooks=cooks.distance(test.lm())[cooks])
+  data.frame(testData()[cooks,], Cooks=cooks.distance(test.lm())[cooks])
 })
 
 output$dffits <- renderTable({
   fits <- as.numeric(which(dffits(test.lm())>1))
-  data.frame(newData()[fits,], DFFITS=dffits(test.lm())[fits])
+  data.frame(testData()[fits,], DFFITS=dffits(test.lm())[fits])
 })
 
 output$dfbetas <- renderTable({
   betas <- as.numeric(which(dfbetas(test.lm())>1))
-  data.frame(newData()[betas,], DFBETAS=dfbetas(test.lm())[betas])
+  data.frame(testData()[betas,], DFBETAS=dfbetas(test.lm())[betas])
   
 })
 

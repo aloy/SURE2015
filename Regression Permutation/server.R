@@ -7,6 +7,8 @@ library(car)
 library(boot)
 data(mtcars)
 
+# Permutation for Regression
+
 shinyServer(function(input, output, session) {
   theData <- reactive({
     if(input$chooseData=="uploadYes"){

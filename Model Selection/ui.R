@@ -47,9 +47,25 @@ shinyUI(bootstrapPage(
         ) #conditionalPanel
       ),#conditionalPanel
       conditionalPanel(
-        "$('li.active a').first().html()==='Full Model'",
-        selectInput('response', label=h4('Response variable'), 'response')
+        "$('li.active a').first().html()==='Model Selection'",
+        selectInput('responseVar', label=h4('Response variable'), 'responseVar'),
+        radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "other"), selected="full"),
+        tags$div(id="selectOptions",
+           uiOutput("factorSelect"),
+          conditionalPanel(
+          condition='input.mod=="other"',
+          uiOutput("select"),
+        uiOutput("yint")
+          )
         ),
+        actionButton("hideSelectOptions", "Show/hide selection options")
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Model Checking'",
+        radioButtons("check", label=h4("Diagnostics"), c("Multicollinearity" = "mult", "Non-Linearity" = "line", 
+                "Influence" = "infl", "Non-Constant Variance" = "var", "Non-Normal Errors" = "norm"), selected="mult"),
+        uiOutput("warn")
+      ),
       conditionalPanel(
         "$('li.active a').first().html()==='Inference'",
         radioButtons("inf", label=h4("Inference"), c("All Coefficients" = "all", "Single Coefficient" = "single")),
@@ -57,16 +73,6 @@ shinyUI(bootstrapPage(
           condition='input.inf=="single"',
           sliderInput("level", label=h4("Confidence Level"), min=0.01, max=0.99, value=0.95, step=0.01)
           )
-      ),
-      conditionalPanel(
-        "$('li.active a').first().html()==='Model Selection'",
-        uiOutput("select")
-      ),
-      conditionalPanel(
-        "$('li.active a').first().html()==='Model Checking'",
-        radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "other"), selected="full"),
-        radioButtons("check", label=h4("Diagnostics"), c("Non-Collinearity" = "mult", "Linearity" = "line", 
-                             "Leverage" = "lev", "Constant Variance" = "var", "Normal Errors" = "norm"), selected="mult")
       )
       ), #sidebar Panel
     mainPanel(
@@ -74,31 +80,18 @@ shinyUI(bootstrapPage(
                   tabPanel("Input",
                            dataTableOutput("contents")               
                   ), #tabPanel
-                  tabPanel("Full Model",
-                       verbatimTextOutput("fullModel")    
-                           ),
-                  tabPanel("Inference",
-                           conditionalPanel(
-                             condition='input.inf=="all"',
-                             tableOutput("anovaNull")
-                           ),
-                           conditionalPanel(
-                             condition='input.inf=="single"',
-                             tableOutput("coefCI")
-                             )
-                  ),
                   tabPanel("Model Selection",
                            verbatimTextOutput("summary")
-                           ),
+                  ),
                   tabPanel("Model Checking",
                            conditionalPanel(
                              condition='input.check=="mult"',
-                            h4("Plotting Matrix"),
+                             h4("Plotting Matrix"),
                              plotOutput("corrPlot"),
-                            h4("Correlations Table"),
+                             h4("Correlations Table"),
                              tableOutput("corrTable"),
-                            h4("Variance Inflation Factor"),
-                            verbatimTextOutput("vif")
+                             h4("Variance Inflation Factor"),
+                             verbatimTextOutput("vif")
                            ),
                            conditionalPanel(
                              condition='input.check=="line"',
@@ -106,7 +99,7 @@ shinyUI(bootstrapPage(
                              plotOutput("av")
                            ),
                            conditionalPanel(
-                             condition='input.check=="lev"',
+                             condition='input.check=="infl"',
                              h4("Hat Values"),
                              tableOutput("hat"),
                              h4("Cook's Distance"),
@@ -126,7 +119,17 @@ shinyUI(bootstrapPage(
                              h4("Normal Q-Q Plot"),
                              plotOutput("qq")
                            )
-                           ) #tabPanel
+                  ),
+                  tabPanel("Inference",
+                           conditionalPanel(
+                             condition='input.inf=="all"',
+                             tableOutput("anovaNull")
+                           ),
+                           conditionalPanel(
+                             condition='input.inf=="single"',
+                             tableOutput("coefCI")
+                             )
+                  )
       ) #tabsetPanel
     ) #mainPanel
   )#sidebarLayout
