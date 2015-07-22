@@ -49,7 +49,8 @@ shinyUI(bootstrapPage(
       conditionalPanel(
         "$('li.active a').first().html()==='Model Selection'",
         selectInput('responseVar', label=h4('Response variable'), 'responseVar'),
-        radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "other"), selected="full"),
+        radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "other",
+        "Backwards Selection from Full" = "back", "Forwards Selection from Null"="forwards"), selected="full"),
         tags$div(id="selectOptions",
            uiOutput("factorSelect"),
           conditionalPanel(

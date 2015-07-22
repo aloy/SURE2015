@@ -52,11 +52,11 @@ shinyServer(function(input,output, session){
   factorData <- reactive({
     if(is.null(input$factCols)==FALSE){
       data <- isolate(filteredData())
-      response0 <- input$responseVar
       factCols0 <- c(input$factCols)
-      data[,factCols0] <- as.factor(data[,factCols0])
-      colnames(data)[colnames(data) == response0] <- "response"
-      data
+      facts <- data.frame(apply(filteredData()[which(colnames(filteredData())== factCols0)], 2, 
+                                function(x) factor(x)))
+      nums <- subset(filteredData(), select=which(colnames(filteredData()) != factCols0))
+      data.frame(nums, facts)
     }
     else{
       filteredData()
@@ -87,7 +87,7 @@ shinyServer(function(input,output, session){
 output$factorSelect <- renderUI({  
   sub <- subset(filteredData(), select=-response)
     qvars <- names(sub[sapply(sub, is.numeric)])
-    checkboxGroupInput("factCols", "Select Numeric Variables as Factors", qvars)
+    checkboxGroupInput("factCols", "Select Numeric Variables as Categorical", qvars)
   })
   
   output$yint <- renderUI({
