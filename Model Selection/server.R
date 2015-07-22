@@ -2,6 +2,7 @@ library(shiny)
 library(shinyjs)
 library(Lock5Data)
 library(car)
+library(leaps)
 data(BodyFat)
 
 #Model Selection
@@ -54,7 +55,7 @@ shinyServer(function(input,output, session){
       data <- isolate(filteredData())
       factCols0 <- c(input$factCols)
       facts <- data.frame(apply(filteredData()[which(colnames(filteredData())== factCols0)], 2, 
-                                function(x) factor(x)))
+                                function(x) as.factor(x)))
       nums <- subset(filteredData(), select=which(colnames(filteredData()) != factCols0))
       data.frame(nums, facts)
     }
@@ -129,7 +130,12 @@ summary(test.lm())
   test.lm <- reactive({
    test <- switch(input$mod,
            full=full.lm(),
-           other=new.lm()
+           other=new.lm(),
+           back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
+           bic.back = step(full.lm, scope = list(lower = ~ 1), direction = "backward",  
+                           k = log(nrow(factorData()))),
+           all = regsubsets(response ~ ., data = factorData(),
+                    method = "exhaustive", nvmax = ncol(factorData()), nbest = 1)
            ) 
    test
     })
@@ -150,6 +156,14 @@ output$warn <- renderUI({
     return(NULL)
   }
 })
+
+output$checkPlot <- renderPlot({
+  switch(input$plot,
+         adjr2=  plot(test.lm(), scale="adjr2"),
+           cp= plot(test.lm(), scale="Cp"),
+           bic.plot=plot(test.lm(), scale="bic")
+         )
+  })
 
 output$corrPlot <- renderPlot({
   plot(testData()[sapply(testData(), is.numeric)], pch = 16)

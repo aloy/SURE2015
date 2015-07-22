@@ -50,7 +50,12 @@ shinyUI(bootstrapPage(
         "$('li.active a').first().html()==='Model Selection'",
         selectInput('responseVar', label=h4('Response variable'), 'responseVar'),
         radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "other",
-        "Backwards Selection from Full" = "back", "Forwards Selection from Null"="forwards"), selected="full"),
+        "AIC Backwards Selection from Full" = "back", "BIC Backwards Selection from Null"="bic.back",
+        "All Subsets" = "all"), selected="full"),
+        conditionalPanel(
+          condition='input.mod=="all"',
+        radioButtons("plot", label=h4("plot"), c("ADJR2" = "adjr2", "Mallow's Cp" = "cp", "BIC"="bic.plot"))
+        ),
         tags$div(id="selectOptions",
            uiOutput("factorSelect"),
           conditionalPanel(
@@ -82,7 +87,8 @@ shinyUI(bootstrapPage(
                            dataTableOutput("contents")               
                   ), #tabPanel
                   tabPanel("Model Selection",
-                           verbatimTextOutput("summary")
+                           verbatimTextOutput("summary"),
+                           plotOutput("checkPlot")
                   ),
                   tabPanel("Model Checking",
                            conditionalPanel(
