@@ -52,8 +52,10 @@ shinyServer(function(input,output, session){
   factorData <- reactive({
     if(is.null(input$factCols)==FALSE){
       data <- isolate(filteredData())
+      response0 <- input$responseVar
       factCols0 <- c(input$factCols)
       data[,factCols0] <- as.factor(data[,factCols0])
+      colnames(data)[colnames(data) == response0] <- "response"
       data
     }
     else{
@@ -161,12 +163,12 @@ output$vif <- renderPrint({
   vif(test.lm())
 })
 
-output$av <- renderPlot({
-  avPlots(test.lm(), pch = 16)
-})
+# output$av <- renderPlot({
+#   avPlots(test.lm(), pch = 16)
+# })
 
 output$hat <- renderTable({
-  hatinf <- as.numeric(which(hatvalues(test.lm())> (2*ncol(testData()))/nrow(testData())))
+  hatinf <- as.numeric(which(hatvalues(test.lm())>(2*(ncol(testData()+1)))/nrow(testData())))
   data.frame(testData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
 })
 
@@ -181,8 +183,8 @@ output$dffits <- renderTable({
 })
 
 output$dfbetas <- renderTable({
-  betas <- as.numeric(which(dfbetas(test.lm())>1))
-  data.frame(testData()[betas,], DFBETAS=dfbetas(test.lm())[betas])
+  betas <- which(dfbetas(test.lm()) >1, arr.ind=TRUE)
+  data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas])
   
 })
 
@@ -190,8 +192,8 @@ output$bp <- renderPrint({
   ncvTest(test.lm())
 })
 
-output$qq <- renderPlot({
-  qqPlot(test.lm(), dist = "norm", pch = 16)
-})
+# output$qq <- renderPlot({
+#   qqPlot(test.lm(), dist = "norm", pch = 16)
+# })
 
 })
