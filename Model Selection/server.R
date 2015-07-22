@@ -15,7 +15,8 @@ shinyServer(function(input,output, session){
       if (is.null(inFile1))
         return(NULL)
       return(      
-        read.csv(inFile1$datapath, header=input$header, sep=input$sep, quote=input$quote)
+        read.csv(inFile1$datapath, header=input$header, sep=input$sep, quote=input$quote, 
+                 row.names=input$rownames)
       )
     }
     else
@@ -47,7 +48,19 @@ shinyServer(function(input,output, session){
     else{
       colnames(data)[colnames(data) == response0] <- "response"
     }
+    if(input$firstCol==TRUE && is.factor(theData()[,1])==TRUE){
+      data <- data[,-1]
+    }
     data
+  })
+  
+  output$rowNames <- renderUI({
+    if(is.factor(theData()[,1])==TRUE){
+      checkboxInput("firstCol", "Remove first column?", value=FALSE)
+    }
+    else{
+      return(NULL)
+    }
   })
   
   factorData <- reactive({
@@ -77,16 +90,16 @@ shinyServer(function(input,output, session){
   })
   
   output$coefCI <- renderTable({
-  confint(full.lm(), level = input$level)
+    confint(full.lm(), level = input$level)
   })
   
-  output$select <- renderUI({
+  output$selectVar <- renderUI({
     cols <- colnames(subset(factorData(), select=-response))
     checkboxGroupInput("cols", "Choose Variables", cols)
   })
   
-output$factorSelect <- renderUI({  
-  sub <- subset(filteredData(), select=-response)
+  output$factorSelect <- renderUI({  
+    sub <- subset(filteredData(), select=-response)
     qvars <- names(sub[sapply(sub, is.numeric)])
     checkboxGroupInput("factCols", "Select Numeric Variables as Categorical", qvars)
   })
@@ -99,17 +112,17 @@ output$factorSelect <- renderUI({
       checkboxInput("yint", "Include Y-Intercept", value=TRUE)
     }
   })
-
+  
   newData <-  reactive({
     vars <- input$cols
     if(is.null(input$cols)){
       newData0 <- data.frame(factorData()[,"response"])
       names(newData0) <- "response"
     }else{
-newData0 <- data.frame(factorData()[,c(vars, "response")])
-}
-newData0
-})
+      newData0 <- data.frame(factorData()[,c(vars, "response")])
+    }
+    newData0
+  })
   
   new.lm <- reactive({
     if(is.null(input$cols)){
@@ -122,84 +135,112 @@ newData0
       lm(response~., data=newData())
     }
   })
-
-output$summary <- renderPrint({
-summary(test.lm())
-})
-
-  test.lm <- reactive({
-   test <- switch(input$mod,
-           full=full.lm(),
-           other=new.lm(),
-           back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
-           bic.back = step(full.lm, scope = list(lower = ~ 1), direction = "backward",  
-                           k = log(nrow(factorData()))),
-           all = regsubsets(response ~ ., data = factorData(),
-                    method = "exhaustive", nvmax = ncol(factorData()), nbest = 1)
-           ) 
-   test
-    })
-
-testData <- reactive({
- data <- switch(input$mod,
-         full=factorData(),
-         other=newData()
-  )
-  data.frame(data)
-})
-
-output$warn <- renderUI({
-  if(input$mod == "other" && is.null(input$cols)==TRUE){
-    p(strong("Please select an alternative model on the Model Selection tab."),  style = "color:red")
-  }
-  else{
-    return(NULL)
-  }
-})
-
-output$checkPlot <- renderPlot({
-  switch(input$plot,
-         adjr2=  plot(test.lm(), scale="adjr2"),
-           cp= plot(test.lm(), scale="Cp"),
-           bic.plot=plot(test.lm(), scale="bic")
-         )
-  })
-
-output$corrPlot <- renderPlot({
-  plot(testData()[sapply(testData(), is.numeric)], pch = 16)
-})
-
-output$corrTable <- renderTable({
-  cor(testData()[sapply(testData(), is.numeric)])
-})
-
-output$vif <- renderPrint({
-  vif(test.lm())
-})
-
-# output$av <- renderPlot({
-#   avPlots(test.lm(), pch = 16)
-# })
-
-output$hat <- renderTable({
-  hatinf <- as.numeric(which(hatvalues(test.lm())>(2*(ncol(testData()+1)))/nrow(testData())))
-  data.frame(testData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
-})
-
-output$cooks <- renderTable({
-  cooks <- as.numeric(which(cooks.distance(test.lm())>1))
-  data.frame(testData()[cooks,], Cooks=cooks.distance(test.lm())[cooks])
-})
-
-output$dffits <- renderTable({
-  fits <- as.numeric(which(dffits(test.lm())>1))
-  data.frame(testData()[fits,], DFFITS=dffits(test.lm())[fits])
-})
-
-output$dfbetas <- renderTable({
-  betas <- which(dfbetas(test.lm()) >1, arr.ind=TRUE)
-  data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas])
   
+  output$summary <- renderPrint({
+    summary(test.lm())
+  })
+  
+  test.lm <- reactive({
+    test <- switch(input$mod,
+                   full=full.lm(),
+                   other=new.lm(),
+                   selected= select.lm()
+    ) 
+    test
+  })
+  
+<<<<<<< HEAD
+  testData <- reactive({
+    data <- switch(input$mod,
+                   full=factorData(),
+                   other=newData()
+    )
+    data.frame(data)
+  })
+  
+  output$warn <- renderUI({
+    if(input$mod == "other" && is.null(input$cols)==TRUE){
+      p(strong("Please select an alternative model on the Model Selection tab."),  style = "color:red")
+    }
+    else{
+      return(NULL)
+    }
+  })
+  
+  
+  select.lm <- reactive({
+    lm <- switch(input$select,
+     back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
+    bic.back=step(full.lm(), scope = list(lower = ~ 1), direction = "backward",  
+                 k = log(nrow(factorData()))),
+    all= regsubsets(response ~ ., data = factorData(),
+                       method = "exhaustive", nvmax = ncol(factorData()), nbest = 1)
+    )
+    lm
+  })
+#   back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
+#   bic.back = step(full.lm(), scope = list(lower = ~ 1), direction = "backward",  
+#                   k = log(nrow(factorData()))),
+#   all = regsubsets(response ~ ., data = factorData(),
+#                    method = "exhaustive", nvmax = ncol(factorData()), nbest = 1)
+#   
+  output$checkPlot <- renderPlot({
+    
+    switch(input$plot,
+           adjr2=  plot(select.lm(), scale="adjr2"),
+           cp= plot(select.lm(), scale="Cp"),
+           bic.plot=plot(select.lm(), scale="bic")
+    )
+  })
+  
+  output$corrPlot <- renderPlot({
+    plot(testData()[sapply(testData(), is.numeric)], pch = 16)
+  })
+  
+  output$corrTable <- renderTable({
+    cor(testData()[sapply(testData(), is.numeric)])
+  })
+  
+  output$vif <- renderPrint({
+    vif(test.lm())
+  })
+  
+  output$av <- renderPlot({
+    test2.lm <- isolate(test.lm())
+    avPlots(test2.lm, pch = 16)
+  })
+  
+  output$hat <- renderTable({
+    hatinf <- as.numeric(which(hatvalues(test.lm())>(2*(ncol(testData()+1)))/nrow(testData())))
+    data.frame(testData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
+  })
+  
+  output$cooks <- renderTable({
+    cooks <- as.numeric(which(cooks.distance(test.lm())>1))
+    data.frame(testData()[cooks,], Cooks=cooks.distance(test.lm())[cooks])
+  })
+  
+  output$dffits <- renderTable({
+    fits <- as.numeric(which(dffits(test.lm())>1))
+    data.frame(testData()[fits,], DFFITS=dffits(test.lm())[fits])
+  })
+  
+  output$dfbetas <- renderTable({
+    betas <- which(dfbetas(test.lm()) >1, arr.ind=TRUE)
+    data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas])
+    
+  })
+  
+  output$bp <- renderPrint({
+    ncvTest(test.lm())
+  })
+  
+  output$qq <- renderPlot({
+    qqPlot(test.lm(), dist = "norm", pch = 16)
+  })
+  
+}) 
+=======
 })
 
 output$bp <- renderPrint({
@@ -211,3 +252,4 @@ output$qq <- renderPlot({
 })
 
 })
+>>>>>>> origin/master

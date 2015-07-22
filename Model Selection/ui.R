@@ -41,7 +41,7 @@ shinyUI(bootstrapPage(
                                 c(None='',
                                   'Double Quote'='"',
                                   'Single Quote'="'"),
-                                '"')      
+                                '"')
           ),
           actionButton("hideDataOptions", "Show/hide data set options")
         ) #conditionalPanel
@@ -49,18 +49,23 @@ shinyUI(bootstrapPage(
       conditionalPanel(
         "$('li.active a').first().html()==='Model Selection'",
         selectInput('responseVar', label=h4('Response variable'), 'responseVar'),
-        radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "other",
-        "AIC Backwards Selection from Full" = "back", "BIC Backwards Selection from Null"="bic.back",
-        "All Subsets" = "all"), selected="full"),
+        radioButtons("mod", label=h4("Model"), c("Full Model" = "full", "Selected Model" = "selected",
+                                                 "New Model" = "other"), selected ="full"),
         conditionalPanel(
-          condition='input.mod=="all"',
-        radioButtons("plot", label=h4("plot"), c("ADJR2" = "adjr2", "Mallow's Cp" = "cp", "BIC"="bic.plot"))
+          condition='input.mod=="selected"',
+        radioButtons("select", label=h4("Selection Method"), c("AIC Backwards from Full" = "back", 
+        "BIC Backwards from Null"="bic.back", "All Subsets" = "all"), selected="back")
+        ),
+        conditionalPanel(
+          condition='input.select=="all"',
+        radioButtons("plot", label=h4("Plot"), c("ADJR2" = "adjr2", "Mallow's Cp" = "cp", "BIC"="bic.plot"))
         ),
         tags$div(id="selectOptions",
+           uiOutput("rowNames"),
            uiOutput("factorSelect"),
           conditionalPanel(
           condition='input.mod=="other"',
-          uiOutput("select"),
+          uiOutput("selectVar"),
         uiOutput("yint")
           )
         ),
@@ -88,7 +93,10 @@ shinyUI(bootstrapPage(
                   ), #tabPanel
                   tabPanel("Model Selection",
                            verbatimTextOutput("summary"),
+                           conditionalPanel(
+                             condition='input.select=="all"',
                            plotOutput("checkPlot")
+                           )
                   ),
                   tabPanel("Model Checking",
                            conditionalPanel(
