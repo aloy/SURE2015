@@ -149,7 +149,6 @@ shinyServer(function(input,output, session){
     test
   })
   
-<<<<<<< HEAD
   testData <- reactive({
     data <- switch(input$mod,
                    full=factorData(),
@@ -205,10 +204,10 @@ shinyServer(function(input,output, session){
     vif(test.lm())
   })
   
-  output$av <- renderPlot({
-    test2.lm <- isolate(test.lm())
-    avPlots(test2.lm, pch = 16)
-  })
+#   output$av <- renderPlot({
+#     test2.lm <- isolate(test.lm())
+#     avPlots(test2.lm, pch = 16)
+#   })
   
   output$hat <- renderTable({
     hatinf <- as.numeric(which(hatvalues(test.lm())>(2*(ncol(testData()+1)))/nrow(testData())))
@@ -230,18 +229,6 @@ shinyServer(function(input,output, session){
     data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas])
     
   })
-  
-  output$bp <- renderPrint({
-    ncvTest(test.lm())
-  })
-  
-  output$qq <- renderPlot({
-    qqPlot(test.lm(), dist = "norm", pch = 16)
-  })
-  
-}) 
-=======
-})
 
 output$bp <- renderPrint({
   ncvTest(test.lm())
@@ -251,5 +238,18 @@ output$qq <- renderPlot({
   qqPlot(test.lm(), dist = "norm", pch = 16)
 })
 
+
+index <- reactive({
+sample(1:nrow(testData()), size = 0.2 * nrow(testData()))  
 })
->>>>>>> origin/master
+
+train.data <- reactive({
+  testData()[-index(),]
+})
+
+
+test.data <- reactive({
+  testData()[index(),]
+})
+
+})

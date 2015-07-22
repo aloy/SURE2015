@@ -84,7 +84,10 @@ shinyUI(bootstrapPage(
           condition='input.inf=="single"',
           sliderInput("level", label=h4("Confidence Level"), min=0.01, max=0.99, value=0.95, step=0.01)
           )
-      )
+      ),
+#       conditionalPanel(
+#         "$('li.active a').first().html()==='Cross Validation'"
+#       )
       ), #sidebar Panel
     mainPanel(
       tabsetPanel(type="tabs",
@@ -144,7 +147,9 @@ shinyUI(bootstrapPage(
                              condition='input.inf=="single"',
                              tableOutput("coefCI")
                              )
-                  )
+                  ),
+#                   tabPanel("Cross-Validation"
+#                   )
       ) #tabsetPanel
     ) #mainPanel
   )#sidebarLayout
