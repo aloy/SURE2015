@@ -206,8 +206,8 @@ output$bp <- renderPrint({
   ncvTest(test.lm())
 })
 
-# output$qq <- renderPlot({
-#   qqPlot(test.lm(), dist = "norm", pch = 16)
-# })
+output$qq <- renderPlot({
+  qqPlot(test.lm(), dist = "norm", pch = 16)
+})
 
 })
