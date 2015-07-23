@@ -71,15 +71,11 @@ observed + qnorm(1 - alpha/2) * SE
 tv <- read.csv("../data/TV.csv")
 
 dat <- tv
-grp <- function() "Cable"
+grp <- "Cable"
 qvar <- "Time"
 
 colnames(dat)[colnames(dat) == grp()] <- "group"
 colnames(dat)[colnames(dat) == qvar] <- "variable"
-
-grouped <- group_by(tv, Cable)
-
-
 
 grouped <- group_by(tv, "Cable")
 
@@ -90,6 +86,7 @@ grouped_trials <- group_by(trials, .index, Cable)
 group_means <- summarise(grouped_trials, mean = mean(Time))
 diffs <- summarise(group_means, mean.diff = diff(mean))
 
+mean(diffs$mean.diff)
 # without kernel density
 w <- .2
 diffs %>% 

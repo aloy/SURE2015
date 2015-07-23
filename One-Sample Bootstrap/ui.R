@@ -117,9 +117,7 @@ shinyUI(fluidPage(
                                               ),
                                             h5("Original Summary Statistics"),
                                             h6("Summary"),
-                                            tableOutput("summary"),
-                                            h6("Standard Deviation"),
-                                            verbatimTextOutput("sd")
+                                            tableOutput("summary")
                                             
                            ),
                   tabPanel("Bootstrap",
@@ -134,9 +132,9 @@ shinyUI(fluidPage(
                                             h5("Bootstrap Summary Statistics"),
                                             h6("Mean"),
                                             verbatimTextOutput("bootMean"),
-                                            h6("Estimate Bias"),
+                                            h6("Bias"),
                                             verbatimTextOutput("bootBias"),
-                                            h6("Estimate Standard Deviation"),
+                                            h6("Standard Deviation"),
                                             verbatimTextOutput("bootSd"),
                                             hidden(
                                             dataTableOutput("trials")

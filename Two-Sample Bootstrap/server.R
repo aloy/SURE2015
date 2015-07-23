@@ -5,6 +5,7 @@ library(mosaic)
 library(Lock5Data)
 library(plyr)
 library(ggvis)
+detach(package:plyr)
 
 #Two-Sample Bootstrap
 
@@ -53,21 +54,6 @@ filteredData<-reactive({
   data
 })
 
-# grouped_df <- reactive({
-#   df1 <- subset(filteredData(),group=="Basic")
-#   df <- data.frame(df0)
-#   names(df1) <- c("group1", "group1.response","group2", "group2.response")
-#   df
-# data.frame(df1)
-# })
-
-# observe({
-#   grouped_df %>%
-#   ggvis(~response) %>% 
-#   layer_histograms() %>%
-#   bind_shiny("group1Hist")
-# })
-
 output$origHist <- renderPlot({
   dataPlot <-switch(input$plot,
                     his =  ggplot(filteredData(), aes(response)) +ggtitle("Original Sample") + 
@@ -80,26 +66,6 @@ output$origHist <- renderPlot({
   )
   dataPlot
 })
-
-# range.100 <- reactive({
-# if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
-#   range.100 <- 0.01
-# }
-# else(
-#   range.100 <- round(diff(range(filteredData()$response))/100, digits=2)
-# )
-# range
-# })
-# 
-# maxval <- reactive({
-# val()*50  
-#   
-# })
-# 
-# val <- reactive({
-#   range.100()*10
-# })
-
 
 output$slider <- renderUI({
   if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
@@ -115,41 +81,37 @@ output$basicSummary <- renderTable({
   favstats(~response|group, data=filteredData())  
   })
 
-origStat <- reactive({ #Our original data frame, with all of the calculations we want (for bias)
-  grouped_trials <- group_by(simdata(), catVals..)
-  group_means <- summarise(grouped_trials, mean=mean(quantVals..), med=median(quantVals..), sd = sd(quantVals..))
-  summarise(group_means, mean.diff=diff(mean), med.diff=diff(med),
-            mean.ratio = mean[1] / mean[2], med.ratio=med[1]/med[2], sd.ratio = sd[1]/sd[2])
-  
-})
-
 trials <- reactive({
   
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){
-      result <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
-      colnames(result) <- "result"
+      result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      result <- summarise(summarise(group_by(result0, .index, group), mean=mean(response)), 
+                          mean.diff=diff(mean))
+      names(result) <- c("index", "result")
     }
     if(input$stat=="bootMedian"){
-      result <- do(input$num) * diff(median(response ~ shuffle(group), data = filteredData()))
-      colnames(result) <- "result"
+      result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
+      result <- summarise(summarise(group_by(result0, .index, group), median=median(response)), 
+                          median.diff=diff(median))
+      names(result) <- c("index", "result")
     }
     if(input$stat=="bootMeanRatio"){
       result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      df <- ddply(result0, .(.index, group), summarise, mean=mean(response))
-      result <- ddply(df, .(.index), summarise, mean.ratio=mean[1]/mean[2])
+      result <- summarise(summarise(group_by(result0, .index, group), mean=mean(response)), 
+                          mean.ratio=mean[1]/mean[2])
       names(result) <- c("index", "result")
     }
     if(input$stat=="bootMedRatio"){
       result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      df <- ddply(result0, .(.index, group), summarise, median=median(response))
-      result <- ddply(df, .(.index), summarise, median.ratio=median[1]/median[2])
+      result <- summarise(summarise(group_by(result0, .index, group), median=median(response)), 
+                          median.ratio=median[1]/median[2])
       names(result) <- c("index", "result")
     }
     if(input$stat=="bootSdRatio"){
       result0 <- do(input$num) * sample(group_by(filteredData(), group), replace = TRUE)
-      df <- ddply(result0, .(.index, group), summarise, sd=sd(response))
-      result <- ddply(df, .(.index), summarise, sd=sd[1]/sd[2])
+      result <- summarise(summarise(group_by(result0, .index, group), sd=sd(response)), 
+                          sd.ratio=sd[1]/sd[2])
       names(result) <- c("index", "result")
     }
     data.frame(result)
@@ -209,12 +171,12 @@ qqdata2 <- reactive({
 
 observed <- reactive({
   switch(input$stat,
-         bootMean= summarise(ddply(filteredData(), .(group), summarise, mean=mean(response)), stat=diff(mean)),
-         bootMedian= summarise(ddply(filteredData(), .(group), summarise, median=median(response)), stat=diff(median)),
-         bootMeanRatio = summarise(ddply(filteredData(), .(group), summarise, mean=mean(response)), stat=mean[1]/mean[2]),
-         bootMedRatio =  summarise(ddply(filteredData(), .(group), summarise, median=median(response)),
+         bootMean=  summarise(summarise(group_by(filteredData(), group), mean=mean(response)), stat=diff(mean)),
+         bootMedian=  summarise(summarise(group_by(filteredData(), group), median=median(response)), stat=diff(median)),
+         bootMeanRatio = summarise(summarise(group_by(filteredData(), group), mean=mean(response)), stat=mean[1]/mean[2]),
+         bootMedRatio =  summarise(summarise(group_by(filteredData(), group), median=median(response)),
                                    stat=median[1]/median[2]),
-         bootSdRatio = summarise(ddply(filteredData(), .(group), summarise, sd=sd(response)), stat=sd[1]/sd[2])
+         bootSdRatio = summarise(summarise(group_by(filteredData(), group), sd=sd(response)),stat=sd[1]/sd[2])
   )
 })
 
@@ -240,7 +202,7 @@ output$slider2 <- renderUI({
 
 
 output$bootBias <- renderPrint({
-  signif(observed()$stat-mean(trials()$result), digits=3)
+ mean(trials()$result) - observed()
  })
 
 output$bootSd <- renderPrint({
