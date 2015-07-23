@@ -93,6 +93,9 @@ shinyUI(bootstrapPage(
           condition='input.inf=="single"',
           sliderInput("level", label=h4("Confidence Level"), min=0.01, max=0.99, value=0.95, step=0.01)
           )
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Cross-Validation'"
       )
       ), #sidebar Panel
     mainPanel(
@@ -103,8 +106,7 @@ shinyUI(bootstrapPage(
                   tabPanel("Model Selection",
                            conditionalPanel(
                              condition='input.mod!="selected"',
-                           tableOutput("summary"),
-                           verbatimTextOutput("summary2")
+                           tableOutput("summary")
                            ),
                            conditionalPanel(
                              condition='input.mod=="selected"',
@@ -116,6 +118,7 @@ shinyUI(bootstrapPage(
                            )
                   ),
                   tabPanel("Model Checking",
+                           uiOutput("warn2"),
                            conditionalPanel(
                              condition='input.check=="mult"',
                              h4("Plotting Matrix"),
@@ -163,7 +166,14 @@ shinyUI(bootstrapPage(
                              condition='input.inf=="single"',
                              tableOutput("coefCI")
                              )
-                  )
+                  ),
+                  tabPanel("Cross-Validation",
+                           verbatimTextOutput("trainSummary"),
+                           h4("Bias"),
+                           verbatimTextOutput("bias"),
+                           h4("Root-Predicted Mean Squared Error"),
+                           verbatimTextOutput("rpmse")
+                           )
       ) #tabsetPanel
     ) #mainPanel
   )#sidebarLayout

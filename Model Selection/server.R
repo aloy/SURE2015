@@ -3,6 +3,8 @@ library(shinyjs)
 library(Lock5Data)
 library(car)
 library(leaps)
+library(caret)
+library(randomForest)
 data(BodyFat)
 
 #Model Selection
@@ -132,16 +134,12 @@ shinyServer(function(input,output, session){
       lm(response~.-1, data=newData())
     }
     else{
-      lm(response~., data=newData(),  na.action=na.exclude)
+      lm(response~., data=newData())
     }
   })
   
   output$summary <- renderTable({
     summary(test.lm())
-  })
-  
-  output$summary2 <- renderPrint({
-    test.lm()$model
   })
   
   output$selectedSummary <- renderPrint({
@@ -199,6 +197,16 @@ shinyServer(function(input,output, session){
     )
   })
   
+  output$warn2 <- renderUI({
+    if(input$mod == "selected"){
+      p(strong("Please select Full Model or New Model on the Model Selection tab."),  
+        style = "color:red")
+    }
+    else{
+      return(NULL)
+    }
+  })
+  
   output$corrPlot <- renderPlot({
     plot(testData()[sapply(testData(), is.numeric)], pch = 16)
   })
@@ -239,7 +247,7 @@ output$residPlot <- renderPlot({
     if(is.data.frame(hatData)==TRUE && nrow(hatData)==0){
       allHat <- data.frame(hatvalues(test.lm()))
       ordern <- order(allHat, decreasing = T)[1:(nrow(allHat)*n)]
-      data.frame(testData()[ordern,], "Largest Cooks"=allCook[ordern,])
+      data.frame(testData()[ordern,], "Largest Hat"=allHat[ordern,])
     }
     else{
       data.frame(hatData)
@@ -288,16 +296,36 @@ output$qq <- renderPlot({
   qqPlot(test.lm(), dist = "norm", pch = 16)
 })
 
-index <- reactive({
-sample(1:nrow(testData()), size = 0.2 * nrow(testData()))  
+training <- reactive({
+ createDataPartition(testData()$response, p=0.8, list=FALSE) 
 })
 
 train.data <- reactive({
-  testData()[-index(),]
+  testData()[-training(),]
 })
 
 test.data <- reactive({
-  testData()[index(),]
+  testData()[training(),]
+})
+
+train.lm <- reactive({
+  train(response~., data=train.data())
+})
+
+output$trainSummary <- renderPrint({
+train.lm()
+})
+
+predictions <- reactive({
+    predict(train.lm(), newdata = test.data())
+})
+
+output$bias <- renderPrint({
+  mean(test.data()$response-predictions())
+})
+
+output$rpmse <- renderPrint({
+sqrt(mean((test.data()$response-predictions())^2))
 })
 
 })
