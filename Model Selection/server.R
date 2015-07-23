@@ -136,7 +136,7 @@ shinyServer(function(input,output, session){
     }
   })
   
-  output$summary <- renderPrint({
+  output$summary <- renderTable({
     summary(test.lm())
   })
   
@@ -204,30 +204,76 @@ shinyServer(function(input,output, session){
     vif(test.lm())
   })
   
-#   output$av <- renderPlot({
-#     test2.lm <- isolate(test.lm())
-#     avPlots(test2.lm, pch = 16)
-#   })
+  output$av <- renderPlot({
+  if(ncol(testData())<10){
+    avPlots(test.lm(), pch = 16)
+  }
+  else{
+    return(NULL)
+  }
+  })
   
+output$residPlot <- renderPlot({
+  switch(input$resid,
+         student= residualPlot(test.lm(), pch = 16, type = "rstudent"),
+          std= residualPlot(test.lm(), pch = 16, type = "rstandard"),
+          raw= residualPlot(test.lm(), pch=16)
+         )
+})
+
   output$hat <- renderTable({
+    n <- input$inflPercent
     hatinf <- as.numeric(which(hatvalues(test.lm())>(2*(ncol(testData()+1)))/nrow(testData())))
-    data.frame(testData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
+    hatData <- data.frame(testData()[hatinf,], Hat=hatvalues(test.lm())[hatinf])
+    if(is.data.frame(hatData)==TRUE && nrow(hatData)==0){
+      allHat <- data.frame(hatvalues(test.lm()))
+      ordern <- order(allHat, decreasing = T)[1:(nrow(allHat)*n)]
+      data.frame(testData()[ordern,], "Largest Cooks"=allCook[ordern,])
+    }
+    else{
+      data.frame(hatData)
+    }
   })
   
   output$cooks <- renderTable({
+    n <- input$inflPercent
     cooks <- as.numeric(which(cooks.distance(test.lm())>1))
-    data.frame(testData()[cooks,], Cooks=cooks.distance(test.lm())[cooks])
+    cooksData <- data.frame(testData()[cooks,], Cooks=cooks.distance(test.lm())[cooks])
+    if(is.data.frame(cooksData)==TRUE && nrow(cooksData)==0){
+      allCook <- data.frame(cooks.distance(test.lm()))
+      ordern <- order(allCook, decreasing = T)[1:(nrow(allCook)*n)]
+      data.frame(testData()[ordern,], "Largest Cooks"=allCook[ordern,])
+    }
+    else{
+      data.frame(cooksData)
+    }
   })
   
   output$dffits <- renderTable({
+    n <- input$inflPercent
     fits <- as.numeric(which(dffits(test.lm())>1))
-    data.frame(testData()[fits,], DFFITS=dffits(test.lm())[fits])
+    fitsData <- data.frame(testData()[fits,], DFFITS=dffits(test.lm())[fits])
+    if(is.data.frame(fitsData)==TRUE && nrow(fitsData)==0){
+      allFits <- data.frame(dffits(test.lm()))
+      ordern <- order(allFits, decreasing = T)[1:(nrow(allFits)*n)]
+      data.frame(testData()[ordern,], "Largest DFFITS"=allFits[ordern,])
+    }
+    else{
+      data.frame(fitsData)
+    }
   })
   
   output$dfbetas <- renderTable({
+    n <- input$inflPercent
     betas <- which(dfbetas(test.lm()) >1, arr.ind=TRUE)
-    data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas])
-    
+    betasData <- data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas]) 
+#     if(is.data.frame(betasData)==TRUE && nrow(betasData)==0){
+#       allBetas <- data.frame(dfbetas(test.lm()))
+#       ordern <- order(allBetas, decreasing = T)[1:(nrow(allBetas)*n)]
+#       data.frame(allBetas[ordern,])
+#       }else{
+        data.frame(betasData)
+#       }
   })
 
 output$bp <- renderPrint({
@@ -238,7 +284,6 @@ output$qq <- renderPlot({
   qqPlot(test.lm(), dist = "norm", pch = 16)
 })
 
-
 index <- reactive({
 sample(1:nrow(testData()), size = 0.2 * nrow(testData()))  
 })
@@ -246,7 +291,6 @@ sample(1:nrow(testData()), size = 0.2 * nrow(testData()))
 train.data <- reactive({
   testData()[-index(),]
 })
-
 
 test.data <- reactive({
   testData()[index(),]

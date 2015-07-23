@@ -1,6 +1,5 @@
 library(shiny)
 library(shinyjs)
-library(ggvis)
 shinyUI(bootstrapPage(
   useShinyjs(),
   titlePanel("Model Selection for MLR"),
@@ -75,7 +74,17 @@ shinyUI(bootstrapPage(
         "$('li.active a').first().html()==='Model Checking'",
         radioButtons("check", label=h4("Diagnostics"), c("Multicollinearity" = "mult", "Non-Linearity" = "line", 
                 "Influence" = "infl", "Non-Constant Variance" = "var", "Non-Normal Errors" = "norm"), selected="mult"),
-        uiOutput("warn")
+        uiOutput("warn"),
+        conditionalPanel(
+          condition='input.check=="line"',
+          radioButtons("resid", label=h4("Residual Type"), c("Studentized" = "student", "Standardized" = "std", 
+                       "Raw (Pearson)" = "raw"), selected="student")
+          ),
+        conditionalPanel(
+          condition='input.check=="infl"',
+          h5("If there are no significant influential points, proportion of highest values to show:"),
+          sliderInput("inflPercent", label="", min=0.01, max=0.1, step=0.01, value=0.05)
+        )
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Inference'",
@@ -84,10 +93,7 @@ shinyUI(bootstrapPage(
           condition='input.inf=="single"',
           sliderInput("level", label=h4("Confidence Level"), min=0.01, max=0.99, value=0.95, step=0.01)
           )
-      ),
-#       conditionalPanel(
-#         "$('li.active a').first().html()==='Cross Validation'"
-#       )
+      )
       ), #sidebar Panel
     mainPanel(
       tabsetPanel(type="tabs",
@@ -95,7 +101,7 @@ shinyUI(bootstrapPage(
                            dataTableOutput("contents")               
                   ), #tabPanel
                   tabPanel("Model Selection",
-                           verbatimTextOutput("summary"),
+                           tableOutput("summary"),
                            conditionalPanel(
                              condition='input.select=="all"',
                            plotOutput("checkPlot")
@@ -114,7 +120,9 @@ shinyUI(bootstrapPage(
                            conditionalPanel(
                              condition='input.check=="line"',
                              h4("Added-Variable Plots"),
-                             plotOutput("av")
+                             plotOutput("av"),
+                             h4("Residual Plot"),
+                             plotOutput("residPlot")
                            ),
                            conditionalPanel(
                              condition='input.check=="infl"',
@@ -147,9 +155,7 @@ shinyUI(bootstrapPage(
                              condition='input.inf=="single"',
                              tableOutput("coefCI")
                              )
-                  ),
-#                   tabPanel("Cross-Validation"
-#                   )
+                  )
       ) #tabsetPanel
     ) #mainPanel
   )#sidebarLayout
