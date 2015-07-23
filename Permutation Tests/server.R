@@ -85,7 +85,7 @@ observedDiff <- reactive({
 })
 
 output$observedDiff <- renderText({
-  observedDiff()
+  round(observedDiff(), digits=3)
 })
 
 

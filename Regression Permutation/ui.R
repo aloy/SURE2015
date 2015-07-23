@@ -103,7 +103,9 @@ shinyUI(bootstrapPage(
                   ), #tabPanel
     tabPanel("Summaries",
              ggvisOutput("origPlot"),
-             verbatimTextOutput("origSummary")
+             verbatimTextOutput("origSummary"),
+             h4("Correlation"),
+             verbatimTextOutput("origCor")
              ),
     tabPanel("Permutation Test",
              conditionalPanel(
@@ -129,16 +131,20 @@ shinyUI(bootstrapPage(
                h4("Percentile-Based"),
                h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("ciPrint"),
-               h6("One-Tailed Confidence Intervals (Lower, Upper)"),
-               verbatimTextOutput("percOneTail")
+               h6("One-Tailed Confidence Interval (Lower)"),
+               verbatimTextOutput("percOneTailLower"),
+               h6("One-Tailed Confidence Interval (Upper)"),
+               verbatimTextOutput("percOneTailUpper")
              ),
              conditionalPanel(
                condition = "input.ci == 'norm'",
                h4("Normal-Based"),
                h6("Two-Tailed Confidence Interval"),
                verbatimTextOutput("normPrint"),
-               h6("One-Tailed Confidence Intervals (Lower, Upper)"),
-               verbatimTextOutput("normOneTail")
+               h6("One-Tailed Confidence Interval (Lower)"),
+               verbatimTextOutput("normOneTailLower"),
+               h6("One-Tailed Confidence Interval (Upper)"),
+               verbatimTextOutput("normOneTailUpper")
              ),
              conditionalPanel(
                condition = "input.ci == 'ypred'",
@@ -151,8 +157,10 @@ shinyUI(bootstrapPage(
                  condition = "input.stat == 'yhat'",
                h6("Two-Tailed Prediction Interval"),
                verbatimTextOutput("predInt"),
-               h6("One-Tailed Prediction Intervals (Lower, Upper)"),
-               verbatimTextOutput("predOneTail")
+               h6("One-Tailed Prediction Interval (Lower)"),
+               verbatimTextOutput("predOneTailLower"),
+               h6("One-Tailed Prediction Interval (Upper)"),
+               verbatimTextOutput("predOneTailUpper")
                )
              )
     ) #tabPanel

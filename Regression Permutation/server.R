@@ -66,6 +66,10 @@ output$origSummary <- renderPrint({
   summary(lm(y~x, data=filteredData()))
 })
 
+output$origCor <- renderPrint({
+  cor(x, y, data=filteredData())
+})
+
   trials <- reactive({    
     if(input$goButton > 0) {
       perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[,1]
@@ -230,12 +234,20 @@ output$ciPrint <- renderText({
   percPrintFunction(ciPrint, alpha()/2)
 })
 
-output$percOneTail <- renderText({
+output$percOneTailLower <- renderText({
   percOneTail <- switch(input$stat,
                     slope =boot.ci(data.boot(), conf=level()-alpha(),type="perc"),
                       yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
   )
-  percPrintFunction(percOneTail, alpha())
+  percPrintFunction(percOneTail, alpha())[1:2]
+})
+
+output$percOneTailUpper <- renderText({
+  percOneTail <- switch(input$stat,
+                        slope =boot.ci(data.boot(), conf=level()-alpha(),type="perc"),
+                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
+  )
+  percPrintFunction(percOneTail, alpha())[3:4]
 })
 
 output$normPrint <- renderText({
@@ -246,20 +258,36 @@ output$normPrint <- renderText({
   normPrintFunction(normPrint, alpha()/2)
 })
 
-output$normOneTail <- renderText({
+output$normOneTailLower <- renderText({
   normOneTail <- switch(input$stat,
                         slope =boot.ci(data.boot(), conf=level()-alpha(),type="norm"),
                         yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm")
   )
-  normPrintFunction(normOneTail, alpha())
+  normPrintFunction(normOneTail, alpha())[1:2]
+})
+
+output$normOneTailUpper <- renderText({
+  normOneTail <- switch(input$stat,
+                        slope =boot.ci(data.boot(), conf=level()-alpha(),type="norm"),
+                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm")
+  )
+  normPrintFunction(normOneTail, alpha())[3:4]
 })
 
 output$predInt <- renderPrint({
 predict(pred(), newdata=data.frame(x=input$xval), interval="predict", level=level())
 })
 
-output$predOneTail <- renderPrint({
-  predict(pred(), newdata=data.frame(x=input$xval), interval="predict", level=level()-alpha())
+output$predOneTailLower <- renderPrint({
+  paste(100*(1-level()),"%",
+    round(predict(pred(), newdata=data.frame(x=input$xval), interval="predict", 
+                  level=level()-alpha())[2], digits=3))
+})
+
+output$predOneTailUpper <- renderPrint({
+  paste(100*level(),"%",
+        round(predict(pred(), newdata=data.frame(x=input$xval), interval="predict", 
+                      level=level()-alpha())[3], digits=3))
 })
 
 })
