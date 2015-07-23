@@ -52,8 +52,8 @@ shinyUI(bootstrapPage(
                                                  "New Model" = "other"), selected ="full"),
         conditionalPanel(
           condition='input.mod=="selected"',
-        radioButtons("select", label=h4("Selection Method"), c("AIC Backwards from Full" = "back", 
-        "BIC Backwards from Null"="bic.back", "All Subsets" = "all"), selected="back")
+        radioButtons("select", label=h4("Selection Method"), c("AIC Backwards from Full" = "aic.back", 
+        "BIC Backwards from Null"="bic.back", "All Subsets" = "all"), selected="aic.back")
         ),
         conditionalPanel(
           condition='input.select=="all"',
@@ -101,10 +101,18 @@ shinyUI(bootstrapPage(
                            dataTableOutput("contents")               
                   ), #tabPanel
                   tabPanel("Model Selection",
-                           tableOutput("summary"),
                            conditionalPanel(
-                             condition='input.select=="all"',
+                             condition='input.mod!="selected"',
+                           tableOutput("summary"),
+                           verbatimTextOutput("summary2")
+                           ),
+                           conditionalPanel(
+                             condition='input.mod=="selected"',
+                            verbatimTextOutput("selectedSummary"),
+                            conditionalPanel(
+                              condition='input.select=="all"',
                            plotOutput("checkPlot")
+                           )
                            )
                   ),
                   tabPanel("Model Checking",

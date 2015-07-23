@@ -67,9 +67,9 @@ shinyServer(function(input,output, session){
     if(is.null(input$factCols)==FALSE){
       data <- isolate(filteredData())
       factCols0 <- c(input$factCols)
-      facts <- data.frame(apply(filteredData()[which(colnames(filteredData())== factCols0)], 2, 
-                                function(x) as.factor(x)))
-      nums <- subset(filteredData(), select=which(colnames(filteredData()) != factCols0))
+      facts <- apply(subset(filteredData(), select=factCols0), 2, 
+                                function(x) as.factor(x))
+      nums <- subset(filteredData(), select=setdiff(colnames(filteredData()),factCols0))
       data.frame(nums, facts)
     }
     else{
@@ -132,12 +132,24 @@ shinyServer(function(input,output, session){
       lm(response~.-1, data=newData())
     }
     else{
-      lm(response~., data=newData())
+      lm(response~., data=newData(),  na.action=na.exclude)
     }
   })
   
   output$summary <- renderTable({
     summary(test.lm())
+  })
+  
+  output$summary2 <- renderPrint({
+    test.lm()$model
+  })
+  
+  output$selectedSummary <- renderPrint({
+    switch(input$select,
+           aic.back= summary(test.lm())$coefficients,
+           bic.back=summary(test.lm())$coefficients,
+           all = summary(test.lm())
+           )
   })
   
   test.lm <- reactive({
@@ -169,7 +181,7 @@ shinyServer(function(input,output, session){
   
   select.lm <- reactive({
     lm <- switch(input$select,
-     back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
+     aic.back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
     bic.back=step(full.lm(), scope = list(lower = ~ 1), direction = "backward",  
                  k = log(nrow(factorData()))),
     all= regsubsets(response ~ ., data = factorData(),
@@ -177,12 +189,7 @@ shinyServer(function(input,output, session){
     )
     lm
   })
-#   back= step(full.lm(), scope = list(lower = ~ 1), direction = "backward"),
-#   bic.back = step(full.lm(), scope = list(lower = ~ 1), direction = "backward",  
-#                   k = log(nrow(factorData()))),
-#   all = regsubsets(response ~ ., data = factorData(),
-#                    method = "exhaustive", nvmax = ncol(factorData()), nbest = 1)
-#   
+
   output$checkPlot <- renderPlot({
     
     switch(input$plot,
@@ -205,12 +212,16 @@ shinyServer(function(input,output, session){
   })
   
   output$av <- renderPlot({
-  if(ncol(testData())<10){
-    avPlots(test.lm(), pch = 16)
-  }
-  else{
-    return(NULL)
-  }
+    n <- length(test.lm()$coefficients)
+    if(n%%3==0){
+      avPlots(test.lm(), layout=c(n/3, 3))
+    }
+    if(n%%3==1){
+      avPlots(test.lm(), layout=c((n+2)/3,3))
+    }
+    if(n%%3==2){
+      avPlots(test.lm(), layout=c((n+1)/3,3))
+    }
   })
   
 output$residPlot <- renderPlot({
@@ -264,16 +275,9 @@ output$residPlot <- renderPlot({
   })
   
   output$dfbetas <- renderTable({
-    n <- input$inflPercent
     betas <- which(dfbetas(test.lm()) >1, arr.ind=TRUE)
     betasData <- data.frame(testData()[betas[,1],], DFBETAS=dfbetas(test.lm())[betas]) 
-#     if(is.data.frame(betasData)==TRUE && nrow(betasData)==0){
-#       allBetas <- data.frame(dfbetas(test.lm()))
-#       ordern <- order(allBetas, decreasing = T)[1:(nrow(allBetas)*n)]
-#       data.frame(allBetas[ordern,])
-#       }else{
-        data.frame(betasData)
-#       }
+    data.frame(betasData)
   })
 
 output$bp <- renderPrint({
