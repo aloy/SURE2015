@@ -90,7 +90,7 @@ shinyServer(function(input, output, session){
   })
 output$summary <- renderTable({
   favstats(response, data=filteredData())
-  })
+  }, digits = 3)
 
 output$hisDenPlot <- renderPlot ({
   ggplot(data=filteredData(), aes(x=response)) + geom_histogram(colour="black", fill="grey19", 
