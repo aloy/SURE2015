@@ -63,14 +63,6 @@ shinyServer(function(input,output, session){
     layer_boxplots() %>%
     bind_shiny("origBox")
    }
-#    if(input$plot=="qq"){
-#    qqdata %>% 
-#      ggvis(~normal.quantiles, ~diffs) %>% 
-#      layer_points() %>% 
-#      add_axis("x", title="Theoretical") %>%
-#      add_axis("y", title="Sample") %>%
-#      bind_shiny("origBox")
-#    }
    if(input$plot=="resid"){
    data %>%
      ggvis(x=~group, y=~resid)  %>%
@@ -78,16 +70,6 @@ shinyServer(function(input,output, session){
      bind_shiny("origBox")
    }
 })
-
-# qqdata <- reactive({
-#   n <- nrow(filteredData())
-#   probabilities <- (1:n)/(1+n)
-#   normal.quantiles <- qnorm(probabilities, mean(filteredData()$response, na.rm = T), 
-#                             sd(filteredData()$response, na.rm = T))
-#   qqdata0 <- data.frame(sort(normal.quantiles), sort(filteredData()$response))
-#   colnames(qqdata0) <- c("normal.quantiles", "diffs")
-#   data.frame(qqdata0)
-# })
 
 output$origPlot <- renderPlot({
 plot <- switch(input$plot,
@@ -102,7 +84,8 @@ plot <- switch(input$plot,
     geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group) + theme(panel.grid.minor = element_line(colour = "grey"),
    panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
    axis.text = element_text(colour = "black")),
-  qq= ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free") + theme(aspect.ratio=1),
+  qq= ggplot(filteredData(), aes(sample=response)) + stat_qq() + facet_grid(.~group, scales="free") + theme(aspect.ratio=1, panel.grid.minor = element_line(colour = "grey"),
+  panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black")),
   hisDen = ggplot(filteredData(), aes(response)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w, aes(y=..density..)) +  
     geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + facet_grid(.~group)
 )
@@ -129,21 +112,12 @@ output$summary <- renderTable({
   favstats(~response|factor(group), data=filteredData())
   })
 
-output$f <- renderPrint({
-  model <- lm(response~factor(group), data=filteredData())
-  summary(model)$fstatistic[1]
-})
-
-output$pval <- renderText({
-  anova(lm(response~factor(group) -1, data=filteredData()))[,"Pr(>F)"][1]
-})
-
 output$anova <- renderTable({
   model <- lm(response~factor(group), data=filteredData())
   anova(model)
 })
 
-output$anova2 <- renderPrint({
+output$anova2 <- renderTable({
   model2 <- lm(response~factor(group) -1, data=filteredData())
   alpha <- 1- input$level
   print <- switch(input$stat,

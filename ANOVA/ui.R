@@ -67,7 +67,7 @@ sidebarLayout(
       conditionalPanel(
         "$('li.active a').first().html()==='Permutation F-Test'",
         numericInput("num", label=h4("Number of Permutations"), min=1, max=100000, step=1, value=1000),
-        actionButton("goButton", "Permute!"), actionButton("reset", "Reset"),
+        actionButton("goButton", "Permute!"), 
         radioButtons("plot2", label=h4("Plotting"), c("Histogram"="his2", "Density"="den2", 
                      "Histogram and Kernel Density" = "hisDen2","Q-Q Plot" = "qq2"),
                      selected="his2"),
@@ -98,11 +98,7 @@ sidebarLayout(
                    plotOutput("origPlot")
                  ),
                  h6("Summary"),
-                 tableOutput("summary"),
-                 h6("Observed F-Statistic"),
-                 verbatimTextOutput("f"),
-                 h6("P-Value"),
-                 verbatimTextOutput("pval")
+                 tableOutput("summary")
                  ),
         tabPanel("ANOVA",
                  conditionalPanel(
@@ -111,7 +107,7 @@ sidebarLayout(
                  ),
                  conditionalPanel(
                    condition='input.stat != "printANOVA"',
-              verbatimTextOutput("anova2")
+              tableOutput("anova2")
                  )
               ),
         tabPanel("Permutation F-Test",
