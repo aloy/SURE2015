@@ -16,3 +16,7 @@ Code and files for research project with Alex Damisch, Summer 2015
 - Model Selection: Shiny app
     - User file input and response variable choice, displays model estimate summary based on user-selected variables, performs AIC/BIC backwards selection from full model and all subsets selection (if sufficiently few variables), displays plots and calculates influence based on various methods for full or user-inputted models, confidence intervals for coefficients
     - Cross-validation still a work in progress
+- r
+    - Raw R code for implementation in above apps
+- trial ggvis
+    - Basic app to display ggvis graphics, requires user inputted data set (optional in other apps) 
