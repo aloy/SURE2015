@@ -49,14 +49,17 @@ shinyUI(bootstrapPage(
           conditionalPanel(
             "$('li.active a').first().html()==='Plots'",
             h4("Variables"),
-            selectInput('x', label='X Variable','x'),
-            selectInput('y', label='Y Variable', 'y'),
+            selectInput("x", label="X Variable","x"),
+            conditionalPanel(
+              condition='input.plot!="qq"',
+            selectInput("y", label="Y Variable","y")
+            ),
             hidden(
               shiny::p(id = "warning", strong("Make sure you select different variables!"),  style = "color:red")
             ),
             radioButtons("plot", label=h4("Plotting"), c("Scatterplot" = "scatter", 
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
-               "Layered Densities" ="den"), selected="scatter"),
+               "Layered Densities" ="den", "Q-Q Plot"="qq"), selected="scatter"),
             numericInput("num", label=h4("Number of Plots"), value=9, min=2, max=24, step=1)
           ) #conditionalPanel
         ), #sidebarPanel
