@@ -67,12 +67,12 @@ shinyUI(fluidPage(
         ),
         conditionalPanel(
         "$('li.active a').first().html()==='Bootstrap'",
-        numericInput("num", 
-                     label = h4("Number of Bootstraps"), 
-                     value = 1000, min = 1, max = 100000),
         radioButtons("stat", label = h4("Bootstrap Statistic"),
                      c("Mean" = "bootMean", "Median" = "bootMedian", 
                        "Standard Deviation" = "bootSd"), selected = "bootMean"),
+        numericInput("num", 
+                     label = h4("Number of Bootstraps"), 
+                     value = 10000, min = 1, max = 100000),
         actionButton("goButton", "Bootstrap!"), 
 #         actionButton("reset", "Reset"),
         radioButtons("plot2", label=h4("Plotting"),
@@ -94,7 +94,8 @@ shinyUI(fluidPage(
         conditionalPanel(
           "$('li.active a').first().html()==='Confidence Intervals'",
         radioButtons("ci", label = h4("Confidence Interval"),
-                     c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
+                     c("Percentile" = "perc", "t interval with bootstrap
+SE" = "t"), selected = "perc"),
         sliderInput("level", 
                      label = h4("Confidence Level"), 
                      value = 0.95, min = 0.01, max = 0.99, step=0.01)
@@ -153,13 +154,13 @@ shinyUI(fluidPage(
                              verbatimTextOutput("percUpper")
                            ),
                            conditionalPanel(
-                             condition = "input.ci == 'norm'",
-                             h6("Two-Tailed Confidence Interval (Normal)"),
-                             verbatimTextOutput("normPrint"),
+                             condition = "input.ci == 't'",
+                             h6("Two-Tailed Confidence Interval (t-based)"),
+                             verbatimTextOutput("tPrint"),
                              h6("Lower Bound"),
-                             verbatimTextOutput("normLower"),
+                             verbatimTextOutput("tLower"),
                              h6("Upper Bound"),
-                             verbatimTextOutput("normUpper")
+                             verbatimTextOutput("tUpper")
                            )
                   )
       ) #tabset

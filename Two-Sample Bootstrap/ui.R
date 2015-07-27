@@ -67,7 +67,7 @@ shinyUI(fluidPage(
                        "Ratio of Standard Deviations" = "bootSdRatio"), selected = "bootMean"),
         numericInput("num", 
                      label = h4("Number of Bootstraps"), 
-                     value = 1000, min = 1, max = 100000),
+                     value = 10000, min = 1, max = 100000),
         actionButton("goButton", "Bootstrap!"),
 #         actionButton("reset", "Reset"),
         radioButtons("plot2", label=h4("Plotting"),
@@ -86,7 +86,8 @@ shinyUI(fluidPage(
       conditionalPanel(
         "$('li.active a').first().html()==='Confidence Intervals'",
         radioButtons("ci", label = h4("Confidence Interval"),
-                     c("Percentile" = "perc", "Normal-Based" = "norm"), selected = "perc"),
+                     c("Percentile" = "perc", "t interval with bootstrap
+SE" = "t"), selected = "perc"),
         sliderInput("level", 
                      label = h4("Confidence Level"), 
                      value = 0.95, min = 0.01, max = 0.99, step=0.01)
@@ -112,15 +113,17 @@ shinyUI(fluidPage(
                          condition="input.plot2 != 'hisDen2'",
                          ggvisOutput("bootHist")
                        ),
+                       h6("Original Statistic"),
+                       verbatimTextOutput("origStat"),
                        h6("Mean"),
                        verbatimTextOutput("bootSummary"),
-                       h6("Estimate Bias"),
+                       h6("Bias"),
                        verbatimTextOutput("bootBias"),
-                       h6("Estimate Standard Deviation"),
+                       h6("Standard Error"),
                        verbatimTextOutput("bootSd"),
                        actionButton("hideData", "Show/hide data set"),
                        hidden(
-                       dataTableOutput("trials")
+                         dataTableOutput("trials")
                        )
                     ),
                     tabPanel("Confidence Intervals",
@@ -134,13 +137,13 @@ shinyUI(fluidPage(
                          verbatimTextOutput("percUpper")
                        ),
                        conditionalPanel(
-                         condition = "input.ci == 'norm'",
-                         h6("Two-Tailed Confidence Interval (Normal)"),
-                         verbatimTextOutput("normPrint"),
+                         condition = "input.ci == 't'",
+                         h6("Two-Tailed Confidence Interval (t-based)"),
+                         verbatimTextOutput("tPrint"),
                          h6("Lower Bound"),
-                         verbatimTextOutput("normLower"),
+                         verbatimTextOutput("tLower"),
                          h6("Upper Bound"),
-                         verbatimTextOutput("normUpper")
+                         verbatimTextOutput("tUpper")
                        )
                     )
               ) #tabsetPanel

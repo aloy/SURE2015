@@ -1,12 +1,12 @@
 library(shiny)
 library(shinyjs)
+library(mosaic)
+library(Lock5Data)
+library(dplyr)
+library(ggvis)
 shinyServer(function(input, output, session){
   
   ## One-Sample Bootstrap
-  library(mosaic)
-  library(Lock5Data)
-  library(dplyr)
-  library(ggvis)
   
   data("SleepStudy")
   
@@ -109,27 +109,33 @@ observe({
                     value=range.100*10, step=range.100)
 })
 
-trials <- reactive({
-  
+bootResult <- reactive({
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){
-    result <- do(input$num) * mean(response, data = sample(filteredData(), replace = TRUE))
+      BS <- bootstrap(filteredData(), mean(response), 
+                      R = input$num, statisticNames = "Mean")
     }
     if(input$stat=="bootMedian"){
-    result <- do(input$num) * median(response, data = sample(filteredData(), replace = TRUE))
+      BS <- bootstrap(filteredData(), median(response), 
+                      R = input$num, statisticNames = "Median")
     }
     if(input$stat=="bootSd"){
-    result <- do(input$num) * sd(response, data = sample(filteredData(), replace = TRUE))
+      BS <- bootstrap(filteredData(), sd(response), 
+                      R = input$num, statisticNames = "Std Dev")
     }
-    names(result) <- "result"
-    data.frame(result)
-
-  }
-else {
-    data.frame(result = rep(0, 10))
-  }  
+    BS
+  } 
 })
 
+trials <- reactive({
+  if(input$goButton > 0) {
+    result <- cbind(index = 1:bootResult()$R, result = bootResult()$replicates)
+    colnames(result) <- c("index", "statistic")
+    as.data.frame(result)
+  } else {
+    data.frame(statistic = rep(0, 10))
+  }
+})
 
 output$trials <-  renderDataTable(trials(), options = list(pageLength = 10))
 
@@ -137,8 +143,8 @@ output$trials <-  renderDataTable(trials(), options = list(pageLength = 10))
 observe({
   
   if(input$goButton > 0){
-    range2.100 <- round(diff(range(trials()$result))/100, digits=3)
-    if (round(diff(range(trials()$result))/100, digits=3) == 0)
+    range2.100 <- round(diff(range(trials()$statistic))/100, digits=3)
+    if (round(diff(range(trials()$statistic))/100, digits=3) == 0)
       range2.100 <- 0.001
   }
   else(
@@ -146,13 +152,13 @@ observe({
     )
   switch(input$plot2,
    his2= trials %>%
-           ggvis(~result) %>%
+           ggvis(~statistic) %>%
      layer_histograms(width = input_slider(range2.100, range2.100*50,
                       value=range2.100*10, step=range2.100)) %>%
            bind_shiny("bootHist", "bootHist_ui"),
  den2=
     trials %>%
-           ggvis(~result) %>%
+           ggvis(~statistic) %>%
            layer_densities(fill := "dodgerblue") %>%
            add_axis("y", title="Density") %>%
            bind_shiny("bootHist", "bootHist_ui"),
@@ -169,16 +175,16 @@ observe({
 qqdata2 <- reactive({
   n <- input$num
   probabilities <- (1:n)/(1+n)
-  normal.quantiles <- qnorm(probabilities, mean(trials()$result, na.rm = T), sd(trials()$result, na.rm = T))
-  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$result))
+  normal.quantiles <- qnorm(probabilities, mean(trials()$statistic, na.rm = T), sd(trials()$statistic, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$statistic))
   colnames(qqdata1) <- c("normal.quantiles", "diffs")
   data.frame(qqdata1)
 })
 
 observe({
   if(input$goButton > 0){
-    range2.100 <- round(diff(range(trials()$result))/100, digits=3)
-    if (round(diff(range(trials()$result))/100, digits=3) == 0)
+    range2.100 <- round(diff(range(trials()$statistic))/100, digits=3)
+    if (round(diff(range(trials()$statistic))/100, digits=3) == 0)
       range2.100 <- 0.001
   }
   else(
@@ -190,35 +196,47 @@ observe({
 })
 
 output$hisDenPlot2 <- renderPlot ({
-  ggplot(data=trials(), aes(x=result)) + geom_histogram(colour="black", fill="grey19", 
-  binwidth=input$w2, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.5) + theme(panel.grid.minor = element_line(colour = "grey"), 
- panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+  ggplot(data=trials(), aes(x=statistic)) + 
+    geom_histogram(colour="black", fill="grey19", binwidth=input$w2, aes(y=..density..)) + 
+    geom_density(colour="royalblue", fill="royalblue", alpha=0.5) + 
+    theme(panel.grid.minor = element_line(colour = "grey"), 
+          panel.background = element_rect(fill = "white"), 
+          axis.line = element_line(colour="black"), 
+          axis.text = element_text(colour = "black"))
 })
 
 output$bootMean <- renderText({
-round(mean(trials()$result), digits=3)
+# round(mean(trials()$statistic), digits=3)
+  bootResult()$stats$Mean
 })
 
-observed <- reactive({
-  switch(input$stat,
-         bootMean= mean(filteredData()$response),
-         bootMedian= median(filteredData()$response),
-         bootSd= sd(filteredData()$response)
-          )
+# observed <- reactive({
+#   switch(input$stat,
+#          bootMean= mean(filteredData()$response),
+#          bootMedian= median(filteredData()$response),
+#          bootSd= sd(filteredData()$response)
+#           )
+# })
+
+output$origStat <- renderText({ 
+  # round(mean(trials()$statistic), digits=3)
+  bootResult()$observed
 })
 
   output$bootBias <- renderText({
-    biasStat <- switch(input$stat,
-           bootMean = observed()-mean(trials()$result),
-           bootMedian= observed()-median(trials()$result),
-           bootSd=observed()-sd(trials()$result)
-           )
-   signif(biasStat, digits=3)
+#     biasStat <- switch(input$stat,
+#            bootMean = observed()-mean(trials()$statistic),
+#            bootMedian= observed()-median(trials()$statistic),
+#            bootSd=observed()-sd(trials()$statistic)
+#            )
+#    signif(biasStat, digits=3)
+    bootResult()$stats$Bias
   })
   
   output$bootSd <- renderText({
-    signif(sd(trials()$result), digits=3)    
-    })
+    # signif(sd(trials()$statistic), digits=3)    
+    bootResult()$stats$SE
+  })
   
   level <- reactive({
     input$level
@@ -228,32 +246,39 @@ observed <- reactive({
     1-as.numeric(level())
   })
   
-  SE <- reactive({
-    sd(trials()$result)
-  })
+#   SE <- reactive({
+#     sd(trials()$statistic)
+#   })
 
-  output$percPrint <- renderText({
-    round(quantile(trials()$result, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
+  output$percPrint <- renderPrint({
+    # round(quantile(trials()$statistic, probs = c(alpha()/2, 1-alpha()/2)), digits=3)
+    CI.percentile(bootResult(), probs = c(alpha()/2, 1-alpha()/2))
   })
   
-  output$percLower <- renderText({
-    c(paste(100*alpha(),'%'), round(quantile(trials()$result, probs = c(alpha())), digits=3))
+  output$percLower <- renderPrint({
+    # c(paste(100*alpha(),'%'), round(quantile(trials()$statistic, probs = c(alpha())), digits=3))
+    CI.percentile(bootResult(), probs = alpha())
   })
   
-  output$percUpper <- renderText({
-    c(paste(100*level(),'%'), round(quantile(trials()$result, probs = c(1-alpha())),digits=3))
+  output$percUpper <- renderPrint({
+    # c(paste(100*level(),'%'), round(quantile(trials()$statistic, probs = c(1-alpha())),digits=3))
+    CI.percentile(bootResult(), probs = 1-alpha())
   })
 
-output$normPrint <- renderText({
-  c(round(observed() - qnorm(1-alpha()/2) *  SE(), digits=3),
-    round(observed() + qnorm(1-alpha()/2) * SE(), digits=3))
+output$tPrint <- renderPrint({
+#   c(round(observed() - qnorm(1-alpha()/2) *  SE(), digits=3),
+#     round(observed() + qnorm(1-alpha()/2) * SE(), digits=3))
+  CI.t(bootResult(), probs = c(alpha()/2, 1-alpha()/2))
 })
 
-output$normLower <- renderText({
-  c(paste(100*alpha(),'%'), round(observed()- qnorm(1-alpha()) * SE(), digits=3))
+output$tLower <- renderPrint({
+  # c(paste(100*alpha(),'%'), round(observed()- qnorm(1-alpha()) * SE(), digits=3))
+  CI.t(bootResult(), probs = alpha())
 })
-  output$normUpper <- renderText({
-    c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
-  })
+
+output$tUpper <- renderPrint({
+  # c(paste(100*level(),'%'), round(observed() + qnorm(1-alpha()) * SE(), digits=3))
+  CI.t(bootResult(), probs = 1-alpha())
+})
  
 })
