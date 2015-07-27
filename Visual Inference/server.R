@@ -1,6 +1,7 @@
 library(mosaic)
 library(Lock5Data)
 library(shinyjs)
+library(ggplot2)
 library(nullabor)
 data(RestaurantTips)
 
@@ -37,8 +38,22 @@ shinyServer(function(input, output, session) {
   observe({
     data <- theData()
     qvars <- colnames(data)[sapply(data,is.numeric)]
-    updateSelectInput(session, 'x', choices = qvars)
-    updateSelectInput(session, 'y', choices = qvars)
+      updateSelectInput(session, 'x', choices = qvars)
+      updateSelectInput(session, 'y', choices = qvars)
+  })
+  
+  observe({
+    if(input$plot=="box"||input$plot=="den"){
+      testFactor <- function(x){
+        f <- colnames(x)[sapply(x,is.factor)]
+        i <- colnames(x)[sapply(x, is.integer)]
+        c <- colnames(x)[sapply(x, is.character)]
+        return(c(f, i, c))
+      }
+      qvars <- colnames(data)[sapply(data,is.numeric)]
+      updateSelectInput(session, 'x', choices = testFactor(data), label='Grouping Variable')
+      updateSelectInput(session, 'y', choices = qvars, label='Response Variable') 
+    }
   })
   
   filteredData <-reactive({
@@ -57,8 +72,17 @@ shinyServer(function(input, output, session) {
   lineupPlot <- reactive({
     n <- input$num
     switch(input$plot,
-           scatter= qplot(x, y, data=filteredData()) %+% 
-             lineup(null_lm(y~x), filteredData(), n=n, pos=sample(n, 1)) + facet_wrap(~.sample)
+           scatter= ggplot(filteredData(), aes(x, y)) %+% 
+             lineup(null_permute("x"), filteredData(), n=n, pos=sample(n, 1)) 
+           + geom_point() + facet_wrap(~.sample),
+           scatterSmooth = ggplot(filteredData(), aes(x, y)) %+% 
+            lineup(null_permute('x'), filteredData(), n=n, pos=sample(n,1)) +  geom_point() +
+             geom_smooth(method="loess", se=FALSE) + facet_wrap(~ .sample),
+           box=ggplot(filteredData(), aes(x, y)) %+% lineup(null_permute("x"),
+            filteredData(), n=n, pos=sample(n,1))  + geom_boxplot()+ facet_wrap(~.sample),
+           den=ggplot(filteredData(), aes(x=y, colour=x, group=x)) %+% lineup(null_permute("x"),
+               filteredData(), n=n, pos=sample(n,1))  + geom_density(aes(fill=x), alpha=0.2) 
+           + facet_wrap(~.sample)
     )
   })
   
