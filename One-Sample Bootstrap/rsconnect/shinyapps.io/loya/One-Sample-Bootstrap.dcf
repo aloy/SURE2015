@@ -1,5 +1,8 @@
 name: One-Sample-Bootstrap
 account: loya
-bundleId: 225343
-url: https://loya.shinyapps.io/One-Sample-Bootstrap
 server: shinyapps.io
+bundleId: 227235
+url: https://loya.shinyapps.io/One-Sample-Bootstrap
+when: 1438034065.81164
+asMultiple: FALSE
+asStatic: FALSE

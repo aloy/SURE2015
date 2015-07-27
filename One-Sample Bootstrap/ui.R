@@ -117,7 +117,6 @@ SE" = "t"), selected = "perc"),
                                             ggvisOutput("origHist")
                                               ),
                                             h5("Original Summary Statistics"),
-                                            h6("Summary"),
                                             tableOutput("summary")
                                             
                            ),
@@ -131,11 +130,13 @@ SE" = "t"), selected = "perc"),
                                               ggvisOutput("bootHist")
                                             ),
                                             h5("Bootstrap Summary Statistics"),
+                           h6("Original Statistic"),
+                           verbatimTextOutput("origStat"),
                                             h6("Mean"),
                                             verbatimTextOutput("bootMean"),
                                             h6("Bias"),
                                             verbatimTextOutput("bootBias"),
-                                            h6("Standard Deviation"),
+                                            h6("Standard Error"),
                                             verbatimTextOutput("bootSd"),
                                             hidden(
                                             dataTableOutput("trials")

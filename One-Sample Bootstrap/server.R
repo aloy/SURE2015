@@ -4,6 +4,7 @@ library(mosaic)
 library(Lock5Data)
 library(dplyr)
 library(ggvis)
+library(resample)
 shinyServer(function(input, output, session){
   
   ## One-Sample Bootstrap
