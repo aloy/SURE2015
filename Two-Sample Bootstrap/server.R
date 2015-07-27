@@ -196,16 +196,16 @@ output$slider2 <- renderUI({
   sliderInput("w2", "", min=range2.100, max=range2.100*50, value=range2.100*10, step=.001)
 })
 
-    output$bootSummary <- renderPrint({ 
+    output$bootSummary <- renderText({ 
       round(mean(trials()$result), digits=3)
       })
 
 
-output$bootBias <- renderPrint({
- mean(trials()$result) - observed()
+output$bootBias <- renderText({
+ as.numeric(mean(trials()$result) - observed())
  })
 
-output$bootSd <- renderPrint({
+output$bootSd <- renderText({
   signif(sd(trials()$result), digits=3)
 })
 
