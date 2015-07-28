@@ -27,3 +27,13 @@ qplot(angle, resid, data = threept) %+% lineup(null_permute('angle'), threept) +
 
 qplot(angle, r, data=threept) %+% lineup(null_lm(r~angle+I(angle^2)), threept) + facet_wrap(~.sample) 
 # Simulation based on H_0 that data follows quadratic line
+
+library(Lock5Data)
+data(RestaurantTips)
+filteredData() <- function(x){data.frame(RestaurantTips)}
+colnames(filteredData()) #change 2 to x and y
+
+#qqPlot doesn't work with the lineup function, so calculate Q-Q plot stuff manually
+# Simulate from target distribution, N(0, sd) using rnorm function
+
+qq <- data.frame(x=sort(filteredData()$x), norm=sort(rnorm(filteredData()$x)))
