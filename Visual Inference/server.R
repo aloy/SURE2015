@@ -21,14 +21,18 @@ shinyServer(function(input, output, session) {
       data.frame(RestaurantTips)
   })
   
-  shiny::observe({
-    toggle(id = "warning", condition = (input$x==input$y || input$x2==input$y2) && input$plot!="qq")
-  })
-  
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   shinyjs::onclick("trueData",
                    shinyjs::toggle(id = "plotPos", anim = TRUE))
+  
+  shiny::observe({
+    toggle(id = "warning", condition = input$x==input$y && input$plot!="qq")
+    })
+  
+  shiny::observe({
+    toggle(id = "warning2", condition = input$x2==input$y2)
+  })
   
   output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
 
@@ -44,45 +48,22 @@ shinyServer(function(input, output, session) {
   updateSelectInput(session,"y", choices=qvars)
   updateSelectInput(session,"x2", choices=testFactor(theData()))
   updateSelectInput(session,"y2", choices=qvars)
-  if(input$plot=="box"||input$plot=="den"){
-    updateSelectInput(session, "y", label="Response Variable")
-  }
-  if(input$plot=="scatterSmooth"||input$plot=="resid"||input$plot=="qq"){
-    updateSelectInput(session, "x", selected=input$x)
-    updateSelectInput(session, "y",selected=input$y)
+  if(input$plot!="scatter"){
+    updateSelectInput(session, "x", selected=isolate(input$x))
+    updateSelectInput(session, "y",selected=isolate(input$y))
   }
   })
-#   
-#   observe({
-#     qvars <- colnames(theData())[sapply(theData(),is.numeric)]
-#     if(input$plot=="scatterSmooth"||input$plot=="resid"){
-#       updateSelectInput(session, "x", label="X Variable", choices=input$x)
-#     }
-#     if(input$plot=="box"||input$plot=="den"){
-#     testFactor <- function(x){
-#       f <- colnames(x)[sapply(x,is.factor)]
-#       i <- colnames(x)[sapply(x, is.integer)]
-#       c <- colnames(x)[sapply(x, is.character)]
-#       return(c(f, i, c))
-#     }
-#     updateSelectInput(session,"x", label="Grouping Variable", choices=testFactor(theData()))
-#     updateSelectInput(session,"y", label="Response Variable", selected=input$y)
-#     }
-#     if(input$plot=="qq"){
-#       updateSelectInput(session,"x", label="Sample Variable", choices=qvars)
-#     }
-#   })
 
   filteredData <-reactive({
     data<-isolate(theData())
-    if(input$x=="x"&&input$y=="y"&&input$x2=="x2"){
+    if(input$x=="x"&&input$y=="y"&&input$x2=="x2"&&input$y2=="y2"){
       if(is.null(data)){
         data<-data.frame(x = rep(0, 10), y = rep(0, 10))
       }
     }
-    if(input$x2!="x2"&&input$plot=="box"||input$plot=="den")
+    if(input$x2!="x2"&&input$y2!="y2"&&input$plot=="box"||input$plot=="den")
     {
-      data <- data[,c(input$x2,input$y)]
+      data <- data[,c(input$x2,input$y2)]
     }
     else{
       data <- data[,c(input$x,input$y)]
@@ -90,7 +71,7 @@ shinyServer(function(input, output, session) {
     names(data)<-c("x","y")
     data.frame(data)
   })
-  
+
   lineupPlot <- reactive({
     n <- input$num
     qq <- data.frame(x=sort(filteredData()$x), norm=sort(rnorm(filteredData()$x)))

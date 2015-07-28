@@ -65,6 +65,9 @@ shinyUI(bootstrapPage(
             hidden(
               shiny::p(id = "warning", strong("Make sure you select different variables!"),  style = "color:red")
             ),
+            hidden(
+              shiny::p(id = "warning2", strong("Make sure you select different variables! (2)"),  style = "color:red")
+            ),
             radioButtons("plot", label=h4("Plotting"), c("Scatterplot" = "scatter", 
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
                "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid"), selected="scatter"),
