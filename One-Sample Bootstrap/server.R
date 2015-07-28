@@ -78,7 +78,7 @@ shinyServer(function(input, output, session){
                         den = filteredData %>%
                           ggvis(~filteredData()$response) %>%
                           layer_densities(fill := "dodgerblue") %>%
-                          add_axis("x", title = input$choose) %>%
+                          add_axis("x", title=input$response) %>%
                           add_axis("y", title="Density") %>%
                           bind_shiny("origHist", "origHist_ui"),
                         qq = qqdata %>% 
@@ -96,7 +96,7 @@ output$summary <- renderTable({
 output$hisDenPlot <- renderPlot ({
   ggplot(data=filteredData(), aes(x=response)) + geom_histogram(colour="black", fill="grey19", 
    binwidth=input$w, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.5) + theme(panel.grid.minor = element_line(colour = "grey"), 
-  panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+  panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black")) + xlab(input$response)
 })
 
 observe({

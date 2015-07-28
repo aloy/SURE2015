@@ -94,8 +94,8 @@ shinyUI(fluidPage(
         conditionalPanel(
           "$('li.active a').first().html()==='Confidence Intervals'",
         radioButtons("ci", label = h4("Confidence Interval"),
-                     c("Percentile" = "perc", "t interval with bootstrap
-SE" = "t"), selected = "perc"),
+                     c("Percentile" = "perc", "t Interval with Bootstrap
+Standard Error" = "t"), selected = "perc"),
         sliderInput("level", 
                      label = h4("Confidence Level"), 
                      value = 0.95, min = 0.01, max = 0.99, step=0.01)
