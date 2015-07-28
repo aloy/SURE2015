@@ -36,4 +36,23 @@ colnames(filteredData()) #change 2 to x and y
 #qqPlot doesn't work with the lineup function, so calculate Q-Q plot stuff manually
 # Simulate from target distribution, N(0, sd) using rnorm function
 
-qq <- data.frame(x=sort(filteredData()$x), norm=sort(rnorm(filteredData()$x)))
+data(RestaurantTips)
+data <- RestaurantTips
+names(data)[1:2] <- c("y","x")
+filteredData <- function(x){data}
+
+xnorm <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
+qqLineup <- function(x){
+  x <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
+  data.frame(qqnorm(x, plot.it=FALSE))
+}
+w <- nrow(filteredData())
+samples <- data.frame(plyr::rdply(n, qqLineup(xnorm)))
+qq.df <- data.frame(.n=rep(as.numeric(r), w), x=sort(qqLineup(xnorm)$x), y=sort(qqLineup(xnorm)$y))
+startrow <- function(x){w*(x-1)}
+nextrow <- function(x){(w*(x))+1}
+endrow <- function(x){w*x-1}
+new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):endrow(n),]))
+ggplot(new.df, aes(x=x, y=y)) + geom_point() + facet_wrap(~.n)
+
+# use replicate function, but save original data
