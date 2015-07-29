@@ -50,16 +50,16 @@ shinyUI(bootstrapPage(
             "$('li.active a').first().html()==='Plots'",
             h4("Variables"),
             conditionalPanel(
-              condition='input.plot!="box"&&input.plot!="den"',
+              condition='input.plot!="box"&&input.plot!="den"&&input.plot!="spine"',
             selectInput("x", label="X Variable","x")
             ),
             conditionalPanel(
-            condition='input.plot=="box"||input.plot=="den"',
+            condition='input.plot=="box"||input.plot=="den"||input.plot=="spine"',
             selectInput("x2", label="Grouping Variable","x2"),
             selectInput("y2", label="Response Variable", "y2")
             ),
             conditionalPanel(
-              condition='input.plot!="qq"&&input.plot!="box"&&input.plot!="den"',
+              condition='input.plot!="qq"&&input.plot!="box"&&input.plot!="den"&&input.plot!="spine"',
             selectInput("y", label="Y Variable","y")
             ),
             hidden(
@@ -70,7 +70,8 @@ shinyUI(bootstrapPage(
             ),
             radioButtons("plot", label=h4("Plotting"), c("Scatterplot" = "scatter", 
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
-               "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid"), selected="scatter"),
+               "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid",
+               "Spine Plot"="spine"), selected="scatter"),
             numericInput("num", label=h4("Number of Plots"), value=9, min=2, max=24, step=1)
           ) #conditionalPanel
         ), #sidebarPanel

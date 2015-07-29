@@ -3,6 +3,7 @@ library(shinyjs)
 library(ggplot2)
 library(stats)
 library(car)
+library(mosaic)
 library(nullabor)
 library(dplyr)
 data(RestaurantTips)
@@ -29,7 +30,8 @@ shinyServer(function(input, output, session) {
                    shinyjs::toggle(id = "plotPos", anim = TRUE))
   
   shiny::observe({
-    toggle(id = "warning", condition = input$x==input$y && input$plot!="qq")
+    toggle(id = "warning", condition = input$x==input$y && input$plot!="qq" 
+           &&input$plot!="box"&&input$plot!="den"&&input$plot!="spine")
     })
   
   shiny::observe({
@@ -63,7 +65,7 @@ shinyServer(function(input, output, session) {
         data<-data.frame(x = rep(0, 10), y = rep(0, 10))
       }
     }
-    if(input$x2!="x2"&&input$y2!="y2"&&input$plot=="box"||input$plot=="den")
+    if(input$x2!="x2"&&input$y2!="y2"&&input$plot=="box"||input$plot=="den"||input$plot=="spine")
     {
       data <- data[,c(input$x2,input$y2)]
     }
@@ -80,6 +82,7 @@ shinyServer(function(input, output, session) {
   })
 
   qqPlot <- reactive({
+    n <- input$num
     r <- qqPos()
     xnorm <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
     qqLineup <- function(y){
@@ -88,11 +91,13 @@ shinyServer(function(input, output, session) {
     }
     w <- nrow(filteredData())
     samples <- data.frame(plyr::rdply(n, qqLineup(xnorm)))
+    samples$.n <- as.numeric(samples$.n)
     qq.df <- data.frame(.n=rep(as.numeric(r), w), x=sort(qqLineup(xnorm)$x), y=sort(qqLineup(xnorm)$y))
     startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
     nextrow <- function(x){(w*(x))+1}
-    endrow <- function(x){w*x-1}
+    endrow <- function(x){(w*n)+1}
     new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):endrow(n),]))
+    new.df <- new.df[complete.cases(new.df),]
     qqlineInfo <- function(x){
       yp <- quantile(x, c(0.25, 0.75))
       theory <- qnorm(p = c(0.25, 0.75))
@@ -123,7 +128,9 @@ shinyServer(function(input, output, session) {
            + facet_wrap(~.sample),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
              lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point()
-             + facet_wrap(~.sample)
+             + facet_wrap(~.sample),
+           spine=spineplot(factor(x)~y, data=filteredData())
+           
     )
   })
   
