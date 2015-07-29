@@ -35,7 +35,8 @@ shinyServer(function(input, output, session) {
     })
   
   shiny::observe({
-    toggle(id = "warning2", condition = input$x2==input$y2)
+    toggle(id = "warning2", condition = input$x2==input$y2 && input$plot!="scatter" 
+           &&input$plot!="scatterSmooth"&&input$plot!="resid")
   })
   
   output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
@@ -95,8 +96,12 @@ shinyServer(function(input, output, session) {
     qq.df <- data.frame(.n=rep(as.numeric(r), w), x=sort(qqLineup(xnorm)$x), y=sort(qqLineup(xnorm)$y))
     startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
     nextrow <- function(x){(w*(x))+1}
-    endrow <- function(x){(w*n)+1}
+    endrow <- function(x){w*n}
+    if(r!=1){
     new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):endrow(n),]))
+    }else{
+      new.df <- data.frame(rbind(qq.df, samples[nextrow(r):endrow(n),]))
+    }
     new.df <- new.df[complete.cases(new.df),]
     qqlineInfo <- function(x){
       yp <- quantile(x, c(0.25, 0.75))
@@ -107,6 +112,29 @@ shinyServer(function(input, output, session) {
     }
     ggplot(new.df, aes(x=x, y=y)) + geom_point() + 
       geom_abline(slope=qqlineInfo(xnorm)[2], intercept=qqlineInfo(xnorm)[1]) +facet_wrap(~.n)
+  })
+  
+  spinePlot <- reactive({
+    n <- input$num
+    w <- nrow(filteredData())
+    spineLineup <- function(x){data.frame(x=sample(filteredData()$x, size=w, replace=FALSE), y=filteredData()$y)}
+    samples <- plyr::rdply(n,spineLineup(filteredData()))
+    r <- qqPos()
+    origSpine <- data.frame(.n=rep(as.numeric(r), w),x=filteredData()$x, y=filteredData()$y)
+    startrow <- function(x){w*(x-1)} 
+    nextrow <- function(x){(w*(x))+1}
+    endrow <- function(x){(w*n)}
+    if(r!=1){
+      new.df <- data.frame(rbind(samples[1:startrow(r),], origSpine, samples[nextrow(r):endrow(n),]))
+      
+    }else{
+      new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
+    }
+    new.df <- new.df[complete.cases(new.df),]
+    par(mfcol=c(3,3))
+    for(i in 1:n){
+      try(spineplot(factor(x)~y, data=new.df[((i-1)*w)+1:w*i,], main=paste(i)))
+    }
   })
   
   lineupPlot <- reactive({
@@ -128,22 +156,25 @@ shinyServer(function(input, output, session) {
            + facet_wrap(~.sample),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
              lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point()
-             + facet_wrap(~.sample),
-           spine=spineplot(factor(x)~y, data=filteredData())
-           
+             + facet_wrap(~.sample)
     )
   })
   
   output$lineup <- renderPlot({
-    if(input$plot!="qq"){
+    if(input$plot=="scatter"||input$plot=="scatterSmooth"||input$plot=="box"||
+         input$plot=="den"||input$plot=="resid"){
     lineupPlot()
-    }else{
-      qqPlot()
+    }
+    else{
+      switch(input$plot,
+      qq=qqPlot(),
+      spine=spinePlot()
+      )
     }
   })
   
   output$plotPos <- renderText({
-    if(input$plot!="qq"){
+    if(input$plot!="qq"&&input$plot!="spine"){
     paste("The true data is in plot ",attr(lineupPlot()$data, "pos"),".", sep="")
     }else{
       paste("The true data is in plot ",qqPos(),".", sep="")

@@ -48,11 +48,35 @@ qqLineup <- function(x){
 }
 w <- nrow(filteredData())
 samples <- data.frame(plyr::rdply(n, qqLineup(xnorm)))
+samples$.n <- as.numeric(samples$.n)
 qq.df <- data.frame(.n=rep(as.numeric(r), w), x=sort(qqLineup(xnorm)$x), y=sort(qqLineup(xnorm)$y))
-startrow <- function(x){w*(x-1)}
+startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
 nextrow <- function(x){(w*(x))+1}
-endrow <- function(x){w*x-1}
+endrow <- function(x){w*n}
 new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):endrow(n),]))
+new.df <- new.df[complete.cases(new.df),]
 ggplot(new.df, aes(x=x, y=y)) + geom_point() + facet_wrap(~.n)
 
-# use replicate function, but save original data
+## More fun with spine plots
+
+Backpack <- read.csv("~/Downloads/Stat2Data2012CSV/Backpack.csv") # on my (Alex's) desktop
+data <- Backpack
+names(data)[3:4] <- c("y", "x")
+filteredData <- function(x){data}
+w <- nrow(filteredData())
+spineplot(factor(x)~y, data=filteredData())
+spineLineup <- function(x){data.frame(x=sample(filteredData()$x, size=w, replace=FALSE), y=filteredData()$y)}
+samples <- plyr::rdply(n - 1,spineLineup(filteredData()))
+r <- sample(n, 1)
+origSpine <- data.frame(.n=rep(as.numeric(r), w),x=filteredData()$x, y=filteredData()$y)
+View(origSpine)
+startrow <- function(x){w*(x-1)} 
+nextrow <- function(x){(w*(x))+1}
+endrow <- function(x){(w*n)}
+if(r!=1){
+  new.df <- data.frame(rbind(samples[1:startrow(r),], origSpine, samples[nextrow(r):endrow(n),]))
+
+}else{
+  new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
+}
+new.df <- new.df[complete.cases(new.df),]
