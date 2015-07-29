@@ -3,7 +3,7 @@ library(shinyjs)
 library(ggplot2)
 library(stats)
 library(car)
-library(mosaic)
+library(productplots)
 library(nullabor)
 library(dplyr)
 data(RestaurantTips)
@@ -111,7 +111,9 @@ shinyServer(function(input, output, session) {
       return(c(intercept = as.numeric(intercept), slope = as.numeric(slope)))
     }
     ggplot(new.df, aes(x=x, y=y)) + geom_point() + 
-      geom_abline(slope=qqlineInfo(xnorm)[2], intercept=qqlineInfo(xnorm)[1]) +facet_wrap(~.n)
+      geom_abline(slope=qqlineInfo(xnorm)[2], intercept=qqlineInfo(xnorm)[1]) +facet_wrap(~.n) + theme(axis.text.x=element_blank(),
+     axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+     axis.title.y=element_blank())
   })
   
   spinePlot <- reactive({
@@ -131,45 +133,6 @@ shinyServer(function(input, output, session) {
       new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
     }
     new.df <- new.df[complete.cases(new.df),]
-    if(n<25){
-    if(n<21){
-  if(n<17){
-  if(n<13){
-  if(n<10){
-    if(n<7){
-      if(n<5){    
-        if(n<3){
-          if(n>1){
-            par(mfrow=c(1, 2))
-             }
-          else{
-         par(mfrow=c(1, 1))
-          }
-        }else{
-        par(mfrow=c(2, 2))
-        }
-      }else{
-      par(mfrow=c(2, 3))
-    }
-    }else{
-      par(mfrow=c(3, 3))
-      }
-    }else{
-      par(mfrow=c(3, 4))
-    }
-  }else{
-   par(mfrow=c(4, 4)) 
-  }
-  }else{
-    par(mfrow=c(4, 5))
-  }
-    }else{
-      par(mar=c(2,1,2,1),mfrow=c(5, 5))
-    }
-    }
-    for(i in 1:n){
-      try(spineplot(factor(x)~y, data=new.df[((i-1)*w)+1:w*i,], main=paste(i)))
-    }
   })
   
   lineupPlot <- reactive({
@@ -180,18 +143,27 @@ shinyServer(function(input, output, session) {
     switch(input$plot,
            scatter= ggplot(filteredData(), aes(x, y)) %+% 
              lineup(null_permute("x"), filteredData(), n=n, pos=sample(n, 1)) 
-           + geom_point() + facet_wrap(~.sample),
+           + geom_point() + facet_wrap(~.sample) +theme(axis.text.x=element_blank(), 
+          axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(),
+          axis.title.y=element_blank()),
            scatterSmooth = ggplot(filteredData(), aes(x, y)) %+% 
             lineup(null_permute('x'), filteredData(), n=n, pos=sample(n,1)) +  geom_point() +
-             geom_smooth(method="loess", se=FALSE) + facet_wrap(~ .sample),
-           box=ggplot(filteredData(), aes(x=x, y=y)) %+% lineup(null_permute("x"),
-            filteredData(), n=n, pos=sample(n,1))  + geom_boxplot()+ facet_wrap(~.sample),
+             geom_smooth(method="lm", se=FALSE) + facet_wrap(~ .sample)+ theme(axis.text.x=element_blank(), 
+            axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+            axis.title.y=element_blank()),
+           box=ggplot(filteredData(), aes(x=x, y=y)) %+% lineup(null_permute("x"),filteredData(), n=n, pos=sample(n,1))
+          + geom_boxplot() + facet_wrap(~.sample) + scale_fill_brewer("", palette="Set2") + theme(axis.text.x=element_blank(), 
+             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank()),
            den=ggplot(filteredData(), aes(x=y, colour=x, group=x)) %+% lineup(null_permute("x"),
                filteredData(), n=n, pos=sample(n,1))  + geom_density(aes(fill=x), alpha=0.2) 
-           + facet_wrap(~.sample),
+           + facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
+            axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(),
+            legend.position="none"),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
              lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point()
-             + facet_wrap(~.sample)
+             + facet_wrap(~.sample) + theme(axis.text.x=element_blank(), 
+            axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+            axis.title.y=element_blank()),
     )
   })
   
@@ -206,6 +178,7 @@ shinyServer(function(input, output, session) {
       spine=spinePlot()
       )
     }
+#   }, width=function() { session$clientData$output_lineup_height * 1.0
   })
   
   output$plotPos <- renderText({

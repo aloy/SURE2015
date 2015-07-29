@@ -28,11 +28,6 @@ qplot(angle, resid, data = threept) %+% lineup(null_permute('angle'), threept) +
 qplot(angle, r, data=threept) %+% lineup(null_lm(r~angle+I(angle^2)), threept) + facet_wrap(~.sample) 
 # Simulation based on H_0 that data follows quadratic line
 
-library(Lock5Data)
-data(RestaurantTips)
-filteredData() <- function(x){data.frame(RestaurantTips)}
-colnames(filteredData()) #change 2 to x and y
-
 #qqPlot doesn't work with the lineup function, so calculate Q-Q plot stuff manually
 # Simulate from target distribution, N(0, sd) using rnorm function
 
@@ -57,33 +52,3 @@ new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):en
 new.df <- new.df[complete.cases(new.df),]
 ggplot(new.df, aes(x=x, y=y)) + geom_point() + facet_wrap(~.n)
 
-## More fun with spine plots
-
-Backpack <- read.csv("~/Downloads/Stat2Data2012CSV/Backpack.csv") # on my (Alex's) desktop
-data <- Backpack
-names(data)[3:4] <- c("y", "x")
-filteredData <- function(x){data}
-w <- nrow(filteredData())
-spineplot(factor(x)~y, data=filteredData())
-spineLineup <- function(x){data.frame(x=sample(filteredData()$x, size=w, replace=FALSE), y=filteredData()$y)}
-samples <- plyr::rdply(n - 1,spineLineup(filteredData()))
-r <- sample(n, 1)
-origSpine <- data.frame(.n=rep(as.numeric(r), w),x=filteredData()$x, y=filteredData()$y)
-View(origSpine)
-startrow <- function(x){w*(x-1)} 
-nextrow <- function(x){(w*(x))+1}
-endrow <- function(x){(w*n)}
-if(r!=1){
-  new.df <- data.frame(rbind(samples[1:startrow(r),], origSpine, samples[nextrow(r):endrow(n),]))
-
-}else{
-  new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
-}
-new.df <- new.df[complete.cases(new.df),]
-
-
-par(mfrow=c(2,2))
-spineplot(factor(x)~y, data=filteredData(), main="Original")
-spineplot(factor(x)~y, data=new.df[1:100,], main="1")
-spineplot(factor(x)~y, data=new.df[101:200,], main="2")
-spineplot(factor(x)~y, data=new.df[201:300,], main="3")

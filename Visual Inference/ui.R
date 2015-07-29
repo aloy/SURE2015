@@ -81,7 +81,7 @@ shinyUI(bootstrapPage(
                  dataTableOutput("contents")
           ), #tabPanel
             tabPanel("Plots",
-                    plotOutput("lineup",),
+                    plotOutput("lineup"),
                     actionButton("trueData", "Show/hide true data"),
                     hidden(
                       verbatimTextOutput("plotPos")
@@ -89,5 +89,6 @@ shinyUI(bootstrapPage(
                      )
         ) #tabsetPanel
       ) #mainPanel
+ 
     ) #sidebarLayout
   ))
