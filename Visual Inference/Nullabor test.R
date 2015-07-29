@@ -80,3 +80,10 @@ if(r!=1){
   new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
 }
 new.df <- new.df[complete.cases(new.df),]
+
+
+par(mfrow=c(2,2))
+spineplot(factor(x)~y, data=filteredData(), main="Original")
+spineplot(factor(x)~y, data=new.df[1:100,], main="1")
+spineplot(factor(x)~y, data=new.df[101:200,], main="2")
+spineplot(factor(x)~y, data=new.df[201:300,], main="3")

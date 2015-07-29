@@ -72,7 +72,7 @@ shinyUI(bootstrapPage(
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
                "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid",
                "Spine Plot"="spine"), selected="scatter"),
-            numericInput("num", label=h4("Number of Plots"), value=9, min=2, max=24, step=1)
+            numericInput("num", label=h4("Number of Plots"), value=9, min=2, max=25, step=1)
           ) #conditionalPanel
         ), #sidebarPanel
         mainPanel(
@@ -81,7 +81,7 @@ shinyUI(bootstrapPage(
                  dataTableOutput("contents")
           ), #tabPanel
             tabPanel("Plots",
-                    plotOutput("lineup", width="100%"),
+                    plotOutput("lineup",),
                     actionButton("trueData", "Show/hide true data"),
                     hidden(
                       verbatimTextOutput("plotPos")

@@ -131,7 +131,42 @@ shinyServer(function(input, output, session) {
       new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
     }
     new.df <- new.df[complete.cases(new.df),]
-    par(mfcol=c(3,3))
+    if(n<25){
+    if(n<21){
+  if(n<17){
+  if(n<13){
+  if(n<10){
+    if(n<7){
+      if(n<5){    
+        if(n<3){
+          if(n>1){
+            par(mfrow=c(1, 2))
+             }
+          else{
+         par(mfrow=c(1, 1))
+          }
+        }else{
+        par(mfrow=c(2, 2))
+        }
+      }else{
+      par(mfrow=c(2, 3))
+    }
+    }else{
+      par(mfrow=c(3, 3))
+      }
+    }else{
+      par(mfrow=c(3, 4))
+    }
+  }else{
+   par(mfrow=c(4, 4)) 
+  }
+  }else{
+    par(mfrow=c(4, 5))
+  }
+    }else{
+      par(mar=c(2,1,2,1),mfrow=c(5, 5))
+    }
+    }
     for(i in 1:n){
       try(spineplot(factor(x)~y, data=new.df[((i-1)*w)+1:w*i,], main=paste(i)))
     }
