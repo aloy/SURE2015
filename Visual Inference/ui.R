@@ -93,6 +93,7 @@ shinyUI(bootstrapPage(
           ), #tabPanel
             tabPanel("Plots",
                     plotOutput("lineup"),
+                    actionButton("go", "New plot"),
                     actionButton("trueData", "Show/hide true data"),
                     hidden(
                       verbatimTextOutput("plotPos")

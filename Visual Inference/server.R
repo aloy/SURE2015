@@ -90,10 +90,13 @@ shinyServer(function(input, output, session) {
   })
 
   qqPos <- reactive({
+    autoInvalidate()
     n <- input$num
     sample(n,1)
   })
-
+  autoInvalidate <- reactive({
+    input$go
+    })
   qqPlot <- reactive({
     n <- input$num
     r <- qqPos()
@@ -122,6 +125,7 @@ shinyServer(function(input, output, session) {
       intercept <- yp[1L] - slope * theory[1L]
       return(c(intercept = as.numeric(intercept), slope = as.numeric(slope)))
     }
+    autoInvalidate()
     ggplot(new.df, aes(x=x, y=y)) + geom_point() + 
       geom_abline(slope=qqlineInfo(xnorm)[2], intercept=qqlineInfo(xnorm)[1]) +facet_wrap(~.n) + theme(axis.text.x=element_blank(),
      axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
@@ -155,6 +159,7 @@ shinyServer(function(input, output, session) {
        axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
        axis.title.y=element_blank(),legend.position="none")
     }
+    autoInvalidate()
       plist <- p
       n <- length(plist)
       nCol <- floor(sqrt(n))
@@ -163,6 +168,7 @@ shinyServer(function(input, output, session) {
   
   
   lineupPlot <- reactive({
+    autoInvalidate()
     n <- input$num
     model <- lm(y~x, data=filteredData())
     resid.df <- data.frame(x=filteredData()$x, y=filteredData()$y,
@@ -184,7 +190,8 @@ shinyServer(function(input, output, session) {
           axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
           legend.position="none"),
            den=ggplot(filteredData(), aes(x=y, group=x)) %+% lineup(null_permute("x"),
-               filteredData(), n=n, pos=sample(n,1)) +facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), 
+               filteredData(), n=n, pos=sample(n,1)) + geom_density(aes(alpha=0.6, fill=x)) 
+          + scale_fill_brewer("", palette="Set2")+facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank(), legend.position="none"),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
