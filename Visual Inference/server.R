@@ -31,12 +31,16 @@ shinyServer(function(input, output, session) {
   
   shiny::observe({
     toggle(id = "warning", condition = input$x==input$y && input$plot!="qq" 
-           &&input$plot!="box"&&input$plot!="den"&&input$plot!="spine")
+           &&input$plot!="box"&&input$plot!="den"&&input$plot!="mosaic")
     })
   
   shiny::observe({
     toggle(id = "warning2", condition = input$x2==input$y2 && input$plot!="scatter" 
-           &&input$plot!="scatterSmooth"&&input$plot!="resid")
+           &&input$plot!="scatterSmooth"&&input$plot!="resid"&&input$plot!="residSmooth")
+  })
+  
+  shiny::observe({
+    toggle(id = "warning3", condition = input$x2==input$y3 && input$plot=="mosaic")
   })
   
   output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
@@ -53,6 +57,8 @@ shinyServer(function(input, output, session) {
   updateSelectInput(session,"y", choices=qvars)
   updateSelectInput(session,"x2", choices=testFactor(theData()))
   updateSelectInput(session,"y2", choices=qvars)
+  updateSelectInput(session,"y3", choices=testFactor(theData()))
+  
   if(input$plot!="scatter"){
     updateSelectInput(session, "x", selected=isolate(input$x))
     updateSelectInput(session, "y",selected=isolate(input$y))
@@ -61,14 +67,17 @@ shinyServer(function(input, output, session) {
 
   filteredData <-reactive({
     data<-isolate(theData())
-    if(input$x=="x"&&input$y=="y"&&input$x2=="x2"&&input$y2=="y2"){
+    if(input$x=="x"&&input$y=="y"&&input$x2=="x2"&&input$y2=="y2"&&input$y3=="y3"){
       if(is.null(data)){
         data<-data.frame(x = rep(0, 10), y = rep(0, 10))
       }
     }
-    if(input$x2!="x2"&&input$y2!="y2"&&input$plot=="box"||input$plot=="den"||input$plot=="spine")
+    if(input$x2!="x2"&&input$y2!="y2"&&input$plot=="box"||input$plot=="den")
     {
       data <- data[,c(input$x2,input$y2)]
+    }
+    if(input$x2!="x2"&&input$y3!="y3"&&input$plot=="mosaic"){
+      data <- data[,c(input$x2,input$y3)]
     }
     else{
       data <- data[,c(input$x,input$y)]
@@ -116,25 +125,6 @@ shinyServer(function(input, output, session) {
      axis.title.y=element_blank())
   })
   
-  spinePlot <- reactive({
-    n <- input$num
-    w <- nrow(filteredData())
-    spineLineup <- function(x){data.frame(x=sample(filteredData()$x, size=w, replace=FALSE), y=filteredData()$y)}
-    samples <- plyr::rdply(n,spineLineup(filteredData()))
-    r <- qqPos()
-    origSpine <- data.frame(.n=rep(as.numeric(r), w),x=filteredData()$x, y=filteredData()$y)
-    startrow <- function(x){w*(x-1)} 
-    nextrow <- function(x){(w*(x))+1}
-    endrow <- function(x){(w*n)}
-    if(r!=1){
-      new.df <- data.frame(rbind(samples[1:startrow(r),], origSpine, samples[nextrow(r):endrow(n),]))
-      
-    }else{
-      new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
-    }
-    new.df <- new.df[complete.cases(new.df),]
-  })
-  
   lineupPlot <- reactive({
     n <- input$num
     model <- lm(y~x, data=filteredData())
@@ -151,38 +141,46 @@ shinyServer(function(input, output, session) {
              geom_smooth(method="lm", se=FALSE) + facet_wrap(~ .sample)+ theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank()),
-           box=ggplot(filteredData(), aes(x=x, y=y)) %+% lineup(null_permute("x"),filteredData(), n=n, pos=sample(n,1))
-          + geom_boxplot() + facet_wrap(~.sample) + scale_fill_brewer("", palette="Set2") + theme(axis.text.x=element_blank(), 
-             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank()),
-           den=ggplot(filteredData(), aes(x=y, colour=x, group=x)) %+% lineup(null_permute("x"),
-               filteredData(), n=n, pos=sample(n,1))  + geom_density(aes(fill=x), alpha=0.2) 
-           + facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
-            axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(),
-            legend.position="none"),
+          box=ggplot(filteredData(), aes(x=x, y=y, fill=x)) %+% lineup(null_permute("x"),filteredData(),
+          n=n, pos=sample(n,1))  + geom_boxplot(aes(alpha=0.6)) + scale_fill_brewer("", palette="Set2") 
+          + facet_wrap(~.sample)  + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
+          axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
+          legend.position="none"),
+           den=ggplot(filteredData(), aes(x=y, group=x)) %+% lineup(null_permute("x"),
+               filteredData(), n=n, pos=sample(n,1))  + geom_density(aes(fill=x), alpha=0.6) 
+            + scale_fill_brewer("", palette="Set2") + facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), 
+            axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title.x=element_blank(), 
+            axis.title.y=element_blank(), legend.position="none"),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
              lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point()
              + facet_wrap(~.sample) + theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank()),
+          residSmooth = ggplot(resid.df, aes(x=x, y=.resid)) %+%
+            lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point() +  
+            geom_smooth(method="lm", se=FALSE)+ facet_wrap(~.sample) + theme(axis.text.x=element_blank(),
+            axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+            axis.title.y=element_blank()),
+          mosaic= prodplot(filteredData(), ~x+y, mosaic(direction = "h")) +aes(fill=x)+
+           scale_fill_brewer("", palette="Set2") + theme(axis.text.x=element_blank(),
+          axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+          axis.title.y=element_blank(), legend.position="none")                                                                       
     )
   })
   
   output$lineup <- renderPlot({
     if(input$plot=="scatter"||input$plot=="scatterSmooth"||input$plot=="box"||
-         input$plot=="den"||input$plot=="resid"){
+         input$plot=="den"||input$plot=="resid"||input$plot=="residSmooth"||
+         input$plot=="mosaic"){
     lineupPlot()
     }
     else{
-      switch(input$plot,
-      qq=qqPlot(),
-      spine=spinePlot()
-      )
+      qqPlot()
     }
-#   }, width=function() { session$clientData$output_lineup_height * 1.0
   })
   
   output$plotPos <- renderText({
-    if(input$plot!="qq"&&input$plot!="spine"){
+    if(input$plot!="qq"&&input$plot!="mosaic"){
     paste("The true data is in plot ",attr(lineupPlot()$data, "pos"),".", sep="")
     }else{
       paste("The true data is in plot ",qqPos(),".", sep="")

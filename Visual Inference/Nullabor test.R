@@ -33,7 +33,7 @@ qplot(angle, r, data=threept) %+% lineup(null_lm(r~angle+I(angle^2)), threept) +
 
 data(RestaurantTips)
 data <- RestaurantTips
-names(data)[1:2] <- c("y","x")
+names(data)[2:3] <- c("y","x")
 filteredData <- function(x){data}
 
 xnorm <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
@@ -52,3 +52,6 @@ new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):en
 new.df <- new.df[complete.cases(new.df),]
 ggplot(new.df, aes(x=x, y=y)) + geom_point() + facet_wrap(~.n)
 
+#prodplots
+data(RestaurantTips)
+data <- RestaurantTips[,c("Guests", "Day")]
