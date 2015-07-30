@@ -73,15 +73,17 @@ shinyServer(function(input, output, session) {
         data<-data.frame(x = rep(0, 10), y = rep(0, 10))
       }
     }
-    if(input$x2!="x2"&&input$y2!="y2"&&input$plot=="box"||input$plot=="den")
-    {
-      data <- data[,c(input$x2,input$y2)]
-    }
-    if(input$x2!="x2"&&input$y3!="y3"&&input$plot=="mosaic"){
-      data <- data[,c(input$x2,input$y3)]
-    }
     else{
-      data <- data[,c(input$x,input$y)]
+      data <- switch(input$plot,
+                     scatter=data[,c(input$x,input$y)],
+                     scatterSmooth=data[,c(input$x,input$y)],
+                     box=data[,c(input$x2,input$y2)],
+                     den=data[,c(input$x2,input$y2)],
+                     qq=data[,c(input$x,input$y)],
+                     resid=data[,c(input$x,input$y)],
+                     residSmooth=data[,c(input$x,input$y)],
+                     mosaic=data[,c(input$x2,input$y3)],
+                     )
     }
     names(data)<-c("x","y")
     data.frame(data)
@@ -182,8 +184,7 @@ shinyServer(function(input, output, session) {
           axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
           legend.position="none"),
            den=ggplot(filteredData(), aes(x=y, group=x)) %+% lineup(null_permute("x"),
-               filteredData(), n=n, pos=sample(n,1))  + geom_density(aes(fill=x), alpha=0.6) 
-            + scale_fill_brewer("", palette="Set2") + facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), 
+               filteredData(), n=n, pos=sample(n,1)) +facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank(), legend.position="none"),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
