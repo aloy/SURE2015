@@ -4,6 +4,7 @@ library(ggplot2)
 library(stats)
 library(car)
 library(productplots)
+library(gridExtra)
 library(nullabor)
 library(dplyr)
 data(RestaurantTips)
@@ -125,6 +126,40 @@ shinyServer(function(input, output, session) {
      axis.title.y=element_blank())
   })
   
+  mosaicPlot <- reactive({
+    n <- input$num
+    w <- nrow(filteredData())
+    mosaicLineup <- function(x){data.frame(x=sample(filteredData()$x, size=w, replace=FALSE), y=filteredData()$y)}
+    samples <- plyr::rdply(n,mosaicLineup(filteredData()))
+    r <- qqPos()
+    origMosaic <- data.frame(.n=rep(as.numeric(r), w),x=filteredData()$x, y=filteredData()$y)
+    startrow <- function(x){w*(x-1)} 
+    nextrow <- function(x){(w*(x))+1}
+    endrow <- function(x){(w*n)}
+    if(r!=1){
+      new.df <- data.frame(rbind(samples[1:startrow(r),], origMosaic, samples[nextrow(r):endrow(n),]))
+      
+    }else{
+      new.df <- data.frame(rbind(origMosaic, samples[nextrow(r):endrow(n),]))
+    }
+    new.df <- new.df[complete.cases(new.df),]
+
+    p <- list()
+    for(i in 1:n){
+      df1 <- 1+((i-1)*w)
+      df2 <-w*i
+      p[[i]] <- prodplot(new.df[df1:df2,], ~y+x) + aes(fill=x) + ggtitle(paste(i))+
+      scale_fill_brewer("", palette="Set2")  + theme(axis.text.x=element_blank(), 
+       axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+       axis.title.y=element_blank(),legend.position="none")
+    }
+      plist <- p
+      n <- length(plist)
+      nCol <- floor(sqrt(n))
+      do.call("grid.arrange", c(plist, ncol=nCol))
+  })
+  
+  
   lineupPlot <- reactive({
     n <- input$num
     model <- lm(y~x, data=filteredData())
@@ -160,22 +195,19 @@ shinyServer(function(input, output, session) {
             lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point() +  
             geom_smooth(method="lm", se=FALSE)+ facet_wrap(~.sample) + theme(axis.text.x=element_blank(),
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
-            axis.title.y=element_blank()),
-          mosaic= prodplot(filteredData(), ~x+y, mosaic(direction = "h")) +aes(fill=x)+
-           scale_fill_brewer("", palette="Set2") + theme(axis.text.x=element_blank(),
-          axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
-          axis.title.y=element_blank(), legend.position="none")                                                                       
+            axis.title.y=element_blank())
     )
   })
   
   output$lineup <- renderPlot({
     if(input$plot=="scatter"||input$plot=="scatterSmooth"||input$plot=="box"||
-         input$plot=="den"||input$plot=="resid"||input$plot=="residSmooth"||
-         input$plot=="mosaic"){
+         input$plot=="den"||input$plot=="resid"||input$plot=="residSmooth"){
     lineupPlot()
-    }
-    else{
-      qqPlot()
+    }else{
+      switch(input$plot,
+      qq=qqPlot(),
+      mosaic=mosaicPlot()
+      )
     }
   })
   

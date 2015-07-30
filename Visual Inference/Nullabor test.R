@@ -55,3 +55,13 @@ ggplot(new.df, aes(x=x, y=y)) + geom_point() + facet_wrap(~.n)
 #prodplots
 data(RestaurantTips)
 data <- RestaurantTips[,c("Guests", "Day")]
+names(data)<- c("y","x")
+filteredData <- function(x){data}
+
+if(r!=1){
+  new.df <- data.frame(rbind(samples[1:startrow(r),], origMosaic, samples[nextrow(r):endrow(n),]))
+  
+}else{
+  new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
+}
+new.df <- new.df[complete.cases(new.df),]
