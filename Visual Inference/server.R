@@ -97,6 +97,7 @@ shinyServer(function(input, output, session) {
   autoInvalidate <- reactive({
     input$go
     })
+
   qqPlot <- reactive({
     n <- input$num
     r <- qqPos()
@@ -166,6 +167,53 @@ shinyServer(function(input, output, session) {
       do.call("grid.arrange", c(plist, ncol=nCol))
   })
   
+  autoInvalidate2 <- reactive({
+    input$go2
+  })
+  
+  nullSwitch <- reactive({
+    autoInvalidate2()
+    nullDF <- data.frame(x=rnorm(1000, mean = 0, sd = 1), y=rnorm(1000, mean = 0, sd = 1))
+    mosaicDF <- data.frame(x=c(1, 2), y=sample(1:10, 1000, replace=TRUE))
+    names(nullDF) <- c("x","y")
+    model2 <- lm(y~x, data=nullDF)
+    resid.df <- data.frame(x=nullDF$x, y=nullDF$y,.resid=residuals(model2), .fitted=fitted(model2))
+    switch(input$plot,
+           scatter= ggplot(nullDF, aes(x=x, y=y))+geom_point()+theme(axis.text.x=element_blank(), 
+               axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+               axis.title.y=element_blank()),
+           scatterSmooth = ggplot(nullDF, aes(x, y)) +  geom_point() +
+             geom_smooth(method="lm", se=FALSE) + theme(axis.text.x=element_blank(), 
+              axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+              axis.title.y=element_blank()),
+           box=ggplot(nullDF, aes(x=x, y=y, fill="green")) + geom_boxplot(aes(alpha=0.6)) + scale_fill_brewer("", palette="Set2") 
+             + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
+                axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
+              legend.position="none"),
+           den=ggplot(nullDF, aes(x=x))+ geom_density(aes(alpha=0.6, fill="green")) 
+              + scale_fill_brewer("", palette="Set2")+theme(axis.text.x=element_blank(), 
+                 axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title.x=element_blank(), 
+                axis.title.y=element_blank(), legend.position="none"),
+           qq = qplot(sample=nullDF$x, stat="qq") + geom_abline(slope=1, intercept=0)
+           + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
+                   axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
+                   legend.position="none"),
+           resid=ggplot(resid.df, aes(x=x, y=.resid)) +geom_point()
+              + theme(axis.text.x=element_blank(), 
+              axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+                 axis.title.y=element_blank()),
+           residSmooth = ggplot(resid.df, aes(x=x, y=.resid)) %+%
+             lineup(null_lm(y~x, method='boot'), n=2, pos=2, resid.df) +geom_point() +  
+             geom_smooth(method="lm", se=FALSE) + theme(axis.text.x=element_blank(),
+              axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+              axis.title.y=element_blank()),
+           mosaic= prodplot(mosaicDF, ~x+y) + aes(fill=x) + 
+            scale_fill_brewer("", palette="Set2")  + theme(axis.text.x=element_blank(), 
+            axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
+            axis.title.y=element_blank(),legend.position="none")
+    )
+  })
+  
   
   lineupPlot <- reactive({
     autoInvalidate()
@@ -205,6 +253,10 @@ shinyServer(function(input, output, session) {
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank())
     )
+  })
+  
+  output$nullPlot <- renderPlot({
+    nullSwitch()
   })
   
   output$lineup <- renderPlot({

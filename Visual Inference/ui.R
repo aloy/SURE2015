@@ -47,7 +47,7 @@ shinyUI(bootstrapPage(
             )#conditionalPanel
           ), #conditionalPanel
           conditionalPanel(
-            "$('li.active a').first().html()==='Plots'",
+            "$('li.active a').first().html()==='Lineup'",
             h4("Variables"),
             conditionalPanel(
               condition='input.plot!="box"&&input.plot!="den"&&input.plot!="mosaic"',
@@ -77,12 +77,18 @@ shinyUI(bootstrapPage(
             ),
             hidden(
               shiny::p(id = "warning3", strong("Make sure you select different variables!"),  style = "color:red")
-            ),
+            )
+          ), 
+          conditionalPanel(
+            "$('li.active a').first().html()!=='Input'",
             radioButtons("plot", label=h4("Plotting"), c("Scatterplot" = "scatter", 
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
                "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid",
                "Residual Plot with Smoother" = "residSmooth", "Mosaic Plot"="mosaic"), 
-               selected="scatter"),
+               selected="scatter")
+          ),
+          conditionalPanel(
+            "$('li.active a').first().html()==='Lineup'",
             numericInput("num", label=h4("Number of Plots"), value=9, min=2, max=25, step=1)
           ) #conditionalPanel
         ), #sidebarPanel
@@ -91,7 +97,11 @@ shinyUI(bootstrapPage(
              tabPanel("Input",
                  dataTableOutput("contents")
           ), #tabPanel
-            tabPanel("Plots",
+          tabPanel("Null Plots",
+                   plotOutput("nullPlot"),
+                   actionButton("go2", "New plot")
+                   ),
+            tabPanel("Lineup",
                     plotOutput("lineup"),
                     actionButton("go", "New plot"),
                     actionButton("trueData", "Show/hide true data"),
