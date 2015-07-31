@@ -12,6 +12,8 @@ data(RestaurantTips)
 # Visual Inference
 
 shinyServer(function(input, output, session) {
+  source("qqplots.r")
+  
   theData <- reactive({
     if(input$chooseData=="uploadYes"){
       inFile1 <- input$file1
@@ -97,40 +99,46 @@ shinyServer(function(input, output, session) {
   autoInvalidate <- reactive({
     input$go
     })
-
+  
   qqPlot <- reactive({
     n <- input$num
     r <- qqPos()
-    xnorm <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
-    qqLineup <- function(y){
-      y <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
-      data.frame(qqnorm(y, plot.it=FALSE))
-    }
     w <- nrow(filteredData())
-    samples <- data.frame(plyr::rdply(n, qqLineup(xnorm)))
-    samples$.n <- as.numeric(samples$.n)
-    qq.df <- data.frame(.n=rep(as.numeric(r), w), x=sort(qqLineup(xnorm)$x), y=sort(qqLineup(xnorm)$y))
+    sim <- sim_lineup(n=w, nplots=input$num)
+    x <- scale(filteredData()$x)
+    true <- data.frame(qq_plot_info(x=x), .sample=rep(r, w))
     startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
     nextrow <- function(x){(w*(x))+1}
     endrow <- function(x){w*n}
     if(r!=1){
-    new.df <- data.frame(rbind(samples[1:startrow(r),], qq.df, samples[nextrow(r):endrow(n),]))
+    new.df <- data.frame(rbind(sim[1:startrow(r),], true, sim[nextrow(r):endrow(n),]))
     }else{
-      new.df <- data.frame(rbind(qq.df, samples[nextrow(r):endrow(n),]))
+      new.df <- data.frame(rbind(true, sim[nextrow(r):endrow(n),]))
     }
     new.df <- new.df[complete.cases(new.df),]
-    qqlineInfo <- function(x){
-      yp <- quantile(x, c(0.25, 0.75))
-      theory <- qnorm(p = c(0.25, 0.75))
-      slope <- diff(yp)/diff(theory)
-      intercept <- yp[1L] - slope * theory[1L]
-      return(c(intercept = as.numeric(intercept), slope = as.numeric(slope)))
-    }
     autoInvalidate()
-    ggplot(new.df, aes(x=x, y=y)) + geom_point() + 
-      geom_abline(slope=qqlineInfo(xnorm)[2], intercept=qqlineInfo(xnorm)[1]) +facet_wrap(~.n) + theme(axis.text.x=element_blank(),
-     axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
-     axis.title.y=element_blank())
+    if(input$plot=="qq"&&input$qqAdj=="std"){
+     plot <- switch(input$qqBand,
+            none=ctrl_lineup(new.df),
+            dh=std_lineup(new.df),
+            ts=std_ts_lineup(new.df)
+            )
+    }
+    if(input$plot=="qq"&&input$qqAdj=="adj"){
+      plot <- switch(input$qqBand,
+             none=rot2_none(new.df),
+             dh=rot2_lineup(new.df),
+             ts=rot2_ts_lineup(new.df)
+             )
+    }
+    if(input$plot=="qq"&&input$qqAdj=="ord"){
+      plot <- switch(input$qqBand,
+             none=rot_none(new.df),
+             dh=rot_lineup(new.df),
+             ts=rot_ts_lineup(new.df)
+        )
+    }
+    plot
   })
   
   mosaicPlot <- reactive({

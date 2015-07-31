@@ -54,7 +54,7 @@ shinyUI(bootstrapPage(
             selectInput("x", label="X Variable","x")
             ),
             conditionalPanel(
-              condition='input.plot!="qq"&&input.plot!="box"&&input.plot!="den"&&input.plot!="mosaic"',
+              condition='input.plot!="box"&&input.plot!="den"&&input.plot!="mosaic"&&input.plot!="qq"',
               selectInput("y", label="Y Variable","y")
             ),
             conditionalPanel(
@@ -85,7 +85,15 @@ shinyUI(bootstrapPage(
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
                "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid",
                "Residual Plot with Smoother" = "residSmooth", "Mosaic Plot"="mosaic"), 
-               selected="scatter")
+               selected="scatter"),
+            conditionalPanel(
+              condition='input.plot=="qq"',
+              h4("Q-Q Plot Options"),
+              radioButtons("qqAdj", label=h5("Adjustments"), c("Standard"="std", "Adjusted Detrended"
+                                                               = "adj", "Ordinary Detrended" = "ord"), selected="std"),
+              radioButtons("qqBand", label=h5("Bands"), c("None" = "none", "DH" = "dh",
+                                                          "TS" = "ts"), selected="none")
+            )
           ),
           conditionalPanel(
             "$('li.active a').first().html()==='Lineup'",

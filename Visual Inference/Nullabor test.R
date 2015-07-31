@@ -32,8 +32,8 @@ qplot(angle, r, data=threept) %+% lineup(null_lm(r~angle+I(angle^2)), threept) +
 # Simulate from target distribution, N(0, sd) using rnorm function
 
 data(RestaurantTips)
-data <- RestaurantTips
-names(data)[2:3] <- c("y","x")
+data <- data.frame(RestaurantTips[,1])
+names(data) <- "x"
 filteredData <- function(x){data}
 
 xnorm <- rnorm(filteredData()$x, mean=mean(filteredData()$x), sd=sd(filteredData()$x))
@@ -54,7 +54,7 @@ ggplot(new.df, aes(x=x, y=y)) + geom_point() + facet_wrap(~.n)
 
 #prodplots
 data(RestaurantTips)
-data <- RestaurantTips[,c("Guests", "Day")]
+data <- RestaurantTips[,c("Bill", "Tip")]
 names(data)<- c("y","x")
 filteredData <- function(x){data}
 
@@ -62,6 +62,6 @@ if(r!=1){
   new.df <- data.frame(rbind(samples[1:startrow(r),], origMosaic, samples[nextrow(r):endrow(n),]))
   
 }else{
-  new.df <- data.frame(rbind(origSpine, samples[nextrow(r):endrow(n),]))
+  new.df <- data.frame(rbind(origMosaic, samples[nextrow(r):endrow(n),]))
 }
 new.df <- new.df[complete.cases(new.df),]

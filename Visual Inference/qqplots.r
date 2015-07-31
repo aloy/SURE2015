@@ -197,6 +197,31 @@ ctrl_lineup <- function(dframe) {
   
 }
 
+rot_none <- function(dframe) { #Ordinary Detrended without bands
+  require(ggplot2)
+  require(grid)
+  ggplot(aes(x = x, y = y - fit), data = dframe) + 
+    geom_hline(yintercept=0, colour="grey30")+
+    geom_point() + 
+    theme_bw() + 
+    facet_wrap(~.sample, ncol=5) +
+    labs(x = "", y = "") +
+    theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
+          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
+}
+
+rot2_none <- function(dframe) { #Adjusted detrended without bands
+  require(ggplot2)
+  require(grid)
+  ggplot(aes(x = x, y = y - fit), data = dframe) + 
+    geom_hline(yintercept=0, colour="grey30")+
+    geom_point() + 
+    theme_bw() + 
+    facet_wrap(~.sample, ncol=5) +
+    labs(x = "", y = "") +
+    theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
+          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
+}
 
 
 ########################
