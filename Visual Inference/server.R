@@ -166,7 +166,7 @@ shinyServer(function(input, output, session) {
       p[[i]] <- prodplot(new.df[df1:df2,], ~y+x) + aes(fill=x) + ggtitle(paste(i))+
       scale_fill_brewer("", palette="Set2")  + theme(axis.text.x=element_blank(), 
        axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
-       axis.title.y=element_blank(),legend.position="none")
+       axis.title.y=element_blank(),legend.position="none", plot.margin=unit(c(0, 0, 0, 0), "cm"))
     }
     autoInvalidate()
       plist <- p
@@ -232,32 +232,32 @@ shinyServer(function(input, output, session) {
     switch(input$plot,
            scatter= ggplot(filteredData(), aes(x, y)) %+% 
              lineup(null_permute("x"), filteredData(), n=n, pos=sample(n, 1)) 
-           + geom_point() + facet_wrap(~.sample) +theme(axis.text.x=element_blank(), 
+           + geom_point() + facet_wrap(~.sample, nrow=ceiling(sqrt(n))) +theme(axis.text.x=element_blank(), 
           axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(),
           axis.title.y=element_blank()),
            scatterSmooth = ggplot(filteredData(), aes(x, y)) %+% 
             lineup(null_permute('x'), filteredData(), n=n, pos=sample(n,1)) +  geom_point() +
-             geom_smooth(method="lm", se=FALSE) + facet_wrap(~ .sample)+ theme(axis.text.x=element_blank(), 
+             geom_smooth(method="lm", se=FALSE) + facet_wrap(~.sample, nrow=ceiling(sqrt(n)))+ theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank()),
           box=ggplot(filteredData(), aes(x=x, y=y, fill=x)) %+% lineup(null_permute("x"),filteredData(),
           n=n, pos=sample(n,1))  + geom_boxplot(aes(alpha=0.6)) + scale_fill_brewer("", palette="Set2") 
-          + facet_wrap(~.sample)  + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
+          + facet_wrap(~.sample, nrow=ceiling(sqrt(n)))  + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
           axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
           legend.position="none"),
            den=ggplot(filteredData(), aes(x=y, group=x)) %+% lineup(null_permute("x"),
                filteredData(), n=n, pos=sample(n,1)) + geom_density(aes(alpha=0.6, fill=x)) 
-          + scale_fill_brewer("", palette="Set2")+facet_wrap(~.sample)+ theme(axis.text.x=element_blank(), 
+          + scale_fill_brewer("", palette="Set2")+facet_wrap(~.sample, nrow=ceiling(sqrt(n)))+ theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank(), legend.position="none"),
            resid=ggplot(resid.df, aes(x=x, y=.resid)) %+%
              lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point()
-             + facet_wrap(~.sample) + theme(axis.text.x=element_blank(), 
+             + facet_wrap(~.sample, nrow=ceiling(sqrt(n))) + theme(axis.text.x=element_blank(), 
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank()),
           residSmooth = ggplot(resid.df, aes(x=x, y=.resid)) %+%
             lineup(null_lm(y~x, method='boot'), n=n, pos=sample(n,1), resid.df) +geom_point() +  
-            geom_smooth(method="lm", se=FALSE)+ facet_wrap(~.sample) + theme(axis.text.x=element_blank(),
+            geom_smooth(method="lm", se=FALSE)+ facet_wrap(~.sample, nrow=ceiling(sqrt(n))) + theme(axis.text.x=element_blank(),
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank())
     )
