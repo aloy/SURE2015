@@ -105,11 +105,25 @@ shinyUI(bootstrapPage(
                  dataTableOutput("contents")
           ), #tabPanel
           tabPanel("Rorschach",
-                   plotOutput("nullPlot"),
+                   conditionalPanel(
+                     condition='input.plot!="qq"',
+                   plotOutput("nullPlot")
+                   ),
+                   conditionalPanel(
+                     condition='input.plot=="qq"',
+                     plotOutput("qqNull")
+                   ),
                    actionButton("go2", "New plot")
                    ),
             tabPanel("Lineup",
-                    plotOutput("lineup"),
+                     conditionalPanel(
+                       condition='input.plot!="qq"',
+                       plotOutput("lineup")
+                     ),
+                     conditionalPanel(
+                       condition='input.plot=="qq"',
+                       plotOutput("qqLineup")
+                     ),
                     actionButton("go", "New plot"),
                     actionButton("trueData", "Show/hide true data"),
                     hidden(

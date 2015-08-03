@@ -12,8 +12,18 @@ data(RestaurantTips)
 # Visual Inference
 
 shinyServer(function(input, output, session) {
-  source("qqplots.r")
   
+  qq.reactive <- reactive({
+    input$plot
+  })
+  
+  observe({
+  qqVar <- isolate(qq.reactive())
+  if(qqVar=="qq"){
+  source("qqplots.r")
+  }
+  })
+
   theData <- reactive({
     if(input$chooseData=="uploadYes"){
       inFile1 <- input$file1
@@ -102,10 +112,11 @@ shinyServer(function(input, output, session) {
     })
   
   qqPlot <- reactive({
+    if(input$plot=="qq"){
     n <- input$num
     r <- qqPos()
     w <- nrow(filteredData())
-    sim <- sim_lineup(n=w, nplots=input_num)
+    sim <- sim_lineup(n=w, nplots=input$num)
     x <- scale(filteredData()$x)
     true <- data.frame(qq_plot_info(x=x), .sample=rep(r, w))
     startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
@@ -140,6 +151,7 @@ shinyServer(function(input, output, session) {
         )
     }
     plot
+    }else{return(NULL)}
   })
   
   mosaicPlot <- reactive({
@@ -180,6 +192,37 @@ shinyServer(function(input, output, session) {
     input$go2
   })
   
+  qqNullSwitch <- reactive({
+    if(input$plot=="qq"){
+      qq.df <- sim_lineup(n=100, nplots=1)
+      if(input$qqAdj=="std"){
+        plot <- switch(input$qqBand,
+                       none=ctrl_lineup(qq.df),
+                       dh=std_lineup(qq.df),
+                       ts=std_ts_lineup(qq.df)
+        )
+      }
+      if(input$qqAdj=="adj"){
+        plot <- switch(input$qqBand,
+                       none=rot2_none(qq.df),
+                       dh=rot2_lineup(qq.df),
+                       ts=rot2_ts_lineup(qq.df)
+        )
+      }
+      if(input$qqAdj=="ord"){
+        plot <- switch(input$qqBand,
+                       none=rot_none(qq.df),
+                       dh=rot_lineup(qq.df),
+                       ts=rot_ts_lineup(qq.df)
+        )
+      }
+      plot
+    }
+    else{
+      return(NULL)
+    }
+  })
+  
   nullSwitch <- reactive({
     autoInvalidate2()
     null.df <- data.frame(x=rnorm(1000, mean = 0, sd = 1), y=rnorm(1000, mean = 0, sd = 1))
@@ -188,8 +231,7 @@ shinyServer(function(input, output, session) {
     model2 <- lm(y~x, data=null.df)
     den.df <- melt(as.matrix(null.df))
     resid.df <- data.frame(x=null.df$x, y=null.df$y,.resid=residuals(model2), .fitted=fitted(model2))
-    if(input$plot!="qq"){
-   plot <- switch(input$plot,
+  switch(input$plot,
            scatter= ggplot(null.df, aes(x=x, y=y))+geom_point()+theme(axis.text.x=element_blank(), 
                axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
                axis.title.y=element_blank()),
@@ -215,33 +257,6 @@ shinyServer(function(input, output, session) {
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank(),legend.position="none")
     )
-    }
-   if(input$plot=="qq"){
-     qq.df <- sim_lineup(n=1000, nplots=1)
-      if(input$qqAdj=="std"){
-     plot <- switch(input$qqBand,
-                    none=ctrl_lineup(qq.df),
-                    dh=std_lineup(qq.df),
-                    ts=std_ts_lineup(qq.df)
-     )
-   }
-   if(input$qqAdj=="adj"){
-     plot <- switch(input$qqBand,
-                    none=rot2_none(qq.df),
-                    dh=rot2_lineup(qq.df),
-                    ts=rot2_ts_lineup(qq.df)
-     )
-   }
-   if(input$qqAdj=="ord"){
-     plot <- switch(input$qqBand,
-                    none=rot_none(qq.df),
-                    dh=rot_lineup(qq.df),
-                    ts=rot_ts_lineup(qq.df)
-     )
-   }
-   }
-   autoInvalidate2()
-   plot
   })
   
   
@@ -289,18 +304,22 @@ shinyServer(function(input, output, session) {
     nullSwitch()
   })
   
+  output$qqNull <- renderPlot({
+    qqNullSwitch()
+  })
+  
   output$lineup <- renderPlot({
     if(input$plot=="scatter"||input$plot=="scatterSmooth"||input$plot=="box"||
          input$plot=="den"||input$plot=="resid"||input$plot=="residSmooth"){
     lineupPlot()
     }else{
-      switch(input$plot,
-      qq=qqPlot(),
-      mosaic=mosaicPlot()
-      )
+      mosaicPlot()
     }
   })
   
+  output$qqLineup <- renderPlot({
+    qqPlot()
+  })
   output$plotPos <- renderText({
     if(input$plot!="qq"&&input$plot!="mosaic"){
     paste("The true data is in plot ",attr(lineupPlot()$data, "pos"),".", sep="")
