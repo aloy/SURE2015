@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
     n <- input$num
     r <- qqPos()
     w <- nrow(filteredData())
-    sim <- sim_lineup(n=w, nplots=input$num)
+    sim <- sim_lineup(n=w, nplots=input_num)
     x <- scale(filteredData()$x)
     true <- data.frame(qq_plot_info(x=x), .sample=rep(r, w))
     startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
@@ -185,8 +185,10 @@ shinyServer(function(input, output, session) {
     mosaicDF <- data.frame(x=c(1, 2), y=sample(1:10, 1000, replace=TRUE))
     names(nullDF) <- c("x","y")
     model2 <- lm(y~x, data=nullDF)
+    qq.df <- sim_lineup(n=1000, nplots=1)
     resid.df <- data.frame(x=nullDF$x, y=nullDF$y,.resid=residuals(model2), .fitted=fitted(model2))
-    switch(input$plot,
+    if(input$plot!="qq"){
+   plot <- switch(input$plot,
            scatter= ggplot(nullDF, aes(x=x, y=y))+geom_point()+theme(axis.text.x=element_blank(), 
                axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
                axis.title.y=element_blank()),
@@ -206,10 +208,6 @@ shinyServer(function(input, output, session) {
            + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
                    axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
                    legend.position="none"),
-           resid=ggplot(resid.df, aes(x=x, y=.resid)) +geom_point()
-              + theme(axis.text.x=element_blank(), 
-              axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
-                 axis.title.y=element_blank()),
            residSmooth = ggplot(resid.df, aes(x=x, y=.resid)) %+%
              lineup(null_lm(y~x, method='boot'), n=2, pos=2, resid.df) +geom_point() +  
              geom_smooth(method="lm", se=FALSE) + theme(axis.text.x=element_blank(),
@@ -220,6 +218,29 @@ shinyServer(function(input, output, session) {
             axis.text.y=element_blank(),axis.ticks=element_blank(), axis.title.x=element_blank(), 
             axis.title.y=element_blank(),legend.position="none")
     )
+    }
+   if(input$plot=="qq"&&input$qqAdj=="std"){
+     plot <- switch(input$qqBand,
+                    none=ctrl_lineup(qq.df),
+                    dh=std_lineup(qq.df),
+                    ts=std_ts_lineup(qq.df)
+     )
+   }
+   if(input$plot=="qq"&&input$qqAdj=="adj"){
+     plot <- switch(input$qqBand,
+                    none=rot2_none(qq.df),
+                    dh=rot2_lineup(qq.df),
+                    ts=rot2_ts_lineup(qq.df)
+     )
+   }
+   if(input$plot=="qq"&&input$qqAdj=="ord"){
+     plot <- switch(input$qqBand,
+                    none=rot_none(qq.df),
+                    dh=rot_lineup(qq.df),
+                    ts=rot_ts_lineup(qq.df)
+     )
+   }
+   plot
   })
   
   
