@@ -72,12 +72,20 @@ output$origCor <- renderPrint({
 
   trials <- reactive({    
     if(input$goButton > 0) {
+      if(input$permStat=="slope"){
       perms <-do(input$num) * summary(lm(formula = y ~ shuffle(x), data = filteredData()))$coefficients[,1]
       colnames(perms) <- c("yint", "perms")
-      data.frame(perms)
+      df <- data.frame(perms)
+      }
+      if(input$permStat=="cor"){
+        perms <- do(input$num) * cor(filteredData()$x, sample(filteredData()$y))
+        colnames(perms) <- "perms"
+        df <- data.frame(perms)
+      }
     } else {
-      data.frame(perms = rep(0, 10))
+      df <- data.frame(perms = rep(0, 10))
     }
+    df
   })
   output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
   
@@ -91,9 +99,9 @@ output$origCor <- renderPrint({
       if (round(diff(range(trials()$perms))/100, digits=3) == 0)
         range.100 <- 0.001
     }
-    else(
+    else{
       range.100 <- 0.001
-    )
+    }
     if(input$plot=="his"){
       trials %>%
         ggvis(~perms) %>%
@@ -164,8 +172,6 @@ output$pval <- renderText({
   }
 })
 
-
-
 alpha <- reactive({
   1 - level()
 }) 
@@ -207,6 +213,18 @@ data2<-data.frame(isolate(filteredData()))
 boot(data2, R=input$R, statistic=yhat.fn())
 })
 
+cor.fn <- reactive({
+  function(data3, index){
+    data3 <- data3[index,]
+    return(cor(data3$x, sample(data3$y)))
+  }
+})
+
+cor.boot <- reactive({
+  data3<-data.frame(isolate(filteredData()))
+  boot(data3, R=input$R, statistic=cor.fn())
+})
+
 pred <- reactive({
 data2<-data.frame(isolate(filteredData()))
   pred0.fn <- function(data2, index){
@@ -229,7 +247,8 @@ normPrintFunction <- function(list, double){
 output$ciPrint <- renderText({
   ciPrint <- switch(input$stat,
   slope = boot.ci(data.boot(), conf=level(), type="perc"),
-  yhat =  boot.ci(yhat.boot(), conf=level(), type="perc")
+  yhat =  boot.ci(yhat.boot(), conf=level(), type="perc"),
+  cor= boot.ci(cor.boot(), conf=level(), type="perc")
   )
   percPrintFunction(ciPrint, alpha()/2)
 })
@@ -237,7 +256,8 @@ output$ciPrint <- renderText({
 output$percOneTailLower <- renderText({
   percOneTail <- switch(input$stat,
                     slope =boot.ci(data.boot(), conf=level()-alpha(),type="perc"),
-                      yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
+                      yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc"),
+                    cor= boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
   )
   percPrintFunction(percOneTail, alpha())[1:2]
 })
@@ -245,7 +265,8 @@ output$percOneTailLower <- renderText({
 output$percOneTailUpper <- renderText({
   percOneTail <- switch(input$stat,
                         slope =boot.ci(data.boot(), conf=level()-alpha(),type="perc"),
-                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
+                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc"),
+                        cor=boot.ci(cor.boot(), conf=level()-alpha(), type="perc")
   )
   percPrintFunction(percOneTail, alpha())[3:4]
 })
@@ -253,7 +274,8 @@ output$percOneTailUpper <- renderText({
 output$normPrint <- renderText({
   normPrint <- switch(input$stat,
                     slope = boot.ci(data.boot(), conf=level(), type="norm"),
-                    yhat =  boot.ci(yhat.boot(), conf=level(), type="norm")
+                    yhat =  boot.ci(yhat.boot(), conf=level(), type="norm"),
+                    cor=boot.ci(cor.boot(), conf=level(), type="norm")
   )
   normPrintFunction(normPrint, alpha()/2)
 })
@@ -261,7 +283,8 @@ output$normPrint <- renderText({
 output$normOneTailLower <- renderText({
   normOneTail <- switch(input$stat,
                         slope =boot.ci(data.boot(), conf=level()-alpha(),type="norm"),
-                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm")
+                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm"),
+                        cor=boot.ci(cor.boot(), conf=level()-alpha(), type="norm")
   )
   normPrintFunction(normOneTail, alpha())[1:2]
 })
@@ -269,7 +292,8 @@ output$normOneTailLower <- renderText({
 output$normOneTailUpper <- renderText({
   normOneTail <- switch(input$stat,
                         slope =boot.ci(data.boot(), conf=level()-alpha(),type="norm"),
-                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm")
+                        yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="norm"),
+                        cor= boot.ci(cor.boot(), conf=level()-alpha(), type="norm")
   )
   normPrintFunction(normOneTail, alpha())[3:4]
 })

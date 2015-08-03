@@ -129,21 +129,21 @@ shinyServer(function(input, output, session) {
     }
     new.df <- new.df[complete.cases(new.df),]
     autoInvalidate()
-    if(input$plot=="qq"&&input$qqAdj=="std"){
+    if(input$qqAdj=="std"){
      plot <- switch(input$qqBand,
             none=ctrl_lineup(new.df),
             dh=std_lineup(new.df),
             ts=std_ts_lineup(new.df)
             )
     }
-    if(input$plot=="qq"&&input$qqAdj=="adj"){
+    if(input$qqAdj=="adj"){
       plot <- switch(input$qqBand,
              none=rot2_none(new.df),
              dh=rot2_lineup(new.df),
              ts=rot2_ts_lineup(new.df)
              )
     }
-    if(input$plot=="qq"&&input$qqAdj=="ord"){
+    if(input$qqAdj=="ord"){
       plot <- switch(input$qqBand,
              none=rot_none(new.df),
              dh=rot_lineup(new.df),

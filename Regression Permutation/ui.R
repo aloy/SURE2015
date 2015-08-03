@@ -57,6 +57,8 @@ shinyUI(bootstrapPage(
    ),
   conditionalPanel(
     "$('li.active a').first().html()==='Permutation Test'",
+    radioButtons("permStat", label=h4("Statistic"), c("Slope" = "slope", "Correlation" = "cor"),
+                selected="slope"),
     radioButtons("test", label=h4("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
                  selected="tt"),
     numericInput("num", 
@@ -82,7 +84,8 @@ shinyUI(bootstrapPage(
   ), #conditionalPanel
   conditionalPanel(
     "$('li.active a').first().html()==='Confidence Intervals'",
-    radioButtons("stat", label=h4("Statistic"), c("Slope (β̂)"="slope", "ŷ"="yhat"), selected="slope"),
+    radioButtons("stat", label=h4("Statistic"), c("Slope (β̂)"="slope", "ŷ"="yhat",
+                "Correlation"="cor"), selected="slope"),
     radioButtons("ci", label = h4("Type of Interval"),
                  c("Percentile Confidence" = "perc", "Normal-Based Confidence" = "norm",
                    "Prediction Interval for ŷ" = "ypred"), selected = "perc"),
@@ -103,6 +106,7 @@ shinyUI(bootstrapPage(
                   ), #tabPanel
     tabPanel("Summaries",
              ggvisOutput("origPlot"),
+             h4("Summary"),
              verbatimTextOutput("origSummary"),
              h4("Correlation"),
              verbatimTextOutput("origCor")
@@ -150,7 +154,7 @@ shinyUI(bootstrapPage(
                condition = "input.ci == 'ypred'",
                h4("Prediction Interval"),
                conditionalPanel(
-                 condition = "input.stat == 'slope'",
+                 condition = "input.stat != 'yhat'",
                  p(strong("Please select the correct statistic."),  style = "color:red")
                ),
                conditionalPanel(
