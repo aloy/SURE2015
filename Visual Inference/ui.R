@@ -83,8 +83,7 @@ shinyUI(bootstrapPage(
             "$('li.active a').first().html()!=='Input'",
             radioButtons("plot", label=h4("Plotting"), c("Scatterplot" = "scatter", 
                "Scatterplot with Smoother" = "scatterSmooth", "Boxplot" = "box", 
-               "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot" = "resid",
-               "Residual Plot with Smoother" = "residSmooth", "Mosaic Plot"="mosaic"), 
+               "Layered Densities" ="den", "Q-Q Plot"="qq", "Residual Plot with Smoother" = "residSmooth", "Mosaic Plot"="mosaic"), 
                selected="scatter"),
             conditionalPanel(
               condition='input.plot=="qq"',
@@ -105,7 +104,7 @@ shinyUI(bootstrapPage(
              tabPanel("Input",
                  dataTableOutput("contents")
           ), #tabPanel
-          tabPanel("Null Plots",
+          tabPanel("Rorschach",
                    plotOutput("nullPlot"),
                    actionButton("go2", "New plot")
                    ),
