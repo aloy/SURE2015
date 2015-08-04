@@ -7,7 +7,9 @@ shinyUI(bootstrapPage(
       conditionalPanel(
         condition="input.lm == true",
         checkboxInput("resid", "Show residual plot")
-        )
+        ),
+      actionButton("exclude_toggle", "Toggle points"),
+      actionButton("exclude_reset", "Reset")
     ),
   mainPanel(
            # In a plotOutput, passing values for click, dblclick, hover, or brush
