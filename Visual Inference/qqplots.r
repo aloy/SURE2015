@@ -83,7 +83,6 @@ QQ.cb<-function(x.sample,mu=0,sigma=1,M.sim=1000,alpha=0.05,plot=TRUE){
 ###############################################################
 
 # Standard Q-Q plot
-if(input$qqAdj=="std"&&input$qqBand=="dh"){
 std_lineup <- function(dframe) {
   require(ggplot2)
   p <- ggplot(aes(x = x, y = y), data = dframe) + 
@@ -97,10 +96,9 @@ std_lineup <- function(dframe) {
           axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
   p  
 }
-}
+
 
 # Standard Q-Q plot with TS bands
-if(input$qqAdj=="std"&&input$qqBand=="ts"){
 std_ts_lineup <- function(dframe) {
   require(ggplot2)
   require(grid)
@@ -115,10 +113,9 @@ std_ts_lineup <- function(dframe) {
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
 }
-}
+
 
 # Adjusted Detrended, DH bands
-if(input$qqAdj=="adj"&&input$qqBand=="dh"){
 rot2_lineup <- function(dframe) {
   require(ggplot2)
   require(grid)
@@ -135,10 +132,9 @@ rot2_lineup <- function(dframe) {
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
 }
-}
+
 
 # Adjusted Detrended, TS bands
-if(input$qqAdj=="adj"&&input$qqBand=="ts"){
 rot2_ts_lineup <- function(dframe) {
   require(ggplot2)
   require(grid)
@@ -153,10 +149,9 @@ rot2_ts_lineup <- function(dframe) {
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
 }
-}
+
 
 # Ordinary Detrended, DH bands 
-if(input$qqAdj=="ord"&&input$qqBand=="dh"){
 rot_lineup <- function(dframe) {
   require(ggplot2)
   require(grid)
@@ -172,9 +167,8 @@ rot_lineup <- function(dframe) {
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
 }
-}
+
 # Ordinary Detrended, TS bands
-if(input$qqAdj=="ord"&&input$qqBand=="ts"){
 rot_ts_lineup <- function(dframe) {
   require(ggplot2)
   require(grid)
@@ -188,10 +182,8 @@ rot_ts_lineup <- function(dframe) {
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
 }
-}
 
 # Control Q-Q plot (i.e. standard design without bands)
-if(input$qqAdj=="std"&&input$qqBand=="none"){
 ctrl_lineup <- function(dframe) {
   require(ggplot2)
   ggplot(aes(x = x, y = y), data = dframe) + 
@@ -204,8 +196,7 @@ ctrl_lineup <- function(dframe) {
           axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
   
 }
-}
-if(input$qqAdj=="ord"&&input$qqBand=="none"){
+
 rot_none <- function(dframe) { #Ordinary Detrended without bands
   require(ggplot2)
   require(grid)
@@ -218,8 +209,7 @@ rot_none <- function(dframe) { #Ordinary Detrended without bands
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
           axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
 }
-}
-if(input$qqAdj=="adj"&&input$qqBand=="none"){
+
 rot2_none <- function(dframe) { #Adjusted detrended without bands
   require(ggplot2)
   require(grid)

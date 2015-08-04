@@ -6,24 +6,14 @@ library(car)
 library(productplots)
 library(gridExtra)
 library(nullabor)
-library(dplyr)
+library(plyr)
+library(reshape2)
 data(RestaurantTips)
 
 # Visual Inference
 
 shinyServer(function(input, output, session) {
   
-  qq.reactive <- reactive({
-    input$plot
-  })
-  
-  observe({
-  qqVar <- isolate(qq.reactive())
-  if(qqVar=="qq"){
-  source("qqplots.r")
-  }
-  })
-
   theData <- reactive({
     if(input$chooseData=="uploadYes"){
       inFile1 <- input$file1
@@ -113,10 +103,19 @@ shinyServer(function(input, output, session) {
   
   qqPlot <- reactive({
     if(input$plot=="qq"){
-    n <- input$num
+      source("qqplots.r")
+      if(input$tabs1 == 'Rorschach'){
+        w <- 100
+        nplots <- 1
+      }else{
+        w <- nrow(filteredData())
+        nplots <- input$num
+      }
+      sim <- sim_lineup(n=w, nplots=nplots)
+      if(input$tabs1=="Lineup"){
+        autoInvalidate()
     r <- qqPos()
-    w <- nrow(filteredData())
-    sim <- sim_lineup(n=w, nplots=input$num)
+    n <- input$num
     x <- scale(filteredData()$x)
     true <- data.frame(qq_plot_info(x=x), .sample=rep(r, w))
     startrow <- function(x){w*(x-1)} #replace one of the samples with the actual data
@@ -127,28 +126,31 @@ shinyServer(function(input, output, session) {
     }else{
       new.df <- data.frame(rbind(true, sim[nextrow(r):endrow(n),]))
     }
-    new.df <- new.df[complete.cases(new.df),]
-    autoInvalidate()
+    qq.df <- new.df[complete.cases(new.df),]
+      }else{
+        autoInvalidate2()
+    qq.df <- sim
+      }
     if(input$qqAdj=="std"){
-     plot <- switch(input$qqBand,
-            none=ctrl_lineup(new.df),
-            dh=std_lineup(new.df),
-            ts=std_ts_lineup(new.df)
-            )
+    plot <- switch(input$qqBand,
+                   none=ctrl_lineup(qq.df),
+                   dh=std_lineup(qq.df),
+                   ts=std_ts_lineup(qq.df)
+    )
     }
     if(input$qqAdj=="adj"){
       plot <- switch(input$qqBand,
-             none=rot2_none(new.df),
-             dh=rot2_lineup(new.df),
-             ts=rot2_ts_lineup(new.df)
-             )
+                     none=rot2_none(qq.df),
+                     dh=rot2_lineup(qq.df),
+                     ts=rot2_ts_lineup(qq.df)
+      )
     }
     if(input$qqAdj=="ord"){
       plot <- switch(input$qqBand,
-             none=rot_none(new.df),
-             dh=rot_lineup(new.df),
-             ts=rot_ts_lineup(new.df)
-        )
+                     none=rot_none(qq.df),
+                     dh=rot_lineup(qq.df),
+                     ts=rot_ts_lineup(qq.df)
+      )
     }
     plot
     }else{return(NULL)}
@@ -192,36 +194,65 @@ shinyServer(function(input, output, session) {
     input$go2
   })
   
-  qqNullSwitch <- reactive({
-    if(input$plot=="qq"){
-      qq.df <- sim_lineup(n=100, nplots=1)
-      if(input$qqAdj=="std"){
-        plot <- switch(input$qqBand,
-                       none=ctrl_lineup(qq.df),
-                       dh=std_lineup(qq.df),
-                       ts=std_ts_lineup(qq.df)
-        )
-      }
-      if(input$qqAdj=="adj"){
-        plot <- switch(input$qqBand,
-                       none=rot2_none(qq.df),
-                       dh=rot2_lineup(qq.df),
-                       ts=rot2_ts_lineup(qq.df)
-        )
-      }
-      if(input$qqAdj=="ord"){
-        plot <- switch(input$qqBand,
-                       none=rot_none(qq.df),
-                       dh=rot_lineup(qq.df),
-                       ts=rot_ts_lineup(qq.df)
-        )
-      }
-      plot
-    }
-    else{
-      return(NULL)
-    }
-  })
+#   qqNullSwitch <- reactive({
+#     if(input$plot=="qq"){
+#       sim_lineup <- function(n, nplots, mean = 0, sd = 1, conf = 0.95) {
+#         sims <- replicate(nplots, rnorm(n, mean = mean, sd = sd))
+#         sims <- as.data.frame(sims)
+#         
+#         qq_info <- lapply(sims, qq_plot_info, conf = conf, line = FALSE)
+#         names(qq_info) <- 1:length(qq_info)
+#         
+#         RES <- plyr::ldply(qq_info, function(df) df, .id = ".sample")
+#       }
+#       qq_plot_info <- function(x, conf = .95, line = FALSE) {
+#         dh_bands <- sim_env(x, conf = conf, line = line)
+#         colnames(dh_bands)[4:5] <- paste(colnames(dh_bands)[4:5], "dh", sep = ".")
+#         ts_bands <- QQ.cb(x, alpha = 1 - conf, plot = FALSE)
+#         colnames(ts_bands)[3:4] <- paste(colnames(ts_bands)[3:4], "ts", sep = ".")
+#         RES <- dplyr::inner_join(x = dh_bands, y = ts_bands, by = c("x", "y"))
+#         return(RES)
+#       }
+#       qq.df <- sim_lineup(n=100, nplots=1)
+#       if(input$qqAdj=="std"){
+#         ctrl_lineup <- function(dframe) {
+#           require(ggplot2)
+#           ggplot(aes(x = x, y = y), data = dframe) + 
+#             geom_smooth(aes(x, fit), colour="grey50", se=FALSE, method="loess") +
+#             geom_point() + 
+#             theme_bw() + 
+#             facet_wrap(~.sample, ncol=5) +
+#             labs(x = "", y = "") +
+#             theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
+#                   axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
+#           
+#         }
+#         plot <- switch(input$qqBand,
+#                        none=ctrl_lineup(qq.df),
+#                        dh=std_lineup(qq.df),
+#                        ts=std_ts_lineup(qq.df)
+#         )
+#       }
+#       if(input$qqAdj=="adj"){
+#         plot <- switch(input$qqBand,
+#                        none=rot2_none(qq.df),
+#                        dh=rot2_lineup(qq.df),
+#                        ts=rot2_ts_lineup(qq.df)
+#         )
+#       }
+#       if(input$qqAdj=="ord"){
+#         plot <- switch(input$qqBand,
+#                        none=rot_none(qq.df),
+#                        dh=rot_lineup(qq.df),
+#                        ts=rot_ts_lineup(qq.df)
+#         )
+#       }
+#       plot
+#     }
+#     else{
+#       return(NULL)
+#     }
+#   })
   
   nullSwitch <- reactive({
     autoInvalidate2()
@@ -305,8 +336,12 @@ shinyServer(function(input, output, session) {
   })
   
   output$qqNull <- renderPlot({
-    qqNullSwitch()
+    qqPlot()
   })
+
+output$qqLineup<- renderPlot({
+  qqPlot()
+})
   
   output$lineup <- renderPlot({
     if(input$plot=="scatter"||input$plot=="scatterSmooth"||input$plot=="box"||
@@ -317,9 +352,7 @@ shinyServer(function(input, output, session) {
     }
   })
   
-  output$qqLineup <- renderPlot({
-    qqPlot()
-  })
+
   output$plotPos <- renderText({
     if(input$plot!="qq"&&input$plot!="mosaic"){
     paste("The true data is in plot ",attr(lineupPlot()$data, "pos"),".", sep="")

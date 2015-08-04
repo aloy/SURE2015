@@ -95,12 +95,18 @@ shinyUI(bootstrapPage(
             )
           ),
           conditionalPanel(
+            "$('li.active a').first().html()==='Rorschach'",
+            p("The Lineup tab will test your ability to look at n plots and choose the single plot of the true data set,
+              and not one of the n-1 null plots. This tab generates null plots so you can get accustomed to the variability that
+              naturally in random scatter.")
+          ),
+          conditionalPanel(
             "$('li.active a').first().html()==='Lineup'",
             numericInput("num", label=h4("Number of Plots"), value=9, min=2, max=25, step=1)
           ) #conditionalPanel
         ), #sidebarPanel
         mainPanel(
-          tabsetPanel(type="tabs",
+          tabsetPanel(type="tabs", id="tabs1",
              tabPanel("Input",
                  dataTableOutput("contents")
           ), #tabPanel
