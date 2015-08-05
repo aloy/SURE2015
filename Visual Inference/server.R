@@ -8,6 +8,7 @@ library(gridExtra)
 library(nullabor)
 library(plyr)
 library(reshape2)
+library(grid)
 data(RestaurantTips)
 
 # Visual Inference
