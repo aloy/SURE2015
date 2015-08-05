@@ -30,7 +30,7 @@ shinyUI(bootstrapPage(
                              '.tsv'
                            )
                  ),
-                 p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                 p("Note: The file size limit is 5MB. Larger files will take longer to upload and resample.
                   You can upload text, .csv, or .tsv files."),
                  checkboxInput('header', 'Header', TRUE),
                  radioButtons('sep', 'Separator',
@@ -67,7 +67,7 @@ shinyUI(bootstrapPage(
                    selected="tt"),
       numericInput("num", 
                    label = h4("Permutation Resamples"), 
-                   value = 1000, min = 1, max = 100000),
+                   value = 9999, min = 1, max = 100000),
       actionButton("goButton", "Permute!"), 
       radioButtons("plot2", label=h4("Plotting"),
                    c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2",

@@ -1,10 +1,11 @@
 library(shiny)
 library(shinyjs)
-shinyServer(function(input,output, session){
 library(mosaic)
 library(ggvis)
 library(dplyr)
 library(Lock5Data)
+library(resample)
+shinyServer(function(input,output, session){
 data("CaffeineTaps")
 
 #Permutation Tests
@@ -89,31 +90,45 @@ output$observedDiff <- renderText({
 })
 
 
+
+permResult <- reactive({
+  if(input$goButton > 0) {
+    PR <- permutationTest2(filteredData(), mean(response), treatment = group, 
+                           R = input$num, statisticNames = "Difference in Means")
+  }
+  PR
+})
+
 trials <- reactive({
   
   if(input$goButton > 0) {
-    perms <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
-    colnames(perms) <- "perms"
-    data.frame(perms)
+#     perms <- do(input$num) * diff(mean(response ~ shuffle(group), data = filteredData()))
+#     colnames(perms) <- "perms"
+#     data.frame(perms)
+    result <- cbind(index = 1:permResult()$R, result = permResult()$replicates)
+    colnames(result) <- c("index", "statistic")
+    as.data.frame(result)
   } else {
-    data.frame(perms = rep(0, 10))
+    data.frame(statistic = rep(0, 10))
   }
 })
 
 output$trials <- renderDataTable(trials(), options = list(pageLength = 10))
 
 output$pval <- renderText({
-n <- input$num
+# n <- input$num
 if(input$goButton > 0) {
   pvalSwitch <- switch(input$test, 
-                       tt = min((sum(trials()$perms>=observedDiff())+1)/(n+1),
-                                (sum(trials()$perms<=observedDiff())+1)/(n+1))*2,
-                       lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
-                       ut = (sum(trials()$perms>=observedDiff())+1)/(n+1)
+                       tt = resample:::.PermutationStats(x = permResult(), alternative = "two.sided")$PValue,
+                       lt = resample:::.PermutationStats(x = permResult(), alternative = "less")$PValue,
+                       ut = resample:::.PermutationStats(x = permResult(), alternative = "greater")$PValue
   )
-signif(pvalSwitch, 4)
-}
-else{
+#                        tt = min((sum(trials()$perms>=observedDiff())+1)/(n+1),
+#                                 (sum(trials()$perms<=observedDiff())+1)/(n+1))*2,
+#                        lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
+#                        ut = (sum(trials()$perms>=observedDiff())+1)/(n+1)
+signif(pvalSwitch, digits = 4)
+} else{
   return(0)
 }
   })
@@ -121,9 +136,10 @@ else{
 qqdata <- reactive({
   n <- input$num
   probabilities <- (1:n)/(1+n)
-  normal.quantiles <- qnorm(probabilities, mean(trials()[,"perms"], na.rm = T), sd(trials()[,"perms"], na.rm = T))
-  qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()[,"perms"]))
-  colnames(qqdata0) <- c("normal.quantiles", "perms")
+#   normal.quantiles <- qnorm(probabilities, mean(trials()[,"perms"], na.rm = T), sd(trials()[,"perms"], na.rm = T))
+  normal.quantiles <- qnorm(probabilities, mean(trials()$statistic, na.rm = T), sd(trials()$statistic, na.rm = T))
+  qqdata0 <- data.frame(sort(normal.quantiles), sort(trials()$statistic))
+  colnames(qqdata0) <- c("normal.quantiles", "statistic")
   data.frame(qqdata0)
   })
 
@@ -133,8 +149,8 @@ observe({
 #     output$trials <- renderDataTable(data.frame(perms = rep(0, 10)))
 #   }
   if(input$goButton > 0){
-    range2.100 <- round(diff(range(trials()$perms))/100, digits=3)
-    if (round(diff(range(trials()$perms))/100, digits=3) == 0)
+    range2.100 <- round(diff(range(trials()$statistic))/100, digits=3)
+    if (round(diff(range(trials()$statistic))/100, digits=3) == 0)
       range2.100 <- 0.001
   }
   else(
@@ -142,21 +158,21 @@ observe({
   )
   if(input$plot2=="his2"){
     trials %>%
-      ggvis(~perms) %>%
+      ggvis(~statistic) %>%
       layer_histograms(width = input_slider(range2.100, range2.100*50,
                                             value=range2.100*10, step=0.001)) %>%
       bind_shiny("trialsHist", "trialsHist_ui")
   }
   if(input$plot2=="den2"){
     trials %>%
-      ggvis(~perms) %>%
+      ggvis(~statistic) %>%
       layer_densities(fill := "dodgerblue") %>%
       add_axis("y", title="Density") %>%
       bind_shiny("trialsHist", "trialsHist_ui")
   }
   if(input$plot2=="qq2"){
     qqdata %>% 
-      ggvis(~normal.quantiles, ~perms) %>% 
+      ggvis(~normal.quantiles, ~statistic) %>% 
       layer_points() %>% 
       add_axis("x", title="Theoretical") %>%
       add_axis("y", title="Sample") %>%
@@ -165,21 +181,25 @@ observe({
 })
 
 output$summary2 <- renderTable({
-  favstats(~perms, data=trials())  
+  favstats(~statistic, data=trials())  
 })
 
 output$hisDenPlot <- renderPlot ({
-  ggplot(data=trials(), aes(x=perms)) + geom_histogram(colour="black", fill="grey19", 
-  binwidth=input$w2, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + theme(panel.grid.minor = element_line(colour = "grey"), 
-   panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"))
+  ggplot(data=trials(), aes(x=statistic)) + geom_histogram(colour="black", fill="grey19", 
+  binwidth=input$w2, aes(y=..density..)) + 
+    geom_density(colour="royalblue", fill="royalblue", alpha=0.6) + 
+    theme(panel.grid.minor = element_line(colour = "grey"), 
+          panel.background = element_rect(fill = "white"), 
+          axis.line = element_line(colour="black"), 
+          axis.text = element_text(colour = "black"))
 })
 
 output$slider2 <- renderUI({
-  if (round(diff(range(trials()$perms))/100, digits=3) == 0){
+  if (round(diff(range(trials()$statistic))/100, digits=3) == 0){
     range2.100 <- 0.01
   }
   else{
-    range2.100 <- round(diff(range(trials()$perms))/100, digits=3)
+    range2.100 <- round(diff(range(trials()$statistic))/100, digits=3)
   }
   sliderInput("w2", "", min=range2.100, max=range2.100*50, value=range2.100*10, step=.001)
 })
