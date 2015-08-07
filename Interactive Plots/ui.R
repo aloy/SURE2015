@@ -65,7 +65,7 @@ shinyUI(bootstrapPage(
            verbatimTextOutput("hover_info")
     ),
     column(width = 3,
-           verbatimTextOutput("brush_info")
+           tableOutput("brush_info")
     )
   ) #fluidRow
   ) #mainPanel

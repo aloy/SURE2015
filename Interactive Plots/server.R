@@ -7,8 +7,18 @@ data(mtcars)
 
 shinyServer(function(input,output){
   
+   preds <- reactiveValues( 
+     predict = predict(lm(mpg~wt, data=mtcars))
+   )
+   
+   resid <- reactiveValues(
+   resid=rstudent(lm(mpg~wt, data=mtcars))
+  )
+  
   mtresid <- reactive({
-    data.frame(mtcars, predict=predict(lm(mpg~wt, data=mtcars)), resid=rstudent(lm(mpg~wt, data=mtcars)))
+    mtresid0 <- data.frame(mtcars, preds$predict, resid$resid)
+    names(mtresid0[12:13]) <- c("predict", "resid")
+    mtresid0
   })
   
   vals <- reactiveValues(
@@ -44,7 +54,10 @@ shinyServer(function(input,output){
   
   output$plot2 <- renderPlot({
     switch(input$plot,
-    resid=ggplot(mtresid(), aes(x=predict, y=resid)) + geom_point(),
+    resid=ggplot(mtresid(), aes(x=predict, y=resid)) + geom_point()
+    + theme(panel.grid.minor = element_line(colour = "grey"), 
+            panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+            axis.text = element_text(colour = "black")),
     qq=qqPlot(lm(mpg~wt, data=keep()), pch=16, asp=1)
     )
   })
@@ -74,8 +87,8 @@ shinyServer(function(input,output){
     str(input$plot_click)
   })
   output$hover_info <- renderPrint({
-    cat("input$plot2_hover:\n")
-    str(input$plot2_hover)
+    cat("input$plot_hover:\n")
+    str(input$plot_hover)
   })
   output$dblclick_info <- renderPrint({
     cat("input$plot_dblclick:\n")
@@ -85,6 +98,10 @@ shinyServer(function(input,output){
     cat("input$plot_brush:\n")
     str(input$plot_brush)
   })
+  
+#   output$brush_info <- renderTable({
+#     mtresid()
+#   })
   
   observeEvent(input$reset, {
     vals$keeprows <- rep(TRUE, nrow(mtresid()))

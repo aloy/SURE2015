@@ -93,7 +93,8 @@ std_lineup <- function(dframe) {
     geom_ribbon(aes(x = x, ymin = lower.dh, ymax = upper.dh),alpha = .2)+
     labs(x = "", y = "") + theme_bw() + 
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
   p  
 }
 
@@ -111,7 +112,8 @@ std_ts_lineup <- function(dframe) {
     xlab("") + ylab("") +
     geom_ribbon(aes(x = x, ymin = lower.ts, ymax = upper.ts),alpha = .2)+
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 
@@ -130,7 +132,8 @@ rot2_lineup <- function(dframe) {
     xlab("") + ylab("") +
     ylim(range(dframe$y)) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 
@@ -147,7 +150,8 @@ rot2_ts_lineup <- function(dframe) {
     xlab("") + ylab("") +
     ylim(range(dframe$y)) +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 
@@ -165,7 +169,8 @@ rot_lineup <- function(dframe) {
     #            xlab("Normal Quantiles") + 
     #            ylab("Sample Quantiles") +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 # Ordinary Detrended, TS bands
@@ -180,7 +185,8 @@ rot_ts_lineup <- function(dframe) {
     theme_bw() + 
     xlab("") + ylab("") +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 # Control Q-Q plot (i.e. standard design without bands)
@@ -193,7 +199,8 @@ ctrl_lineup <- function(dframe) {
     facet_wrap(~.sample, ncol=5) +
     labs(x = "", y = "") +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm")) +
+    coord_fixed(ratio=1)
   
 }
 
@@ -207,7 +214,8 @@ rot_none <- function(dframe) { #Ordinary Detrended without bands
     theme_bw() +
     labs(x = "", y = "") +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 rot2_none <- function(dframe) { #Adjusted detrended without bands
@@ -220,7 +228,8 @@ rot2_none <- function(dframe) { #Adjusted detrended without bands
     theme_bw() + 
     labs(x = "", y = "") +
     theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
+          axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))+
+    coord_fixed(ratio=1)
 }
 
 
