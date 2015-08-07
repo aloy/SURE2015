@@ -81,14 +81,10 @@ shinyServer(function(input,output){
     cat("input$plot_dblclick:\n")
     str(input$plot_dblclick)
   })
-#   output$brush_info <- renderPrint({
-#     cat("input$plot_brush:\n")
-#     str(input$plot_brush)
-#   })
-
-# output$brush_info <- renderTable({
-#   mtresid()
-# })
+  output$brush_info <- renderPrint({
+    cat("input$plot_brush:\n")
+    str(input$plot_brush)
+  })
   
   observeEvent(input$reset, {
     vals$keeprows <- rep(TRUE, nrow(mtresid()))
