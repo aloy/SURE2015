@@ -4,6 +4,8 @@ shinyUI(bootstrapPage(
   useShinyjs(),
   sidebarLayout(
     sidebarPanel(
+      conditionalPanel(
+        "$('li.active a').first().html()==='Linear Model'",
       checkboxInput("lm", "Add linear model"),
       conditionalPanel(
         condition="input.lm == true",
@@ -11,10 +13,15 @@ shinyUI(bootstrapPage(
         ),
       actionButton("reset", "Reset"),
       p("Clicking on a point will automatically exclude it. Click the 'Reset' button to include all points.")
-    ),
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Diagnostics'",
+      radioButtons("diag", label="Diagnostic Plots", c("Leverage"="lev", "Cook's Distance"="cooks"), selected="lev")
+      )
+      ),
   mainPanel(
-           # In a plotOutput, passing values for click, dblclick, hover, or brush
-           # will enable those interactions.
+   tabsetPanel(type="tabs",
+    tabPanel("Linear Model",          
     fluidRow(
       column(width=6,
            plotOutput("plot1",
@@ -65,9 +72,14 @@ shinyUI(bootstrapPage(
            verbatimTextOutput("hover_info")
     ),
     column(width = 3,
-           tableOutput("brush_info")
+           verbatimTextOutput("brush_info")
     )
   ) #fluidRow
+    ),#tabPanel
+  tabPanel("Diagnostics",
+           plotOutput("diagPlot")
+    )#tabPanel
+  ) #tabsetPanel
   ) #mainPanel
   ) #sidebarLayout
   ))

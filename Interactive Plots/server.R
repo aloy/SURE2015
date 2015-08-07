@@ -7,30 +7,19 @@ data(mtcars)
 
 shinyServer(function(input,output){
   
-   preds <- reactiveValues( 
-     predict = predict(lm(mpg~wt, data=mtcars))
-   )
-   
-   resid <- reactiveValues(
-   resid=rstudent(lm(mpg~wt, data=mtcars))
-  )
-  
-  mtresid <- reactive({
-    mtresid0 <- data.frame(mtcars, preds$predict, resid$resid)
-    names(mtresid0[12:13]) <- c("predict", "resid")
-    mtresid0
-  })
-  
   vals <- reactiveValues(
     keeprows = rep(TRUE, nrow(mtcars))
   )
   
   keep <- reactive({
-    mtresid()[ vals$keeprows, , drop = FALSE]
-  })
+    keep0 <- mtcars[ vals$keeprows, , drop = FALSE] 
+    n <- nrow(keep0)
+data.frame(keep0, predict=predict(lm(mpg~wt, data=keep0)), resid=rstudent(lm(mpg~wt, data=keep0)),
+      quant=qnorm((seq(1:n)-0.5)/n))
+    })
   
   exclude <- reactive({
-    mtresid()[!vals$keeprows, , drop = FALSE]
+    mtcars[!vals$keeprows, , drop = FALSE]
   })
   
   output$plot1 <- renderPlot({    
@@ -51,34 +40,42 @@ shinyServer(function(input,output){
               axis.text = element_text(colour = "black"))
     }
   })
-  
+
   output$plot2 <- renderPlot({
     switch(input$plot,
-    resid=ggplot(mtresid(), aes(x=predict, y=resid)) + geom_point()
-    + theme(panel.grid.minor = element_line(colour = "grey"), 
+    resid=ggplot(keep(), aes(x=predict, y=resid)) + geom_point() +
+    theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black")),
-    qq=qqPlot(lm(mpg~wt, data=keep()), pch=16, asp=1)
+    qq=ggplot(keep(), aes(x=quant, y=sort(resid))) + geom_point() +
+      theme(panel.grid.minor = element_line(colour = "grey"), 
+            panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+            axis.text = element_text(colour = "black")) + coord_fixed(ratio=1) +
+      geom_abline(slope=1, intercept=0, colour="blue")
     )
   })
   
   observeEvent(input$plot_click, {
-    res <- nearPoints(mtresid(), input$plot_click, allRows = TRUE)
+    res <- nearPoints(keep(), input$plot_click, xvar="wt", yvar="mpg", allRows = TRUE)
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
   observeEvent(input$plot2_click, {
-    res <- nearPoints(mtresid(), input$plot2_click, xvar=predict, yvar=resid, allRows = TRUE)
+    if(input$plot=="resid"){
+    res <- nearPoints(keep(), input$plot2_click, xvar="predict", yvar="resid", allRows = TRUE)
+    }else{
+      res <- nearPoints(keep(), input$plot2_click, xvar="quant", yvar=sort("resid"), allRows = TRUE)
+    }
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
   observeEvent(input$plot_dblclick, {
-    res <- nearPoints(mtresid(), input$plot_dblclick, allRows = TRUE)
+    res <- nearPoints(keep(), input$plot_dblclick, allRows = TRUE)
       vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
   observeEvent(input$plot_brush, {
-      res <- brushedPoints(mtresid(), input$plot_brush, allRows = TRUE)
+      res <- brushedPoints(keep(), input$plot_brush, allRows = TRUE)
       vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
@@ -97,19 +94,23 @@ shinyServer(function(input,output){
   output$brush_info <- renderPrint({
     cat("input$plot_brush:\n")
     str(input$plot_brush)
+    
   })
   
-#   output$brush_info <- renderTable({
-#     mtresid()
-#   })
-  
   observeEvent(input$reset, {
-    vals$keeprows <- rep(TRUE, nrow(mtresid()))
+    vals$keeprows <- rep(TRUE, nrow(mtcars))
   })
   
   output$lm <- renderTable({
     summary(lm(mpg~wt, data=keep()))
   })
+
+output$diagPlot <- renderPlot({
+  switch(input$diag,
+         lev=plot(lm(mpg~wt, data=keep()), which = 5, pch = 16),
+         cooks=plot(lm(mpg~wt, data=keep()), which = 4, pch = 16)
+         )
+})
   
 })
   

@@ -257,7 +257,7 @@ output$percOneTailLower <- renderText({
   percOneTail <- switch(input$stat,
                     slope =boot.ci(data.boot(), conf=level()-alpha(),type="perc"),
                       yhat =  boot.ci(yhat.boot(), conf=level()-alpha(), type="perc"),
-                    cor= boot.ci(yhat.boot(), conf=level()-alpha(), type="perc")
+                    cor= boot.ci(cor.boot(), conf=level()-alpha(), type="perc")
   )
   percPrintFunction(percOneTail, alpha())[1:2]
 })
