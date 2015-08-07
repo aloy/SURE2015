@@ -106,7 +106,7 @@ std_ts_lineup <- function(dframe) {
     #  geom_smooth(aes(naive1.qq.x, naive1.env.fit.value), colour="grey50", se=FALSE, method="loess") +
     geom_abline(colour = "grey50") +
     facet_wrap(~ .sample, ncol = 5) +
-    geom_point() + 
+    geom_point() +
     theme_bw() + 
     xlab("") + ylab("") +
     geom_ribbon(aes(x = x, ymin = lower.ts, ymax = upper.ts),alpha = .2)+

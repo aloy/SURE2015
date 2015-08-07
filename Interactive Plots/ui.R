@@ -1,15 +1,16 @@
 library(shiny)
 
 shinyUI(bootstrapPage(
+  useShinyjs(),
   sidebarLayout(
     sidebarPanel(
       checkboxInput("lm", "Add linear model"),
       conditionalPanel(
         condition="input.lm == true",
-        checkboxInput("resid", "Show residual plot")
+        radioButtons("plot", label="Plots", c("Residual plot"="resid","Q-Q Plot"="qq"), selected="resid")
         ),
-      actionButton("exclude_toggle", "Toggle points"),
-      actionButton("exclude_reset", "Reset")
+      actionButton("reset", "Reset"),
+      p("Clicking on a point will automatically exclude it. Click the 'Reset' button to include all points.")
     ),
   mainPanel(
            # In a plotOutput, passing values for click, dblclick, hover, or brush
@@ -32,18 +33,18 @@ shinyUI(bootstrapPage(
       ),
       column(width=6,
              conditionalPanel(
-               condition="input.resid == true",
+               condition="input.lm == true",
                plotOutput("plot2",
                           # Equivalent to: click = clickOpts(id = "plot_click")
-                          click = "plot_click",
+                          click = "plot2_click",
                           dblclick = dblclickOpts(
-                            id = "plot_dblclick"
+                            id = "plot2_dblclick"
                           ),
                           hover = hoverOpts(
-                            id = "plot_hover"
+                            id = "plot2_hover"
                           ),
                           brush = brushOpts(
-                            id = "plot_brush"
+                            id = "plot2_brush"
                           )
                )
              )
@@ -51,7 +52,11 @@ shinyUI(bootstrapPage(
     ),
   fluidRow(
     column(width = 3,
-           verbatimTextOutput("click_info")
+           verbatimTextOutput("click_info"),
+           conditionalPanel(
+             condition="input.lm == true",
+           tableOutput("lm")
+           )
     ),
     column(width = 3,
            verbatimTextOutput("dblclick_info")

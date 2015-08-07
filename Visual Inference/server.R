@@ -195,66 +195,6 @@ shinyServer(function(input, output, session) {
     input$go2
   })
   
-#   qqNullSwitch <- reactive({
-#     if(input$plot=="qq"){
-#       sim_lineup <- function(n, nplots, mean = 0, sd = 1, conf = 0.95) {
-#         sims <- replicate(nplots, rnorm(n, mean = mean, sd = sd))
-#         sims <- as.data.frame(sims)
-#         
-#         qq_info <- lapply(sims, qq_plot_info, conf = conf, line = FALSE)
-#         names(qq_info) <- 1:length(qq_info)
-#         
-#         RES <- plyr::ldply(qq_info, function(df) df, .id = ".sample")
-#       }
-#       qq_plot_info <- function(x, conf = .95, line = FALSE) {
-#         dh_bands <- sim_env(x, conf = conf, line = line)
-#         colnames(dh_bands)[4:5] <- paste(colnames(dh_bands)[4:5], "dh", sep = ".")
-#         ts_bands <- QQ.cb(x, alpha = 1 - conf, plot = FALSE)
-#         colnames(ts_bands)[3:4] <- paste(colnames(ts_bands)[3:4], "ts", sep = ".")
-#         RES <- dplyr::inner_join(x = dh_bands, y = ts_bands, by = c("x", "y"))
-#         return(RES)
-#       }
-#       qq.df <- sim_lineup(n=100, nplots=1)
-#       if(input$qqAdj=="std"){
-#         ctrl_lineup <- function(dframe) {
-#           require(ggplot2)
-#           ggplot(aes(x = x, y = y), data = dframe) + 
-#             geom_smooth(aes(x, fit), colour="grey50", se=FALSE, method="loess") +
-#             geom_point() + 
-#             theme_bw() + 
-#             facet_wrap(~.sample, ncol=5) +
-#             labs(x = "", y = "") +
-#             theme(axis.text.y = element_blank(), axis.text.x = element_blank(),
-#                   axis.ticks = element_blank(), plot.margin=grid::unit(c(0, 0, 0, 0), "cm"))
-#           
-#         }
-#         plot <- switch(input$qqBand,
-#                        none=ctrl_lineup(qq.df),
-#                        dh=std_lineup(qq.df),
-#                        ts=std_ts_lineup(qq.df)
-#         )
-#       }
-#       if(input$qqAdj=="adj"){
-#         plot <- switch(input$qqBand,
-#                        none=rot2_none(qq.df),
-#                        dh=rot2_lineup(qq.df),
-#                        ts=rot2_ts_lineup(qq.df)
-#         )
-#       }
-#       if(input$qqAdj=="ord"){
-#         plot <- switch(input$qqBand,
-#                        none=rot_none(qq.df),
-#                        dh=rot_lineup(qq.df),
-#                        ts=rot_ts_lineup(qq.df)
-#         )
-#       }
-#       plot
-#     }
-#     else{
-#       return(NULL)
-#     }
-#   })
-  
   nullSwitch <- reactive({
     autoInvalidate2()
     null.df <- data.frame(x=rnorm(1000, mean = 0, sd = 1), y=rnorm(1000, mean = 0, sd = 1))
@@ -275,7 +215,7 @@ shinyServer(function(input, output, session) {
              + theme(axis.text.x=element_blank(), axis.text.y=element_blank(),
                 axis.ticks=element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), 
               legend.position="none"),
-           den=ggplot(den.df, aes(x=value, color=Var2))+ geom_density(aes(alpha=0.6, fill=Var2)) +
+           den=ggplot(den.df, aes(x=value, colour=Var2, fill=Var2))+ geom_density(aes(alpha=0.6)) +
               scale_fill_brewer("", palette="Set2")+theme(axis.text.x=element_blank(), 
                  axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title.x=element_blank(), 
                 axis.title.y=element_blank(), legend.position="none"),
