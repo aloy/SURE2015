@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyjs)
 
 shinyUI(bootstrapPage(
   useShinyjs(),
@@ -16,7 +17,8 @@ shinyUI(bootstrapPage(
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Diagnostics'",
-      radioButtons("diag", label="Diagnostic Plots", c("Leverage"="lev", "Cook's Distance"="cooks"), selected="lev")
+      radioButtons("diag", label="Diagnostic Plots", c("Leverage"="lev", "Cook's Distance"="cooks", 
+                                                       "DFFITS" = "dffits"), selected="lev")
       )
       ),
   mainPanel(
@@ -57,13 +59,11 @@ shinyUI(bootstrapPage(
              )
       )
     ),
+    actionButton("hideCoord", "Toggle Plot Information"),
   fluidRow(
+    div(id="coordInfo",
     column(width = 3,
-           verbatimTextOutput("click_info"),
-           conditionalPanel(
-             condition="input.lm == true",
-           tableOutput("lm")
-           )
+           verbatimTextOutput("click_info")
     ),
     column(width = 3,
            verbatimTextOutput("dblclick_info")
@@ -74,7 +74,12 @@ shinyUI(bootstrapPage(
     column(width = 3,
            verbatimTextOutput("brush_info")
     )
-  ) #fluidRow
+    )#coordInfo
+  ),#fluidRow
+  conditionalPanel(
+    condition="input.lm == true",
+  verbatimTextOutput("lm") 
+  )
     ),#tabPanel
   tabPanel("Diagnostics",
            plotOutput("diagPlot")

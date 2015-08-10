@@ -2,10 +2,15 @@ library(shiny)
 library(htmlwidgets)
 library(ggplot2)
 library(car)
-library(shinyjs)
+# library(shinyjs)
+library(stats)
+require(graphics)
 data(mtcars)
 
-shinyServer(function(input,output){
+shinyServer(function(input,output, session){
+  
+  shinyjs::onclick("hideCoord",
+                   shinyjs::toggle(id = "coordInfo", anim = TRUE))
   
   vals <- reactiveValues(
     keeprows = rep(TRUE, nrow(mtcars))
@@ -94,21 +99,29 @@ data.frame(keep0, predict=predict(lm(mpg~wt, data=keep0)), resid=rstudent(lm(mpg
   output$brush_info <- renderPrint({
     cat("input$plot_brush:\n")
     str(input$plot_brush)
-    
-  })
+    })
   
   observeEvent(input$reset, {
     vals$keeprows <- rep(TRUE, nrow(mtcars))
   })
   
-  output$lm <- renderTable({
+  output$lm <- renderPrint({
     summary(lm(mpg~wt, data=keep()))
   })
 
 output$diagPlot <- renderPlot({
+  dffits <- data.frame(dffits(lm(mpg~wt, data=keep())))
+  names(dffits) <- "dffits.lm."
   switch(input$diag,
          lev=plot(lm(mpg~wt, data=keep()), which = 5, pch = 16),
-         cooks=plot(lm(mpg~wt, data=keep()), which = 4, pch = 16)
+         cooks=plot(lm(mpg~wt, data=keep()), which = 4, pch = 16),
+         dffits= plot(dffits(lm(mpg~wt, data=mtcars)), type="h")
+#            ggplot(dffits, aes(x=seq(nrow(dffits)), y=dffits.lm.)) + 
+#            geom_bar(stat="identity", width=0.1) + geom_text(aes(label=row.names(dffits))) + 
+#     theme(panel.grid.minor = element_line(colour = "grey"),
+#           panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+#           axis.text = element_text(colour = "black"))
+#Works in the console but not in Shiny   
          )
 })
   
