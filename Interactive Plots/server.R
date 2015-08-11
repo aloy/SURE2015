@@ -10,41 +10,51 @@ data(mtcars)
 shinyServer(function(input,output, session){
   
   shinyjs::onclick("hideCoord",
-                   shinyjs::toggle(id = "coordInfo", anim = TRUE))
+                   shinyjs::toggle(id = "coordInfo", anim = FALSE))
   
   vals <- reactiveValues(
     keeprows = rep(TRUE, nrow(mtcars))
   )
   
   keep <- reactive({
-    keep0 <- mtcars[ vals$keeprows, , drop = FALSE] 
+    if(is.null(input$vars)==FALSE){
+    m <- input$vars
+    keep0 <- data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c(m, "mpg")])
+    colnames(keep0) <- c("m", "mpg")
     n <- nrow(keep0)
-data.frame(keep0, predict=predict(lm(mpg~wt, data=keep0)), resid=rstudent(lm(mpg~wt, data=keep0)),
+data.frame(keep0, predict=predict(lm(mpg~m, data=keep0)), resid=rstudent(lm(mpg~m, data=keep0)),
       quant=qnorm((seq(1:n)-0.5)/n))
+}
     })
   
   exclude <- reactive({
-    mtcars[!vals$keeprows, , drop = FALSE]
+    mtcars[!vals$keeprows, , drop = FALSE][,c(m, "mpg")]
   })
   
+output$scatterChoices <- renderUI({
+  selectInput("vars", label="Scatterplot Variable", choices=colnames(subset(mtcars, select=-mpg)))
+})
+
   output$plot1 <- renderPlot({    
-    if(input$lm==TRUE){
-      ggplot(keep(), aes(wt, mpg)) + geom_point() + stat_smooth(method="lm") +
-        geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
-        coord_cartesian(xlim = c(1.5, 5.5), ylim = c(5,35))+
-        theme(panel.grid.minor = element_line(colour = "grey"), 
-              panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-              axis.text = element_text(colour = "black"))
-    }
-    else{
-      ggplot(keep(), aes(wt, mpg)) + geom_point() +
-        geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
-        coord_cartesian(xlim = c(1.5, 5.5), ylim = c(5,35))+
-        theme(panel.grid.minor = element_line(colour = "grey"), 
-              panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-              axis.text = element_text(colour = "black"))
-    }
+    if(is.null(input$vars)==FALSE){
+      if(input$lm==TRUE){
+        ggplot(keep(), aes(m, mpg)) + geom_point() + stat_smooth(method="lm") +
+          theme(panel.grid.minor = element_line(colour = "grey"), 
+                panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+                axis.text = element_text(colour = "black"))
+      }else{
+    ggplot(keep(), aes(m, mpg)) + geom_point() + xlab(paste(input$vars)) +
+      theme(panel.grid.minor = element_line(colour = "grey"), 
+            panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+            axis.text = element_text(colour = "black"))
+  
+}
+}
   })
+
+output$excluded <- renderText({
+  nrow(exclude())
+})
 
   output$plot2 <- renderPlot({
     switch(input$plot,
@@ -61,7 +71,7 @@ data.frame(keep0, predict=predict(lm(mpg~wt, data=keep0)), resid=rstudent(lm(mpg
   })
   
   observeEvent(input$plot_click, {
-    res <- nearPoints(keep(), input$plot_click, xvar="wt", yvar="mpg", allRows = TRUE)
+    res <- nearPoints(keep(), input$plot_click, xvar="m", yvar="mpg", allRows = TRUE)
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
@@ -100,22 +110,22 @@ data.frame(keep0, predict=predict(lm(mpg~wt, data=keep0)), resid=rstudent(lm(mpg
     cat("input$plot_brush:\n")
     str(input$plot_brush)
     })
-  
+
   observeEvent(input$reset, {
     vals$keeprows <- rep(TRUE, nrow(mtcars))
   })
   
   output$lm <- renderPrint({
-    summary(lm(mpg~wt, data=keep()))
+    summary(lm(mpg~m, data=keep()))
   })
 
 output$diagPlot <- renderPlot({
-  dffits <- data.frame(dffits(lm(mpg~wt, data=keep())))
+  dffits <- data.frame(dffits(lm(mpg~m, data=keep())))
   names(dffits) <- "dffits.lm."
   switch(input$diag,
-         lev=plot(lm(mpg~wt, data=keep()), which = 5, pch = 16),
-         cooks=plot(lm(mpg~wt, data=keep()), which = 4, pch = 16),
-         dffits= plot(dffits(lm(mpg~wt, data=mtcars)), type="h")
+         lev=plot(lm(mpg~m, data=keep()), which = 5, pch = 16),
+         cooks=plot(lm(mpg~m, data=keep()), which = 4, pch = 16),
+         dffits= plot(dffits(lm(mpg~m, data=keep())), type="h")
 #            ggplot(dffits, aes(x=seq(nrow(dffits)), y=dffits.lm.)) + 
 #            geom_bar(stat="identity", width=0.1) + geom_text(aes(label=row.names(dffits))) + 
 #     theme(panel.grid.minor = element_line(colour = "grey"),
@@ -125,34 +135,27 @@ output$diagPlot <- renderPlot({
          )
 })
 
-output$scatterChoices <- renderUI({
-  selectInput("vars", label="Scatterplot Variable", choices=colnames(subset(keep(), select=-mpg)))
-})
-
 output$residChoices <- renderUI({
-  checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(keep(), select=-c(mpg,
-                                                                         predict, resid, quant))))
+  checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(mtcars, select=-c(mpg))))
 })
 
-output$scatter <- renderPlot({
-  data <- isolate(keep())
-  n <- which(colnames(data)==input$vars)
-  colnames(data)[n] <- "m"
-  ggplot(data, aes(x=m, y=mpg)) + geom_point() +  xlab(paste(input$vars)) +
-    theme(panel.grid.minor = element_line(colour = "grey"), 
-          panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-          axis.text = element_text(colour = "black"))
-})
+# output$scatter <- renderPlot({
+#   data <- isolate(keep())
+#   n <- which(colnames(data)==input$vars)
+#   colnames(data)[n] <- "m"
+#   ggplot(data, aes(x=m, y=mpg)) + geom_point() +  xlab(paste(input$vars)) +
+#     theme(panel.grid.minor = element_line(colour = "grey"), 
+#           panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+#           axis.text = element_text(colour = "black"))
+# })
 
 residData <-  reactive({
   vars <- input$vars2
-  data2 <- isolate(keep())
   if(is.null(input$vars2)){
-    newData0 <- data.frame(data2[,"mpg"])
+    newData0 <- data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c("mpg")])
     names(newData0) <- "mpg"
   }else{
-    newData0 <- 
-      data.frame(data2[,c(vars, "mpg")])
+    newData0 <-  data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c(vars, "mpg")])
   }
   newData0
 })

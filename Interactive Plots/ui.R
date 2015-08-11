@@ -7,6 +7,7 @@ shinyUI(bootstrapPage(
     sidebarPanel(
       conditionalPanel(
         "$('li.active a').first().html()==='Linear Model'",
+        uiOutput("scatterChoices"),
       checkboxInput("lm", "Add linear model"),
       conditionalPanel(
         condition="input.lm == true",
@@ -22,7 +23,6 @@ shinyUI(bootstrapPage(
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Multiple Regression'",
-uiOutput("scatterChoices"),
 uiOutput("residChoices")
 )
       ),
@@ -65,9 +65,14 @@ uiOutput("residChoices")
       )
     ),
     actionButton("hideCoord", "Toggle Plot Information"),
-  fluidRow(
     div(id="coordInfo",
-    column(width = 3,
+    fluidRow(
+      column(width = 6,
+  h5("Number of Points Excluded: "), verbatimTextOutput("excluded")
+      )
+    ),
+  fluidRow(
+        column(width = 3,
            verbatimTextOutput("click_info")
     ),
     column(width = 3,
@@ -90,8 +95,6 @@ uiOutput("residChoices")
            plotOutput("diagPlot")
     ),#tabPanel
   tabPanel("Multiple Regression",
-           h4("Scatterplot"),
-           plotOutput("scatter"),
            h4("Residual Plot"),
            plotOutput("resid")
            )
