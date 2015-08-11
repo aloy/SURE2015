@@ -19,7 +19,11 @@ shinyUI(bootstrapPage(
         "$('li.active a').first().html()==='Diagnostics'",
       radioButtons("diag", label="Diagnostic Plots", c("Leverage"="lev", "Cook's Distance"="cooks", 
                                                        "DFFITS" = "dffits"), selected="lev")
-      )
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Multiple Regression'",
+uiOutput("choices")
+)
       ),
   mainPanel(
    tabsetPanel(type="tabs",
@@ -83,7 +87,10 @@ shinyUI(bootstrapPage(
     ),#tabPanel
   tabPanel("Diagnostics",
            plotOutput("diagPlot")
-    )#tabPanel
+    ),#tabPanel
+  tabPanel("Multiple Regression",
+           plotOutput("varPlot")
+           )
   ) #tabsetPanel
   ) #mainPanel
   ) #sidebarLayout

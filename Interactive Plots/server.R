@@ -48,7 +48,7 @@ data.frame(keep0, predict=predict(lm(mpg~wt, data=keep0)), resid=rstudent(lm(mpg
 
   output$plot2 <- renderPlot({
     switch(input$plot,
-    resid=ggplot(keep(), aes(x=predict, y=resid)) + geom_point() +
+    resid=ggplot(keep(), aes(x=predict, y=resid)) + geom_point() + geom_abline(slope=0, intercept=0) +
     theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black")),
@@ -124,6 +124,20 @@ output$diagPlot <- renderPlot({
 #Works in the console but not in Shiny   
          )
 })
-  
+
+output$choices <- renderUI({
+  selectInput("cols", label="Choose Variable", choices=colnames(subset(keep(), select=-mpg)))
+})
+
+output$varPlot <- renderPlot({
+  data <- isolate(keep())
+  n <- which(colnames(data)==input$cols)
+  colnames(data)[n] <- "m"
+  ggplot(data, aes(x=m, y=mpg)) + geom_point() +  xlab(paste(input$cols)) +
+    theme(panel.grid.minor = element_line(colour = "grey"), 
+          panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+          axis.text = element_text(colour = "black"))
+})
+
 })
   
