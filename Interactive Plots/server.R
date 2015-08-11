@@ -125,19 +125,48 @@ output$diagPlot <- renderPlot({
          )
 })
 
-output$choices <- renderUI({
-  selectInput("cols", label="Choose Variable", choices=colnames(subset(keep(), select=-mpg)))
+output$scatterChoices <- renderUI({
+  selectInput("vars", label="Scatterplot Variable", choices=colnames(subset(keep(), select=-mpg)))
 })
 
-output$varPlot <- renderPlot({
+output$residChoices <- renderUI({
+  checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(keep(), select=-c(mpg,
+                                                                         predict, resid, quant))))
+})
+
+output$scatter <- renderPlot({
   data <- isolate(keep())
-  n <- which(colnames(data)==input$cols)
+  n <- which(colnames(data)==input$vars)
   colnames(data)[n] <- "m"
-  ggplot(data, aes(x=m, y=mpg)) + geom_point() +  xlab(paste(input$cols)) +
+  ggplot(data, aes(x=m, y=mpg)) + geom_point() +  xlab(paste(input$vars)) +
     theme(panel.grid.minor = element_line(colour = "grey"), 
           panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
           axis.text = element_text(colour = "black"))
 })
+
+residData <-  reactive({
+  vars <- input$vars2
+  data2 <- isolate(keep())
+  if(is.null(input$vars2)){
+    newData0 <- data.frame(data2[,"mpg"])
+    names(newData0) <- "mpg"
+  }else{
+    newData0 <- 
+      data.frame(data2[,c(vars, "mpg")])
+  }
+  newData0
+})
+
+output$resid <- renderPlot({
+    if(is.null(input$vars2)){
+      residLM <- lm(mpg~1, data=residData())
+    }
+    else{
+      residLM <- lm(mpg~., data=residData())
+    }
+    residualPlot(residLM, type="rstudent", pch=16, col.quad="blue")
+  })
+
 
 })
   

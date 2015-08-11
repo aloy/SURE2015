@@ -22,7 +22,8 @@ shinyUI(bootstrapPage(
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Multiple Regression'",
-uiOutput("choices")
+uiOutput("scatterChoices"),
+uiOutput("residChoices")
 )
       ),
   mainPanel(
@@ -89,7 +90,10 @@ uiOutput("choices")
            plotOutput("diagPlot")
     ),#tabPanel
   tabPanel("Multiple Regression",
-           plotOutput("varPlot")
+           h4("Scatterplot"),
+           plotOutput("scatter"),
+           h4("Residual Plot"),
+           plotOutput("resid")
            )
   ) #tabsetPanel
   ) #mainPanel
