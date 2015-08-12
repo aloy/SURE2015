@@ -17,7 +17,7 @@ shinyServer(function(input,output, session){
   
   keep <- reactive({
     if(is.null(input$vars)==FALSE){
-    m <- input$vars
+      m <- input$vars
     keep0 <- data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c(m, "mpg")])
     colnames(keep0) <- c("m", "mpg")
     n <- nrow(keep0)
@@ -27,6 +27,7 @@ data.frame(keep0, predict=predict(lm(mpg~m, data=keep0)), resid=rstudent(lm(mpg~
     })
   
   exclude <- reactive({
+    m <- input$vars
     mtcars[!vals$keeprows, , drop = FALSE][,c(m, "mpg")]
   })
   
@@ -168,6 +169,16 @@ output$resid <- renderPlot({
     }
     residualPlot(residLM, type="rstudent", pch=16, col.quad="blue")
   })
+
+output$av <- renderPlot({
+  if(is.null(input$vars2)){
+    avLM <- lm(mpg~m, data=keep())
+  }
+  else{
+    avLM <- lm(mpg~., data=residData())
+  }
+  avPlots(avLM, col.lines='blue', pch=16)
+})
 
 
 })

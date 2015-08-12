@@ -96,7 +96,9 @@ uiOutput("residChoices")
     ),#tabPanel
   tabPanel("Multiple Regression",
            h4("Residual Plot"),
-           plotOutput("resid")
+           plotOutput("resid"),
+           h4("Added-Variable Plots"),
+           plotOutput("av")
            )
   ) #tabsetPanel
   ) #mainPanel
