@@ -57,15 +57,35 @@ output$scattery <- renderUI({
 })
 
   output$plot1 <- renderPlot({    
+    n <- which(colnames(theData())==input$xvar)
+    n2 <- which(colnames(theData())==input$yvar)
+    xmin  <- floor(min(theData()[,n]))
+    xmax <- ceiling(max(theData()[,n]))
+    ymin <- floor(min(theData()[,n2]))
+    ymax <- ceiling(max(theData()[,n2]))
+    if(xmin==min(theData()[,n])){
+      xmin <- xmin- diff(range(theData()[,n])/10)
+    }
+    if(ymin==min(theData()[,n2])){
+      ymin <- ymin-diff(range(theData()[,n2])/10)
+    }
+    if(xmax==max(theData()[,n])){
+      xmax <- xmax+ diff(range(theData()[,n])/10)
+    }
+    if(ymax==max(theData()[,n2])){
+      ymax <- ymax+ diff(range(theData()[,n2])/10)
+    }
       if(input$lm==TRUE){
         ggplot(keep(), aes(x, y)) + geom_point() + stat_smooth(method="lm") +
           geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
+          coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
           theme(panel.grid.minor = element_line(colour = "grey"), 
                 panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
                 axis.text = element_text(colour = "black"))
       }else{
     ggplot(keep(), aes(x, y)) + geom_point() + xlab(paste(input$xvar)) +
       geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
+      coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
       theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black"))
