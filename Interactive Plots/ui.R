@@ -1,8 +1,6 @@
 library(shiny)
-library(shinyjs)
 
 shinyUI(bootstrapPage(
-  useShinyjs(),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -64,8 +62,6 @@ uiOutput("residChoices")
              )
       )
     ),
-    actionButton("hideCoord", "Toggle Plot Information"),
-    div(id="coordInfo",
     fluidRow(
       column(width = 6,
   h5("Number of Points Excluded: "), verbatimTextOutput("excluded")
@@ -84,7 +80,6 @@ uiOutput("residChoices")
     column(width = 3,
            verbatimTextOutput("brush_info")
     )
-    )#coordInfo
   ),#fluidRow
   conditionalPanel(
     condition="input.lm == true",

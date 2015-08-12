@@ -8,9 +8,6 @@ data(mtcars)
 
 shinyServer(function(input,output, session){
   
-  shinyjs::onclick("hideCoord",
-                   shinyjs::toggle(id = "coordInfo", anim = FALSE))
-  
   vals <- reactiveValues(
     keeprows = rep(TRUE, nrow(mtcars))
   )
@@ -125,7 +122,7 @@ output$diagPlot <- renderPlot({
   switch(input$diag,
          lev=plot(lm(mpg~m, data=keep()), which = 5, pch = 16),
          cooks=plot(lm(mpg~m, data=keep()), which = 4, pch = 16),
-         dffits= plot(dffits(lm(mpg~m, data=keep())), type="h")
+         dffits= plot(dffits$dffits.lm, type="h") 
 #            ggplot(dffits, aes(x=seq(nrow(dffits)), y=dffits.lm.)) + 
 #            geom_bar(stat="identity", width=0.1) + geom_text(aes(label=row.names(dffits))) + 
 #     theme(panel.grid.minor = element_line(colour = "grey"),
@@ -133,6 +130,10 @@ output$diagPlot <- renderPlot({
 #           axis.text = element_text(colour = "black"))
 #Works in the console but not in Shiny   
          )
+if(input$diag=="dffits"){
+  attach(dffits)
+  text(row(dffits), dffits$dffits.lm, row.names(dffits), cex=0.7, pos=4)
+}
 })
 
 output$residChoices <- renderUI({
