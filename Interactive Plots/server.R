@@ -93,12 +93,32 @@ output$scattery <- renderUI({
   })
 
   output$plot2 <- renderPlot({
+    n <- which(colnames(theData())==input$xvar)
+    n2 <- which(colnames(theData())==input$yvar)
+    xmin  <- floor(min(theData()[,n]))
+    xmax <- ceiling(max(theData()[,n]))
+    ymin <- floor(min(rstudent(lm(theData()[,n2]~theData()[,n]))))
+    ymax <- ceiling(max(rstudent(lm(theData()[,n2]~theData()[,n]))))
+    if(xmin==min(theData()[,n])){
+      xmin <- xmin- diff(range(theData()[,n])/10)
+    }
+    if(ymin==min(theData()[,n2])){
+      ymin <- ymin-diff(range(rstudent(lm(theData()[,n2]~theData()[,n])))/10)
+    }
+    if(xmax==max(theData()[,n])){
+      xmax <- xmax+ diff(range(theData()[,n])/10)
+    }
+    if(ymax==max(theData()[,n2])){
+      ymax <- ymax+ diff(range(rstudent(lm(theData()[,n2]~theData()[,n])))/10)
+    }
     switch(input$plot,
     resid=ggplot(keep(), aes(x=x, y=resid)) + geom_point() + geom_abline(slope=0, intercept=0) +
+      coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
     theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black")),
     qq=ggplot(keep(), aes(x=quant, y=sort(resid))) + geom_point() +
+      coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
       theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black")) + coord_fixed(ratio=1) +
