@@ -8,54 +8,73 @@ data(mtcars)
 
 shinyServer(function(input,output, session){
   
+  output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
+  
+  theData <- reactive({
+    if(input$chooseData=="uploadYes"){
+      inFile1 <- input$file1
+      if (is.null(inFile1))
+        return(NULL)
+      return(      
+        read.csv(inFile1$datapath, header=input$header, sep=input$sep, quote=input$quote, 
+                 row.names=input$rownames)
+      )
+    }
+    else
+      data.frame(mtcars)
+  })
+  
   vals <- reactiveValues(
-    keeprows = rep(TRUE, nrow(mtcars))
+    keeprows = rep(TRUE, nrow(isolate(as.data.frame(theData()))))
   )
   
   keep <- reactive({
-    if(is.null(input$vars)==FALSE){
-      m <- input$vars
-    keep0 <- data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c(m, "mpg")])
-    colnames(keep0) <- c("m", "mpg")
+      x <- input$xvar
+      y <- input$yvar
+    keep0 <- data.frame(theData()[ vals$keeprows, , drop = FALSE][,c(x, y)])
+    colnames(keep0) <- c("x", "y")
     n <- nrow(keep0)
-data.frame(keep0, predict=predict(lm(mpg~m, data=keep0)), resid=rstudent(lm(mpg~m, data=keep0)),
+data.frame(keep0, predict=predict(lm(y~x, data=keep0)), resid=rstudent(lm(y~x, data=keep0)),
       quant=qnorm((seq(1:n)-0.5)/n))
-}
     })
   
   exclude <- reactive({
-    m <- input$vars
-    mtcars[!vals$keeprows, , drop = FALSE][,c(m, "mpg")]
+    x <- input$xvar
+    y <- input$yvar
+    exclude0 <- theData()[!vals$keeprows, , drop = FALSE][,c(x, y)]
+    colnames(exclude0) <- c("x", "y")
+    exclude0
   })
   
-output$scatterChoices <- renderUI({
-  selectInput("vars", label="Scatterplot Variable", choices=colnames(subset(mtcars, select=-mpg)))
+output$scatterx <- renderUI({
+  num <- colnames(theData())[sapply(theData(),is.numeric)]
+  selectInput("xvar", label="X Variable", choices=num)
+})
+
+output$scattery <- renderUI({
+  num <- colnames(theData())[sapply(theData(),is.numeric)]
+  selectInput("yvar", label="Y Variable", choices=num)
 })
 
   output$plot1 <- renderPlot({    
-    if(is.null(input$vars)==FALSE){
       if(input$lm==TRUE){
-        ggplot(keep(), aes(m, mpg)) + geom_point() + stat_smooth(method="lm") +
+        ggplot(keep(), aes(x, y)) + geom_point() + stat_smooth(method="lm") +
+          geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
           theme(panel.grid.minor = element_line(colour = "grey"), 
                 panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
                 axis.text = element_text(colour = "black"))
       }else{
-    ggplot(keep(), aes(m, mpg)) + geom_point() + xlab(paste(input$vars)) +
+    ggplot(keep(), aes(x, y)) + geom_point() + xlab(paste(input$xvar)) +
+      geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
       theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black"))
-  
-}
 }
   })
 
-output$excluded <- renderText({
-  nrow(exclude())
-})
-
   output$plot2 <- renderPlot({
     switch(input$plot,
-    resid=ggplot(keep(), aes(x=predict, y=resid)) + geom_point() + geom_abline(slope=0, intercept=0) +
+    resid=ggplot(keep(), aes(x=x, y=resid)) + geom_point() + geom_abline(slope=0, intercept=0) +
     theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black")),
@@ -68,7 +87,7 @@ output$excluded <- renderText({
   })
   
   observeEvent(input$plot_click, {
-    res <- nearPoints(keep(), input$plot_click, xvar="m", yvar="mpg", allRows = TRUE)
+    res <- nearPoints(keep(), input$plot_click, xvar="x", yvar="y", allRows = TRUE)
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
@@ -108,20 +127,25 @@ output$excluded <- renderText({
     str(input$plot_brush)
     })
 
+# output$brush_info <- renderTable({
+# residData()
+# })
+
   observeEvent(input$reset, {
-    vals$keeprows <- rep(TRUE, nrow(mtcars))
+    data <- isolate(theData())
+    vals$keeprows <- rep(TRUE, nrow(data))
   })
   
   output$lm <- renderPrint({
-    summary(lm(mpg~m, data=keep()))
+    summary(lm(y~x, data=keep()))
   })
 
 output$diagPlot <- renderPlot({
-  dffits <- data.frame(dffits(lm(mpg~m, data=keep())))
+  dffits <- data.frame(dffits(lm(y~x, data=keep())))
   names(dffits) <- "dffits.lm."
   switch(input$diag,
-         lev=plot(lm(mpg~m, data=keep()), which = 5, pch = 16),
-         cooks=plot(lm(mpg~m, data=keep()), which = 4, pch = 16),
+         lev=plot(lm(y~x, data=keep()), which = 5, pch = 16),
+         cooks=plot(lm(y~x, data=keep()), which = 4, pch = 16),
          dffits= plot(dffits$dffits.lm, type="h") 
 #            ggplot(dffits, aes(x=seq(nrow(dffits)), y=dffits.lm.)) + 
 #            geom_bar(stat="identity", width=0.1) + geom_text(aes(label=row.names(dffits))) + 
@@ -137,46 +161,38 @@ if(input$diag=="dffits"){
 })
 
 output$residChoices <- renderUI({
-  checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(mtcars, select=-c(mpg))))
+  checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(theData())))
 })
 
-# output$scatter <- renderPlot({
-#   data <- isolate(keep())
-#   n <- which(colnames(data)==input$vars)
-#   colnames(data)[n] <- "m"
-#   ggplot(data, aes(x=m, y=mpg)) + geom_point() +  xlab(paste(input$vars)) +
-#     theme(panel.grid.minor = element_line(colour = "grey"), 
-#           panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-#           axis.text = element_text(colour = "black"))
-# })
-
 residData <-  reactive({
+  y <- input$yvar
   vars <- input$vars2
   if(is.null(input$vars2)){
-    newData0 <- data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c("mpg")])
-    names(newData0) <- "mpg"
+    newData0 <- data.frame(theData()[ vals$keeprows, , drop = FALSE][,y])
+    names(newData0) <- "y"
   }else{
-    newData0 <-  data.frame(mtcars[ vals$keeprows, , drop = FALSE][,c(vars, "mpg")])
+    newData0 <-  data.frame(theData()[ vals$keeprows, , drop = FALSE][,c(vars)],
+                            y=theData()[ vals$keeprows, , drop = FALSE][,c(y)])
   }
   newData0
 })
 
 output$resid <- renderPlot({
     if(is.null(input$vars2)){
-      residLM <- lm(mpg~1, data=residData())
+      residLM <- lm(y~1, data=residData())
     }
     else{
-      residLM <- lm(mpg~., data=residData())
+      residLM <- lm(y~., data=residData())
     }
     residualPlot(residLM, type="rstudent", pch=16, col.quad="blue")
   })
 
 output$av <- renderPlot({
   if(is.null(input$vars2)){
-    avLM <- lm(mpg~m, data=keep())
+    avLM <- lm(y~x, data=keep())
   }
   else{
-    avLM <- lm(mpg~., data=residData())
+    avLM <- lm(y~., data=residData())
   }
   avPlots(avLM, col.lines='blue', pch=16)
 })

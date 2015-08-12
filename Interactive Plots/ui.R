@@ -4,8 +4,46 @@ shinyUI(bootstrapPage(
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
+        "$('li.active a').first().html()==='Input'",
+        radioButtons("chooseData", label=h4("Choose data set"),
+                     c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
+                     selected = "uploadNo"),
+        conditionalPanel(
+          condition= "input.chooseData=='uploadYes'",
+          tags$div(id="dataOptions",
+                   h4("Data Set Options"),
+                   fileInput('file1', 'Choose a file to upload.',
+                             accept = c(
+                               'text/csv',
+                               'text/comma-separated-values',
+                               'text/tab-separated-values',
+                               'text/plain',
+                               '.csv',
+                               '.tsv'
+                             )
+                   ),
+                   p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                  You can upload text, .csv, or .tsv files."),
+                   checkboxInput('header', 'Header', TRUE),
+                   radioButtons('sep', 'Separator',
+                                c(Comma=',',
+                                  Semicolon=';',
+                                  Tab='\t',
+                                  Space = " "),
+                                ','),
+                   radioButtons('quote', 'Quote',
+                                c(None='',
+                                  'Double Quote'='"',
+                                  'Single Quote'="'"),
+                                '"')
+          ),
+          actionButton("hideDataOptions", "Show/hide data set options")
+        ) #conditionalPanel
+      ),#conditionalPanel
+      conditionalPanel(
         "$('li.active a').first().html()==='Linear Model'",
-        uiOutput("scatterChoices"),
+        uiOutput("scatterx"),
+        uiOutput("scattery"),
       checkboxInput("lm", "Add linear model"),
       conditionalPanel(
         condition="input.lm == true",
@@ -26,6 +64,9 @@ uiOutput("residChoices")
       ),
   mainPanel(
    tabsetPanel(type="tabs",
+               tabPanel("Input",
+                        dataTableOutput("contents")               
+               ), #tabPanel
     tabPanel("Linear Model",          
     fluidRow(
       column(width=6,
@@ -60,11 +101,6 @@ uiOutput("residChoices")
                           )
                )
              )
-      )
-    ),
-    fluidRow(
-      column(width = 6,
-  h5("Number of Points Excluded: "), verbatimTextOutput("excluded")
       )
     ),
   fluidRow(
