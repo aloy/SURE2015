@@ -128,8 +128,8 @@ uiOutput("residChoices")
   tabPanel("Multiple Regression",
            h4("Residual Plot"),
            plotOutput("resid"),
-           h4("Added-Variable Plots"),
-           plotOutput("av")
+           plotOutput("residPlot"),
+           tableOutput("residDF")
            )
   ) #tabsetPanel
   ) #mainPanel

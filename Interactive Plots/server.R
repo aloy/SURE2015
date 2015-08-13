@@ -3,6 +3,7 @@ library(htmlwidgets)
 library(ggplot2)
 library(car)
 library(stats)
+library(gridExtra)
 require(graphics)
 data(mtcars)
 
@@ -78,6 +79,7 @@ output$scattery <- renderUI({
       if(input$lm==TRUE){
         ggplot(keep(), aes(x, y)) + geom_point() + stat_smooth(method="lm") +
           geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
+          ylab(paste(colnames(theData()[,n2])))+  ylab(paste(colnames(theData()[,n])))+
           coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
           theme(panel.grid.minor = element_line(colour = "grey"), 
                 panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
@@ -204,17 +206,19 @@ output$residChoices <- renderUI({
   checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(theData())))
 })
 
-residData <-  reactive({
+residData <- reactive({
   y <- input$yvar
   vars <- input$vars2
   if(is.null(input$vars2)){
-    newData0 <- data.frame(theData()[ vals$keeprows, , drop = FALSE][,y])
-    names(newData0) <- "y"
-  }else{
+    newData0 <- data.frame(y=theData()[ vals$keeprows, , drop = FALSE][,(y)])
+    newData0
+    }else{
     newData0 <-  data.frame(theData()[ vals$keeprows, , drop = FALSE][,c(vars)],
                             y=theData()[ vals$keeprows, , drop = FALSE][,c(y)])
+    names(newData0) <- c(vars, "y")
+    newData2 <- data.frame(newData0, resid=rstudent(lm(y~., data=newData0)))
+    newData2
   }
-  newData0
 })
 
 output$resid <- renderPlot({
@@ -222,21 +226,33 @@ output$resid <- renderPlot({
       residLM <- lm(y~1, data=residData())
     }
     else{
-      residLM <- lm(y~., data=residData())
+      residLM <- lm(y~.-resid, data=residData())
     }
     residualPlot(residLM, type="rstudent", pch=16, col.quad="blue")
   })
 
-output$av <- renderPlot({
-  if(is.null(input$vars2)){
-    avLM <- lm(y~x, data=keep())
-  }
-  else{
-    avLM <- lm(y~., data=residData())
-  }
-  avPlots(avLM, col.lines='blue', pch=16)
+output$residDF <- renderTable({
+residData()
 })
 
+output$residPlot <- renderPlot({
+  p <- list()
+  n <- ncol(residData())-2
+  if(is.null(input$vars2)==FALSE){
+    for(i in 1:n){
+      p[[i]] <-ggplot(residData()) + aes(x=residData()[,i], y=resid) + geom_point() + 
+        xlab(paste(colnames(residData())[i])) +
+        theme(panel.grid.minor = element_line(colour = "grey"), 
+              panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+              axis.text = element_text(colour = "black"))
+    }
+    plist <- p
+    n <- length(plist)
+    nCol <- floor(sqrt(n))
+    do.call("grid.arrange", c(plist, ncol=nCol))
+  }
+  # Won't recognize residData() even though it's defined above?
+})
 
 })
   
