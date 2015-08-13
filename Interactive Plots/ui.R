@@ -42,8 +42,14 @@ shinyUI(bootstrapPage(
       ),#conditionalPanel
       conditionalPanel(
         "$('li.active a').first().html()==='Linear Model'",
-        uiOutput("scatterx"),
-        uiOutput("scattery"),
+        uiOutput("scatterx")
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()!='Input'&&$('li.active a').first().html()!='Diagnostics'",
+        uiOutput("scattery")
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Linear Model'",
       checkboxInput("lm", "Add linear model"),
       conditionalPanel(
         condition="input.lm == true",
@@ -126,10 +132,9 @@ uiOutput("residChoices")
            plotOutput("diagPlot")
     ),#tabPanel
   tabPanel("Multiple Regression",
-           h4("Residual Plot"),
+           h4("Full Model Residual Plot"),
            plotOutput("resid"),
-           plotOutput("residPlot"),
-           tableOutput("residDF")
+           plotOutput("residPlot")
            )
   ) #tabsetPanel
   ) #mainPanel

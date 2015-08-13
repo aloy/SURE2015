@@ -49,12 +49,12 @@ data.frame(keep0, predict=predict(lm(y~x, data=keep0)), resid=rstudent(lm(y~x, d
   
 output$scatterx <- renderUI({
   num <- colnames(theData())[sapply(theData(),is.numeric)]
-  selectInput("xvar", label="X Variable", choices=num)
+  selectInput("xvar", label="Predictor Variable", choices=num)
 })
 
 output$scattery <- renderUI({
   num <- colnames(theData())[sapply(theData(),is.numeric)]
-  selectInput("yvar", label="Y Variable", choices=num)
+  selectInput("yvar", label="Response Variable", choices=num)
 })
 
   output$plot1 <- renderPlot({    
@@ -79,7 +79,7 @@ output$scattery <- renderUI({
       if(input$lm==TRUE){
         ggplot(keep(), aes(x, y)) + geom_point() + stat_smooth(method="lm") +
           geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
-          ylab(paste(colnames(theData()[,n2])))+  ylab(paste(colnames(theData()[,n])))+
+          xlab(paste(colnames(theData()[n])))+  ylab(paste(colnames(theData()[n2])))+
           coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
           theme(panel.grid.minor = element_line(colour = "grey"), 
                 panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
@@ -88,6 +88,7 @@ output$scattery <- renderUI({
     ggplot(keep(), aes(x, y)) + geom_point() + xlab(paste(input$xvar)) +
       geom_point(data = exclude(), shape = 21, fill = NA, color = "black", alpha = 0.25) +
       coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
+      xlab(paste(colnames(theData()[n])))+  ylab(paste(colnames(theData()[n2])))+
       theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black"))
@@ -116,6 +117,7 @@ output$scattery <- renderUI({
     switch(input$plot,
     resid=ggplot(keep(), aes(x=x, y=resid)) + geom_point() + geom_abline(slope=0, intercept=0) +
       coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax)) +
+      xlab(paste(colnames(theData()[n])))+ 
     theme(panel.grid.minor = element_line(colour = "grey"), 
             panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
             axis.text = element_text(colour = "black")),
@@ -169,10 +171,6 @@ output$scattery <- renderUI({
     str(input$plot_brush)
     })
 
-# output$brush_info <- renderTable({
-# residData()
-# })
-
   observeEvent(input$reset, {
     data <- isolate(theData())
     vals$keeprows <- rep(TRUE, nrow(data))
@@ -183,18 +181,11 @@ output$scattery <- renderUI({
   })
 
 output$diagPlot <- renderPlot({
-  dffits <- data.frame(dffits(lm(y~x, data=keep())))
-  names(dffits) <- "dffits.lm."
+  dffits <- data.frame(dffits.lm = dffits(lm(y~x, data=keep())))
   switch(input$diag,
          lev=plot(lm(y~x, data=keep()), which = 5, pch = 16),
          cooks=plot(lm(y~x, data=keep()), which = 4, pch = 16),
-         dffits= plot(dffits$dffits.lm, type="h") 
-#            ggplot(dffits, aes(x=seq(nrow(dffits)), y=dffits.lm.)) + 
-#            geom_bar(stat="identity", width=0.1) + geom_text(aes(label=row.names(dffits))) + 
-#     theme(panel.grid.minor = element_line(colour = "grey"),
-#           panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-#           axis.text = element_text(colour = "black"))
-#Works in the console but not in Shiny   
+          dffits= plot(dffits$dffits.lm, type="h")
          )
 if(input$diag=="dffits"){
   attach(dffits)
@@ -203,7 +194,8 @@ if(input$diag=="dffits"){
 })
 
 output$residChoices <- renderUI({
-  checkboxGroupInput("vars2", label="Residual Variables", choices=colnames(subset(theData())))
+  n <- which(colnames(theData())==input$yvar)
+  checkboxGroupInput("vars2", label="Coefficients", choices=colnames(theData()[-n]))
 })
 
 residData <- reactive({
@@ -231,27 +223,17 @@ output$resid <- renderPlot({
     residualPlot(residLM, type="rstudent", pch=16, col.quad="blue")
   })
 
-output$residDF <- renderTable({
-residData()
-})
-
 output$residPlot <- renderPlot({
-  p <- list()
-  n <- ncol(residData())-2
   if(is.null(input$vars2)==FALSE){
-    for(i in 1:n){
-      p[[i]] <-ggplot(residData()) + aes(x=residData()[,i], y=resid) + geom_point() + 
-        xlab(paste(colnames(residData())[i])) +
-        theme(panel.grid.minor = element_line(colour = "grey"), 
-              panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
-              axis.text = element_text(colour = "black"))
-    }
-    plist <- p
-    n <- length(plist)
-    nCol <- floor(sqrt(n))
-    do.call("grid.arrange", c(plist, ncol=nCol))
+  n <- which(colnames(residData())=="y")
+  resid_melt <- melt(residData()[-n], id="resid")
+  ggplot(resid_melt, aes(x = value, y = resid)) + 
+    geom_point() + facet_wrap(~ variable) + ggtitle("Individual Residual Plots") +
+    theme(panel.grid.minor = element_line(colour = "grey"),
+          panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
+          axis.text = element_text(colour = "black"))
   }
-  # Won't recognize residData() even though it's defined above?
+  
 })
 
 })
