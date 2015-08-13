@@ -3,6 +3,7 @@ library(htmlwidgets)
 library(ggplot2)
 library(car)
 library(stats)
+library(reshape2)
 library(gridExtra)
 require(graphics)
 data(mtcars)
@@ -223,17 +224,21 @@ output$resid <- renderPlot({
     residualPlot(residLM, type="rstudent", pch=16, col.quad="blue")
   })
 
+resid_melt <- reactive({
+    vars <- input$vars2
+    resid_melt0 <- melt(melt(residData(), id=c(vars)), id=c("variable", "value"))
+    colnames(resid_melt0) <- c("ystat", "yval", "xstat", "xval")
+    resid_melt0
+})
+
 output$residPlot <- renderPlot({
   if(is.null(input$vars2)==FALSE){
-  n <- which(colnames(residData())=="y")
-  resid_melt <- melt(residData()[-n], id="resid")
-  ggplot(resid_melt, aes(x = value, y = resid)) + 
-    geom_point() + facet_wrap(~ variable) + ggtitle("Individual Residual Plots") +
+  ggplot(resid_melt(), aes(x = xval, y = yval)) + 
+    geom_point()  + facet_grid(ystat~xstat)  + ggtitle("Individual Residual Plots") +
     theme(panel.grid.minor = element_line(colour = "grey"),
           panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), 
           axis.text = element_text(colour = "black"))
   }
-  
 })
 
 })
