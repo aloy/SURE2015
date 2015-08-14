@@ -114,9 +114,6 @@ uiOutput("residChoices")
            verbatimTextOutput("click_info")
     ),
     column(width = 3,
-           verbatimTextOutput("dblclick_info")
-    ),
-    column(width = 3,
            verbatimTextOutput("hover_info")
     ),
     column(width = 3,

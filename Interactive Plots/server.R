@@ -138,17 +138,13 @@ output$scattery <- renderUI({
   
   observeEvent(input$plot2_click, {
     if(input$plot=="resid"){
-    res <- nearPoints(keep(), input$plot2_click, xvar="predict", yvar="resid", allRows = TRUE)
+    res <- nearPoints(keep(), input$plot2_click, xvar="x", yvar="resid", allRows = TRUE)
     }else{
       res <- nearPoints(keep(), input$plot2_click, xvar="quant", yvar=sort("resid"), allRows = TRUE)
     }
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
-  observeEvent(input$plot_dblclick, {
-    res <- nearPoints(keep(), input$plot_dblclick, allRows = TRUE)
-      vals$keeprows <- xor(vals$keeprows, res$selected_)
-  })
   
   observeEvent(input$plot_brush, {
       res <- brushedPoints(keep(), input$plot_brush, allRows = TRUE)

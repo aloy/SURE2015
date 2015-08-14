@@ -3,7 +3,15 @@ library(shinyBS)
 
 fluidPage(
     mainPanel(
+      h4("ggvis tooltip"),
       ggvisOutput("visplot"),
+      h4("ggvis linked brushing"),
+      ggvisOutput("linked1"),
+      ggvisOutput("linked2"),
+#       actionButton("exclude", "Exclude brushed"),
+#       actionButton("reset", "reset"),
+      verbatimTextOutput("lbtest"),
+      h4("Tweaked ggplot2 excluding"),
       plotOutput("ggplot",
                  # Equivalent to: click = clickOpts(id = "plot_click")
                  click = "plot_click",

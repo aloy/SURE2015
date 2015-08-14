@@ -19,6 +19,43 @@ shinyServer(function(input, output, session) {
 #    add_tooltip(all_values, "click") %>%
    bind_shiny("visplot")
 
+# lb  <- linked_brush(keys = 1:nrow(mtReactive()), "red")
+lb <-  reactive({
+ linked_brush(keys = 1:nrow(mtReactive()), "red")
+})
+
+mtReactive <- reactive({
+mtReactive0 <- data.frame(mtcars)
+#   if(input$exclude >0){
+#     mtReactive0 <-mtcars[!lb()$selected(),]
+#   }
+# if(input$reset>0){
+#   mtReactive0 <- data.frame(mtcars)
+# }
+mtReactive0
+})
+
+# Change the colour of the points
+observe({
+mtReactive() %>%
+  ggvis(~disp, ~mpg) %>%
+  layer_points(fill := lb()$fill, size.brush := 400) %>%
+  lb()$input() %>%
+  bind_shiny("linked1")
+
+# Display one layer with all points and another layer with selected points
+mtReactive() %>%
+  ggvis(~disp, ~mpg) %>%
+  layer_points(size.brush := 400) %>%
+  lb()$input() %>%
+  layer_points(fill := "red", data = reactive(mtReactive()[lb()$selected(), ])) %>%
+  bind_shiny("linked2")
+})
+
+output$lbtest <- renderPrint({
+lb()$selected()
+})
+
 #Prints location to console–might be some way to get that output to print?
 
 data <- reactive({
