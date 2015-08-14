@@ -33,7 +33,13 @@ shinyServer(function(input, output){
     selectInput("var", label="Column of Trials", cols)
   })
   
-  p0 <- reactive({
+  filteredData <- reactive({
+    filteredData0 <- data.frame(theData()[,input$var])
+    names(filteredData0) <- "data"
+    filteredData0
+  })
+  
+  p <- reactive({
     if(input$method=="num"){
      input$success/input$trials
     }else{
@@ -41,8 +47,28 @@ shinyServer(function(input, output){
     }
   })
   
-  output$p0 <- renderPrint({
-    p0()
+  output$p <- renderPrint({
+    p()
+  })
+  
+  k <- reactive({
+    switch(input$method,
+           num=input$success,
+           data=mean(filteredData()$data)*nrow(filteredData()))
+  })
+  
+  n <- reactive({
+    switch(input$method,
+           num=input$trials,
+           data=nrow(filteredData()))
+  })
+  
+  output$testPrint <- renderPrint({
+    switch(input$test,
+           exact=dbinom(k(),n(),p()),
+           lt=pbinom(k(), n(), p()),
+           ut=pbinom(k(), n(), p(), lower.tail=FALSE)
+           )
   })
   
 })

@@ -50,7 +50,7 @@ shinyUI(bootstrapPage(
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
         radioButtons("test", label=h4("Binomial Test"), 
-          c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"))
+          c("Exact Probability" = "exact", "Lower Tail" = "lt", "Upper Tail" = "ut"))
       )
     ), 
   mainPanel(
@@ -72,7 +72,9 @@ shinyUI(bootstrapPage(
         ), #tabPanel
       tabPanel("Tests",
                h5(HTML(paste("p", tags$sub(0), sep = ""))),
-          verbatimTextOutput("p0")
+          verbatimTextOutput("p"),
+          h5("P-Value"),
+          verbatimTextOutput("testPrint")
                )
       ) #tabsetPanel
     ) #mainPanel

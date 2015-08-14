@@ -183,9 +183,9 @@ observe({
 updateNumericInput(session, "xval", label=paste("Value of", input$x))
 })
 
-observe({
-  updateSliderInput(session, "x")
-})
+# observe({
+#   updateSliderInput(session, "x")
+# })
 
 data.fn <- reactive({
   function(data1, index){
