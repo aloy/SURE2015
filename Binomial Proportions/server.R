@@ -39,13 +39,9 @@ shinyServer(function(input, output){
     filteredData0
   })
   
-  p0 <- reactive({
-     input$p0
-  })
-  
   perms <- reactive({
     if(input$goButton>0){
-    data.frame(replicate(1000, rbinom(nrow(filteredData()), 1, prob=mean(filteredData()$data))))  
+    data.frame(replicate(1000, rbinom(nrow(filteredData()), 1, prob=input$p0)))  
     }
     })
   
@@ -78,8 +74,16 @@ output$permMean <- renderPrint({
 output$pval <- renderPrint({
   x <- sum(perms())
   n <- nrow(filteredData())*input$num
+  p <- mean(filteredData()$data)
+binom.test(x=x, n=n, p=p)$p.value
+})
+
+output$ci <- renderPrint({
+  x <- sum(perms())
+  n <- nrow(filteredData())*input$num
   p <- input$p0
-prop.test(x=x, n=n, p=p)$p.value
+  c <- input$ci
+  binom.test(x=x, n=n, p=p)$conf.int[1:2]
 })
 
 })
