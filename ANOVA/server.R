@@ -32,7 +32,7 @@ shinyServer(function(input,output, session){
 
   observe({
     data <- theData()
-    cvars <- colnames(data)
+    cvars <- colnames(data)[sapply(data,nlevels) > 1]
     qvars <- colnames(data)[sapply(data,is.numeric)]
     updateSelectInput(session, 'group', choices = cvars)
     updateSelectInput(session, 'response', choices = qvars)
@@ -49,7 +49,7 @@ shinyServer(function(input,output, session){
       data <- data[,c(input$group,input$response)]
     }
     names(data)<-c("group","response")
-    data.frame(data)
+    as.data.frame(data)
   })
   
   observe({
