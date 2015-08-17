@@ -66,7 +66,7 @@ output$origSummary <- renderPrint({
   summary(lm(y~x, data=filteredData()))
 })
 
-output$origCor <- renderPrint({
+output$origCor <- renderText({
   cor(x, y, data=filteredData())
 })
 
