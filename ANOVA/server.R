@@ -49,7 +49,8 @@ shinyServer(function(input,output, session){
       data <- data[,c(input$group,input$response)]
     }
     names(data)<-c("group","response")
-    as.data.frame(data)
+    res <- as.data.frame(data)
+    droplevels(res)
   })
   
   observe({

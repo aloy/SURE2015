@@ -51,7 +51,7 @@ sidebarLayout(
     conditionalPanel(
       "$('li.active a').first().html()==='Summaries'",
     radioButtons("plot", label=h4("Plotting"), c("Boxplot" = "box", "Histogram"="his", "Kernel Density" = "den",
-       "Histogram with Kernel Density"="hisDen", "Q-Q Plot"="qq", "Residual Plot" = "resid"), selected="box"),
+       "Histogram with Kernel Density"="hisDen", "Q-Q Plot"="qq"), selected="box"),
     uiOutput("slider")
     ),
     conditionalPanel(
