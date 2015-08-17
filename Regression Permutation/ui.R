@@ -63,7 +63,7 @@ shinyUI(bootstrapPage(
                  selected="tt"),
     numericInput("num", 
                  label = h4("Permutation Resamples"), 
-                 value = 1000, min = 1, max = 10000),
+                 value = 999, min = 1, max = 9999),
     actionButton("goButton", "Permute!"), 
     radioButtons("plot", label=h4("Plotting"), c("Histogram"="his", "Kernel Density"="den", 
                 "Histogram and Kernel Density" = "hisDen","Q-Q Plot" = "qq"),
