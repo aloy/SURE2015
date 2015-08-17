@@ -100,16 +100,6 @@ sidebarLayout(
                  h6("Summary"),
                  tableOutput("summary")
                  ),
-        tabPanel("ANOVA",
-                 conditionalPanel(
-                   condition='input.stat == "printANOVA"',
-                 tableOutput("anova")
-                 ),
-                 conditionalPanel(
-                   condition='input.stat != "printANOVA"',
-              tableOutput("anova2")
-                 )
-              ),
         tabPanel("Permutation F-Test",
                  conditionalPanel(
                    condition="input.plot2=='hisDen2'",
@@ -125,7 +115,17 @@ sidebarLayout(
                  hidden(
                  dataTableOutput("trials")
                  )
+                 ),
+        tabPanel("ANOVA",
+                 conditionalPanel(
+                   condition='input.stat == "printANOVA"',
+                   tableOutput("anova")
+                 ),
+                 conditionalPanel(
+                   condition='input.stat != "printANOVA"',
+                   tableOutput("anova2")
                  )
+        )
     ) #tabsetPanel
     ) #mainPanel
   ) #sidebarLayout
