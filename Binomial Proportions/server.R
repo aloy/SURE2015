@@ -1,5 +1,7 @@
 library(shiny)
 library(shinyjs)
+library(ggvis)
+library(dplyr)
 
 shinyServer(function(input, output){
   
@@ -7,7 +9,6 @@ shinyServer(function(input, output){
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
   theData <- reactive({
-    if(input$method=="data"){
     if(input$chooseData=="uploadYes"){
       inFile <- input$file1
       if (is.null(inFile))
@@ -19,8 +20,7 @@ shinyServer(function(input, output){
     else(
      read.csv("../Binomial Proportions/data/Backpack.csv")
     )
-    }
-  })
+    })
   
   output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
   
@@ -39,36 +39,47 @@ shinyServer(function(input, output){
     filteredData0
   })
   
-  p <- reactive({
-    if(input$method=="num"){
-     input$success/input$trials
-    }else{
-     mean(theData()[,input$var]) 
+  p0 <- reactive({
+     input$p0
+  })
+  
+  perms <- reactive({
+    if(input$goButton>0){
+    data.frame(replicate(1000, rbinom(nrow(filteredData()), 1, prob=mean(filteredData()$data))))  
     }
+    })
+  
+  trials <- reactive({
+    if(input$goButton>0){
+    trials0 <- data.frame(perms=colMeans(perms()))
+    }
+    else{
+      trials0 <- data.frame(perms=rep(0, 10))
+    }
+    trials0
   })
   
-  output$p <- renderPrint({
-    p()
-  })
-  
-  k <- reactive({
-    switch(input$method,
-           num=input$success,
-           data=mean(filteredData()$data)*nrow(filteredData()))
-  })
-  
-  n <- reactive({
-    switch(input$method,
-           num=input$trials,
-           data=nrow(filteredData()))
-  })
-  
-  output$testPrint <- renderPrint({
-    switch(input$test,
-           exact=dbinom(k(),n(),p()),
-           lt=pbinom(k(), n(), p()),
-           ut=pbinom(k(), n(), p(), lower.tail=FALSE)
-           )
-  })
-  
+  observe({
+    trials() %>%
+      ggvis(~perms) %>%
+      add_axis("x", title = "Proportion of Successes") %>%
+      layer_histograms(width=input$w) %>%
+      bind_shiny("permHist")
+})
+
+output$sampleMean <- renderPrint({
+  mean(filteredData()$data)
+})
+
+output$permMean <- renderPrint({
+  mean(trials()$perms)
+})
+
+output$pval <- renderPrint({
+  x <- sum(perms())
+  n <- nrow(filteredData())*input$num
+  p <- input$p0
+prop.test(x=x, n=n, p=p)$p.value
+})
+
 })

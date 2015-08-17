@@ -7,10 +7,6 @@ shinyUI(bootstrapPage(
     sidebarPanel(
       conditionalPanel(
         "$('li.active a').first().html()==='Input'",
-      radioButtons("method", label=h4("Select method of entry"), choices=c("Numeric input" ="num",
-                                                                       "Data set" = "data")),
-      conditionalPanel(
-        condition='input.method=="data"',
         radioButtons("chooseData", label=h4("Choose data set"),
                      c("Use built-in data set" = "uploadNo", "Upload my own data set" = "uploadYes"),
                      selected = "uploadNo"),
@@ -45,36 +41,29 @@ shinyUI(bootstrapPage(
           actionButton("hideDataOptions", "Show/hide data set options")
         ), #conditionalPanel
         uiOutput("selectVar")
-      ) #conditionalPanel (fileInput)
-      ), #conditionalPanel (input tab)
+        ), #conditionalPanel (input tab)
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
-        radioButtons("test", label=h4("Binomial Test"), 
-          c("Exact Probability" = "exact", "Lower Tail" = "lt", "Upper Tail" = "ut"))
+        h4(HTML(paste("p", tags$sub(0), sep = ""))),
+        sliderInput("p0", label="", min=0.01, max=1, value=0.5, step=0.01),
+        numericInput("num", label=h4("Number of Resamples"), value=1000, min=1, max=100000, step=1),
+        actionButton("goButton", "Permute!"),
+        sliderInput("w", label=h4("Bootstrap Bin Width"),value=0.05, min=0.001, max=0.1, step=0.001)
       )
     ), 
   mainPanel(
     tabsetPanel(type="tabs",
       tabPanel("Input",
-               conditionalPanel(
-                 condition='input.method=="data"',
-               dataTableOutput("contents")  
-               ),
-               conditionalPanel(
-                 condition='input.method=="num"',
-                 numericInput("success", "Number of Successes", value=0),
-                 numericInput("trials", "Number of Trials", value=0),
-                 hidden(
-                   shiny::p(id = "warning", strong("Number of successes must be 
-                  less than or equal to number of trials."),  style = "color:red")
-                 )
-               )
+               dataTableOutput("contents")
         ), #tabPanel
       tabPanel("Tests",
-               h5(HTML(paste("p", tags$sub(0), sep = ""))),
-          verbatimTextOutput("p"),
-          h5("P-Value"),
-          verbatimTextOutput("testPrint")
+              ggvisOutput("permHist"),
+              h5("Sample Mean"),
+              verbatimTextOutput("sampleMean"),
+              h5("Permutation Mean"),
+              verbatimTextOutput("permMean"),
+              h5("P-Value"),
+              verbatimTextOutput("pval")
                )
       ) #tabsetPanel
     ) #mainPanel
