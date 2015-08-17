@@ -19,41 +19,54 @@ shinyServer(function(input, output, session) {
 #    add_tooltip(all_values, "click") %>%
    bind_shiny("visplot")
 
-# lb  <- linked_brush(keys = 1:nrow(mtReactive()), "red")
-lb <-  reactive({
- linked_brush(keys = 1:nrow(mtReactive()), "red")
+lb <-  linked_brush(keys = 1:nrow(filteredData()), "red")
+
+theData <- reactive({
+  data.frame(mtcars)
 })
 
-mtReactive <- reactive({
-mtReactive0 <- data.frame(mtcars)
-#   if(input$exclude >0){
-#     mtReactive0 <-mtcars[!lb()$selected(),]
-#   }
-# if(input$reset>0){
-#   mtReactive0 <- data.frame(mtcars)
-# }
-mtReactive0
+output$scatterx <- renderUI({
+  num <- colnames(theData())[sapply(theData(),is.numeric)]
+  selectInput("xvar", label="Predictor Variable", choices=num)
 })
 
-# Change the colour of the points
+output$scattery <- renderUI({
+  num <- colnames(theData())[sapply(theData(),is.numeric)]
+  selectInput("yvar", label="Response Variable", choices=num)
+})
+
+
+lb <- linked_brush(keys = 1:nrow(theData()), "red")
+
+filteredData <- reactive({
+  if(is.null(input$xvar)==FALSE){
+    filtered0<- data.frame(theData()[,c(input$xvar, input$yvar)])
+    names(filtered0) <- c("x", "y")
+    data.frame(filtered0, resid=rstudent(lm(y~x, data=filtered0)))
+  }else{
+    data.frame(x=rep(0, nrow(theData())), y=rep(0, nrow(theData())), resid=rep(0,nrow(theData())))
+  }
+})
+
 observe({
-mtReactive() %>%
-  ggvis(~disp, ~mpg) %>%
-  layer_points(fill := lb()$fill, size.brush := 400) %>%
-  lb()$input() %>%
-  bind_shiny("linked1")
-
-# Display one layer with all points and another layer with selected points
-mtReactive() %>%
-  ggvis(~disp, ~mpg) %>%
-  layer_points(size.brush := 400) %>%
-  lb()$input() %>%
-  layer_points(fill := "red", data = reactive(mtReactive()[lb()$selected(), ])) %>%
-  bind_shiny("linked2")
+  filteredData %>%
+    ggvis(~x, ~y) %>%
+    layer_points() %>%
+    layer_points(fill := lb$fill, size.brush := 400) %>%
+    lb$input() %>%
+    bind_shiny("linked1")
+  
+  #   # Display one layer with all points and another layer with selected points
+  filteredData %>%
+    ggvis(~x, ~resid) %>%
+    layer_points(size.brush := 400) %>%
+    lb$input() %>%
+    layer_points(fill := "red", data = reactive(filteredData()[lb$selected(), ])) %>%
+    bind_shiny("linked2")
 })
 
 output$lbtest <- renderPrint({
-lb()$selected()
+lb$selected()
 })
 
 #Prints location to console–might be some way to get that output to print?

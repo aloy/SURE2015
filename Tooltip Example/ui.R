@@ -6,6 +6,7 @@ fluidPage(
       h4("ggvis tooltip"),
       ggvisOutput("visplot"),
       h4("ggvis linked brushing"),
+      uiOutput("scatterx"), uiOutput("scattery"),
       ggvisOutput("linked1"),
       ggvisOutput("linked2"),
 #       actionButton("exclude", "Exclude brushed"),

@@ -1,6 +1,7 @@
 library(shiny)
 library(htmlwidgets)
 library(ggplot2)
+library(ggvis)
 library(car)
 library(stats)
 library(reshape2)
@@ -57,6 +58,46 @@ output$scattery <- renderUI({
   num <- colnames(theData())[sapply(theData(),is.numeric)]
   selectInput("yvar", label="Response Variable", choices=num)
 })
+
+lb <- linked_brush(keys = 1:nrow(theData()), "red")
+
+filteredData <- reactive({
+  if(is.null(input$xvar)==FALSE){
+    filtered0<- data.frame(theData()[,c(input$xvar, input$yvar)])
+    names(filtered0) <- c("x", "y")
+    data.frame(filtered0, resid=rstudent(lm(y~x, data=filtered0)), line=rep(0, nrow(theData())))
+  }else{
+    data.frame(x=rep(0, nrow(theData())), y=rep(0, nrow(theData())), resid=rep(0,nrow(theData())))
+  }
+})
+
+data_line <- reactive({
+ data.frame(x_rng = c(min(filteredData()$x), max(filteredData()$x)), 
+  y_rng = c(0, 0))
+})
+
+observe({
+  filteredData %>%
+    ggvis(~x, ~y) %>%
+    layer_points() %>%
+    layer_points(fill := lb$fill, size.brush := 400) %>%
+    lb$input() %>%
+    bind_shiny("linked1")
+  
+  #   # Display one layer with all points and another layer with selected points
+  filteredData %>%
+    ggvis(~x, ~resid) %>%
+    layer_points(size.brush := 400) %>%
+    lb$input() %>%
+    layer_paths(x = ~x_rng, y = ~y_rng, stroke := "blue", data = data_line) %>%
+    layer_points(fill := "red", data = reactive(filteredData()[lb$selected(), ])) %>%
+    bind_shiny("linked2")
+})
+
+
+# output$filtered <- renderTable({
+#   keep()
+# })
 
   output$plot1 <- renderPlot({    
     n <- which(colnames(theData())==input$xvar)

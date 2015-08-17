@@ -41,7 +41,8 @@ shinyUI(bootstrapPage(
         ) #conditionalPanel
       ),#conditionalPanel
       conditionalPanel(
-        "$('li.active a').first().html()==='Linear Model'",
+        "$('li.active a').first().html()!='Input'&&$('li.active a').first().html()!='Diagnostics'&&
+          $('li.active a').first().html()!='Multiple Regression'",
         uiOutput("scatterx")
       ),
       conditionalPanel(
@@ -73,6 +74,11 @@ uiOutput("residChoices")
                tabPanel("Input",
                         dataTableOutput("contents")               
                ), #tabPanel
+       tabPanel("Linked Brushing",
+                ggvisOutput("linked1"),
+                ggvisOutput("linked2"),
+                tableOutput("filtered")
+                        ),
     tabPanel("Linear Model",          
     fluidRow(
       column(width=6,
