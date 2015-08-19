@@ -50,14 +50,14 @@ shinyUI(bootstrapPage(
         uiOutput("scattery")
       ),
       conditionalPanel(
-        "$('li.active a').first().html()==='Linear Model'",
+        "$('li.active a').first().html()==='Point Exclusion'",
       checkboxInput("lm", "Add linear model"),
       conditionalPanel(
         condition="input.lm == true",
         radioButtons("plot", label="Plots", c("Residual plot"="resid","Q-Q Plot"="qq"), selected="resid")
         ),
       actionButton("reset", "Reset"),
-      p("Clicking on a point will automatically exclude it. Click the 'Reset' button to include all points.")
+      p("Brushing (recommended) or clicking on a point on the scatterplot will automatically exclude it. Click the 'Reset' button to include all points.")
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Diagnostics'",
@@ -75,11 +75,13 @@ uiOutput("residChoices")
                         dataTableOutput("contents")               
                ), #tabPanel
        tabPanel("Linked Brushing",
+                h4("Scatterplot"),
                 ggvisOutput("linked1"),
+                h4("Residual Plot"),
                 ggvisOutput("linked2"),
                 tableOutput("filtered")
                         ),
-    tabPanel("Linear Model",          
+    tabPanel("Point Exclusion",          
     fluidRow(
       column(width=6,
            plotOutput("plot1",

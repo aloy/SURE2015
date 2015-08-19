@@ -29,14 +29,26 @@ shinyServer(function(input, output){
   })
   
   output$selectVar <- renderUI({
+    if(input$factor=="col"){
     cols <- colnames(theData())[sapply(theData(),is.numeric)]
     selectInput("var", label="Column of Trials", cols)
+    }else{
+      cols <- colnames(theData())[sapply(theData(),is.factor)]
+      selectInput("var", label="Column of Trials", cols)
+      }
   })
   
   filteredData <- reactive({
     filteredData0 <- data.frame(theData()[,input$var])
     names(filteredData0) <- "data"
     filteredData0
+  })
+  
+  output$factSuccess <- renderUI({
+    if(input$factor=="fact"){
+      levels <- levels(theData()[,input$var])
+      selectInput("success", "Level for Success", levels)
+    }
   })
   
   perms <- reactive({
@@ -64,7 +76,12 @@ shinyServer(function(input, output){
 })
 
 output$sampleMean <- renderPrint({
+  if(input$factor=="fact"){
+    y <- which(levels(filteredData()$data)==input$success)
+(summary(filteredData()$data)/sum(summary(filteredData()$data)))[y]
+  }else{
   mean(filteredData()$data)
+  }
 })
 
 output$permMean <- renderPrint({
@@ -74,7 +91,12 @@ output$permMean <- renderPrint({
 output$pval <- renderPrint({
   x <- sum(perms())
   n <- nrow(filteredData())*input$num
-  p <- mean(filteredData()$data)
+  if(input$factor=="fact"){
+    y <- which(levels(filteredData()$data)==input$success)
+    p <- (summary(filteredData()$data)/sum(summary(filteredData()$data)))[y]
+  }else{
+    p <- mean(filteredData()$data)
+  }
 binom.test(x=x, n=n, p=p)$p.value
 })
 

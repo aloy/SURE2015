@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyjs)
+library(ggvis)
 
 shinyUI(bootstrapPage(
   useShinyjs(),
@@ -36,11 +37,17 @@ shinyUI(bootstrapPage(
                                 c(None='',
                                   'Double Quote'='"',
                                   'Single Quote'="'"),
-                                '"')
+                                '"'),
+                   radioButtons("factor", label="Numeric/Factor", c("Column of 0/1s" = "col",
+                                "Factor with Two Levels" = "fact"))
           ), #tags
           actionButton("hideDataOptions", "Show/hide data set options")
         ), #conditionalPanel
-        uiOutput("selectVar")
+        uiOutput("selectVar"),
+        conditionalPanel(
+          condition='input.factor=="fact"',
+          uiOutput("factSuccess")
+        )
         ), #conditionalPanel (input tab)
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
