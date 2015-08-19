@@ -24,10 +24,6 @@ shinyServer(function(input, output){
   
   output$contents <- renderDataTable(theData(), options = list(pageLength = 10))
   
-  shiny::observe({
-    toggle(id = "warning", condition = input$success > input$trials)
-  })
-  
   output$selectVar <- renderUI({
     if(input$factor=="col"){
     cols <- colnames(theData())[sapply(theData(),is.numeric)]
@@ -53,7 +49,7 @@ shinyServer(function(input, output){
   
   perms <- reactive({
     if(input$goButton>0){
-    data.frame(replicate(1000, rbinom(nrow(filteredData()), 1, prob=input$p0)))  
+    data.frame(replicate(input$num, rbinom(nrow(filteredData()), 1, prob=input$p0)))  
     }
     })
   
