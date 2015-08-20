@@ -42,14 +42,20 @@ shinyUI(bootstrapPage(
           actionButton("hideDataOptions", "Show/hide data set options")
         ), #conditionalPanel
         uiOutput("selectPop"),
-        uiOutput("selectDiff")
+        uiOutput("selectDiff"),
+        hidden(
+          shiny::p(id = "suggest", "Suggested: Use 'Home' for Populations and 'WinLoss' for Proportions.")
+        )
       ), #conditionalPanel (input tab)
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
-        h4(HTML(paste("p", tags$sub(0), " (Expected Difference)", sep = ""))),
-        sliderInput("p0", label="", min=0.01, max=0.99, value=0.5, step=0.01),
+        radioButtons("hyp", label=h4("Alternative Hypothesis"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"),   selected="tt"),
         numericInput("num", label=h4("Number of Resamples"), value=1000, min=1, max=100000, step=1),
         actionButton("goButton", "Permute!")
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html()==='Confidence Interval'",
+        sliderInput("ci", label=h4("Confidence Levels"), value=0.95, min=0.01, max=0.99, step=0.01)
       )
     ), #sidebarPanel
     mainPanel(
@@ -66,6 +72,9 @@ shinyUI(bootstrapPage(
                       h5("Permutation Difference In Proportions"),
                       verbatimTextOutput("permDiff"),
                       verbatimTextOutput("test")
+                           ),
+                  tabPanel("Confidence Interval",
+                           verbatimTextOutput("confInt")
                            )
       ) #tabsetPanel
     )#mainPanel

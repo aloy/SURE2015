@@ -10,6 +10,10 @@ shinyServer(function(input, output){
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
   
+  shiny::observe({
+    toggle(id = "suggest", condition = input$chooseData=="uploadNo")
+  })
+  
   theData <- reactive({
     if(input$chooseData=="uploadYes"){
       inFile <- input$file1
@@ -45,7 +49,11 @@ shinyServer(function(input, output){
   })
   
   output$test <- renderPrint({
-    prop.test(tab())
+    switch(input$hyp,
+           tt=prop.test(tab()),
+           lt=prop.test(tab(), alternative="l"),
+             ut=prop.test(tab(), alternative="g")
+           )
   })
   
   perms1 <- reactive({
@@ -85,6 +93,14 @@ output$propDiff <- renderPrint({
 
 output$permDiff <- renderPrint({
   summarise(summarise(group_by(trials(), variable), mean=mean(value)), mean.diff=diff(mean))
+})
+
+output$confInt <- renderPrint({
+  switch(input$hyp,
+         tt=prop.test(tab(), conf.level=input$ci)$conf.int[1:2],
+         lt=prop.test(tab(), alternative="l",conf.level=input$ci)$conf.int[1:2],
+         ut=prop.test(tab(), alternative="g",conf.level=input$ci)$conf.int[1:2]
+         )
 })
   
   })
