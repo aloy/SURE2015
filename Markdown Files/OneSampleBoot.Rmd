@@ -1,0 +1,75 @@
+---
+title: "One-Sample Bootstrap"
+author: "Alex Damisch"
+date: "August 20, 2015"
+runtime: shiny
+output: html_document
+---
+
+```{r}
+library(ggvis)
+library(shiny)
+library(ggplot2)
+```
+
+We will examine a variable from the SleepStudy dataset, found in the Lock5Data package.
+
+```{r}
+library(Lock5Data)
+data(SleepStudy)
+head(SleepStudy)
+```
+
+```{r}
+c <- colnames(SleepStudy)[sapply(SleepStudy, is.numeric)]
+
+inputPanel(
+selectInput("choose", label="Choose Data", choices=c, selected="AverageSleep")
+  )
+```
+
+Define a reactive function called filteredData() that consists of one column of the SleepStudy dataset, in this example, AverageSleep. (Note that the functions and data frames are named ambiguously here, so you should be able to select any numeric variable in the data frame and the graphs will update properly.)
+
+```{r}
+
+filteredData <- reactive({
+  data.frame(response= SleepStudy[,input$choose])
+                          })
+```
+
+
+Plot a histogram and a kernel density of the data.
+```{r, echo = FALSE}
+inputPanel(
+  radioButtons("plot", label=h4("Plotting"), c("Histogram" = "his", "Kernel Density" = "den"
+#                                                , "Histogram and Kernel Density" = "hisDen", "Q-Q Plot" = "qq")
+               )
+  )
+)
+rmarkdown::render_delayed({
+     if (round(diff(range(filteredData()))/100, digits=2) == 0){
+        range.100 <- 0.01
+    }
+    else(
+      range.100 <- round(diff(range(filteredData()))/100, digits=2)
+    )
+      switch(input$plot,
+                        his =filteredData %>%
+                          ggvis(~filteredData()$response) %>%
+                          add_axis("x", title = input$response) %>%
+                          layer_histograms(width = input_slider(range.100, 
+                          range.100*20, step=range.100, value=range.100*10, label="Binwidth")),
+                        den = filteredData %>%
+                          ggvis(~filteredData()$response) %>%
+                          layer_densities(fill := "dodgerblue") %>%
+                          add_axis("x", title=input$response) %>%
+                          add_axis("y", title="Density")
+          )
+#              hisDen=renderPlot({ggplot(data=filteredData(), aes(x=response)) + geom_histogram(colour="black", fill="grey19", 
+#    binwidth=input$w, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.5) + theme(panel.grid.minor = element_line(colour = "grey"), 
+#   panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"), aspect.ratio=0.75) + xlab(input$response)
+
+  })
+
+```
+
