@@ -49,7 +49,8 @@ shinyUI(bootstrapPage(
       ), #conditionalPanel (input tab)
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
-        radioButtons("hyp", label=h4("Alternative Hypothesis"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"),   selected="tt"),
+        h4(HTML(paste("p", tags$sub(1), "-p", tags$sub(2), sep = ""))),
+        sliderInput("p1p2", label="", min=-0.99, max=0.99, value=0, step=0.01),
         numericInput("num", label=h4("Number of Resamples"), value=1000, min=1, max=100000, step=1),
         actionButton("goButton", "Permute!")
       ),

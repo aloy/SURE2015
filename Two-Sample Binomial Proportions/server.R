@@ -48,17 +48,9 @@ shinyServer(function(input, output){
     tab()
   })
   
-  output$test <- renderPrint({
-    switch(input$hyp,
-           tt=prop.test(tab()),
-           lt=prop.test(tab(), alternative="l"),
-             ut=prop.test(tab(), alternative="g")
-           )
-  })
-  
   perms1 <- reactive({
     if(input$goButton>0){
-    data.frame(replicate(input$num, rbinom(nrow(theData()), 1, prob=tab()[1]/(tab()[1]+tab()[2]))))
+    data.frame(replicate(input$num, rbinom(nrow(theData()), 1, prob=tab()[3]/(tab()[3]+tab()[1]))))
     }else{
       data.frame(rep(1:2, 5))
     }
@@ -66,7 +58,7 @@ shinyServer(function(input, output){
   
   perms2 <- reactive({
     if(input$goButton>0){
-    data.frame(replicate(input$num, rbinom(nrow(theData()), 1, prob=tab()[3]/(tab()[3]+tab()[4]))))
+    data.frame(replicate(input$num, rbinom(nrow(theData()), 1, prob=tab()[4]/(tab()[2]+tab()[4]))))
     }else{
       data.frame(rep(1:2, 5))
     }
@@ -75,32 +67,42 @@ shinyServer(function(input, output){
   trials <- reactive({
     if(input$goButton>0){
     trials1 <- data.frame(pop1 = colMeans(perms1()), pop2=colMeans(perms2()))
-    trials0 <- data.frame(melt(trials1))
+    trials0 <- mutate(trials1, diff=(pop1-pop2))
     }else{
-      trials0 <- data.frame(value=rep(0, 10), variable=rep("a", 10))
+      trials0 <- data.frame(diff=rep(0, 10))
     }
     trials0
   })
 
-  observe({
-  trials %>% group_by(variable) %>% 
-    ggvis(~value) %>% layer_histograms(fill=~variable) %>% bind_shiny("permsHist")
-  })
+observe({
+  trials %>% ggvis(~diff) %>% layer_histograms() %>% bind_shiny("permsHist")
+})
 
 output$propDiff <- renderPrint({
-  (tab()[1]/(tab()[1]+tab()[2])) - (tab()[3]/(tab()[3]+tab()[4]))
+  (tab()[3]/(tab()[1]+tab()[3])) - (tab()[4]/(tab()[2]+tab()[4]))
 })
 
 output$permDiff <- renderPrint({
-  summarise(summarise(group_by(trials(), variable), mean=mean(value)), mean.diff=diff(mean))
+  mean(trials()$diff)
 })
 
+output$test <- renderPrint({
+  prop.test(tab())
+})
+
+## Alternative idea–-sample binomial distribution to get a distribution centered at the 
+## p_1-p_2 difference, then test with the sample proportion as null hypothesis
+# permsTest <- reactive ({ replicate(input$num, rbinom(nrow(theData()), 1, prob=input$p1p2)) })
+# trialsTest <- reactive({ data.frame(test=colMeans(permsTest)) })
+#  x <- sum(permsTest())
+# n <- nrow(theData())*input$num
+#  p <-  (tab()[3]/(tab()[1]+tab()[3])) - (tab()[4]/(tab()[2]+tab()[4]))
+# binom.test(x=x, n=n, p=p)
+## 
+
+
 output$confInt <- renderPrint({
-  switch(input$hyp,
-         tt=prop.test(tab(), conf.level=input$ci)$conf.int[1:2],
-         lt=prop.test(tab(), alternative="l",conf.level=input$ci)$conf.int[1:2],
-         ut=prop.test(tab(), alternative="g",conf.level=input$ci)$conf.int[1:2]
-         )
+         prop.test(tab(), conf.level=input$ci)$conf.int[1:2]
 })
   
   })
