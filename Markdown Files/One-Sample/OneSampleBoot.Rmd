@@ -1,0 +1,231 @@
+---
+title: "One-Sample Bootstrap"
+author: "Alex Damisch"
+date: "August 20, 2015"
+runtime: shiny
+output: html_document
+---
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(ggvis)
+library(shiny)
+library(ggplot2)
+library("mosaic")
+```
+
+We will examine a variable from the ```SleepStudy``` dataset, found in the ```Lock5Data``` package.
+
+```{r}
+library(Lock5Data)
+data(SleepStudy)
+head(SleepStudy)
+```
+
+```{r}
+c <- colnames(SleepStudy)[sapply(SleepStudy, is.numeric)]
+
+inputPanel(
+selectInput("choose", label="Choose Data", choices=c, selected="AverageSleep")
+  )
+```
+
+Define a reactive function called ```filteredData()``` that consists of one column of the ```SleepStudy``` dataset, in this example, ```AverageSleep```. (Note that the functions and data frames are named ambiguously here, so you should be able to select any numeric variable in the data frame and the graphs will update properly.)
+
+```{r}
+
+filteredData <- reactive({
+  data.frame(response= SleepStudy[,input$choose])
+                          })
+```
+
+Since filteredData is just a reactive data frame, we can look at the head of it. Look how it's the same as whatever variable you chose above, but with the generic column name ```response```.
+
+```{r}
+renderTable({ head(filteredData())
+              })
+```
+
+Here are the summary statistics of the chosen column.
+```{r}
+renderTable({
+  favstats(response, data=filteredData())
+  }, digits = 3)
+```
+
+Plot a histogram, kernel density, a kernel density superimposed on a histogram, and quantile-quantile (Q-Q) plot of the data.
+
+```{r, echo = FALSE}
+inputPanel(
+  radioButtons("plot", label=h4("Plotting"), c("Histogram" = "his", "Kernel Density" = "den", "Histogram and Kernel Density" = "hisDen", "Q-Q Plot" = "qq")
+               )
+  )
+
+  qqdata <- reactive({
+    n <- nrow(filteredData())
+    probabilities <- (1:n)/(1+n)
+    normal.quantiles <- qnorm(probabilities, mean(filteredData()$response, na.rm = T), 
+                              sd(filteredData()$response, na.rm = T))
+    qqdata0 <- data.frame(sort(normal.quantiles), sort(filteredData()$response))
+    colnames(qqdata0) <- c("normal.quantiles", "diffs")
+    data.frame(qqdata0)
+  })
+
+rmarkdown::render_delayed({
+      switch(input$plot,
+                        his =filteredData %>%
+                          ggvis(~filteredData()$response) %>%
+                          add_axis("x", title = input$response) %>%
+                          layer_histograms(width = input$w),
+                        den = filteredData %>%
+                          ggvis(~filteredData()$response) %>%
+                          layer_densities(fill := "dodgerblue") %>%
+                          add_axis("x", title=input$response) %>%
+                          add_axis("y", title="Density"),
+                           qq=qqdata %>% 
+                          ggvis(~normal.quantiles, ~diffs) %>% 
+                          layer_points() %>% 
+                          add_axis("x", title="Theoretical") %>%
+                          add_axis("y", title="Sample"),
+             hisDen=renderPlot({ggplot(data=filteredData(), aes(x=response)) + geom_histogram(colour="black", fill="grey19", 
+   binwidth=input$w, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.5) + theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"), aspect.ratio=0.75) + xlab(input$response)})
+   )
+    })
+range.100 <- reactive({
+  if(is.null(input$choose)==FALSE){
+ if (round(diff(range(filteredData()$response))/100, digits=2) == 0){
+        0.01
+    }
+    else(
+      round(diff(range(filteredData()$response))/100, digits=2)
+    )
+ }else{0.01}
+})
+   inputPanel(
+ sliderInput("w", label = "Histogram Binwidth", min=isolate(range.100()), max=isolate(range.100())*50, step=isolate(range.100()), value=isolate(range.100())*25)
+  )
+```
+
+Now that we've had a look at the original data set, we're ready to bootstrap it. Before beginning the operation, what really happens when we take a bootstrap sample? In this example, we're making a reactive data frame named  ```trials```. You can see the code for ```trials``` below. 
+
+There will be three inputs for your ```trials()``` set: a set of radio buttons called ```stat``` with three choices ("Mean", called ```bootMean```, "Median"", called ```bootMedian```, and "Standard Deviation"", called ```bootSd```), a numeric input box called ```num```, and an action button called ```goButton`` and labelled "Permute!".
+
+```{r}
+trials <- reactive({
+  if(input$goButton > 0) {
+    if(input$stat=="bootMean"){
+     result <- do(input$num) * mean(sample(filteredData()$response, replace = TRUE))
+    }
+    if(input$stat=="bootMedian"){
+     result <- do(input$num) * median(sample(filteredData()$response, replace = TRUE))
+    }
+    if(input$stat=="bootSd"){
+     result <- do(input$num) * sd(sample(filteredData()$response, replace = TRUE))
+    }
+    data.frame(result=result)
+
+  }
+else {
+    data.frame(result = rep(0, 10))
+  }  
+})
+```
+
+Before ```goButton``` has been pressed, it has a value of 0. We don't resample until the button is pressed, or until ```input$goButton > 0``` (note that the open bracket after ```if(input$goButton > 0)``` is closed after the radio button possibilities have been evaluated--before the radio buttons have been pressed, ```trials``` just returns a data frame of ten zeros--that's what the   ```else``` condition means). After ```goButton``` has been pressed, ```trials``` evaluates the input of the radio buttons named ```stat```, which you selected above. Depending on which radio button has been selected, ```trials``` will perform a different operation. Although the individual processes for mean, median, and standard deviation are listed consecutively, they're mutually exclusive–only the one that corresponds to the selected button will execute; the rest are ignored.
+
+Let's say you wanted to bootstrap for the mean, and selected "Mean" from the radio buttons. The ```trials``` data set will then perform the code directly under ```if(input$stat=="bootMean")```, and not the ones that correspond to ```bootMedian``` or ```bootSd```. We'll look at how ```result0``` is built from the inside out.
+
+First, look at ```sample(filteredData()$response, replace = TRUE)```. This is pretty simple–take a sample of the ```response``` column of ```filteredData()``` with replacement. Since the size of the sample is not specified, it will be the same size as the numbered of rows in ```filteredData()``` (for the ```SleepStudy``` dataset, 253). This sample gives us a vector of 253 values from ```filteredData()```. Here's an example of the first 10 elements of what such a sample looks like. 
+
+```{r}
+x <- reactive({
+ sample(filteredData()$response, replace=TRUE)
+  })
+renderPrint({
+x()[1:10]
+})
+```
+
+That 253-line data set is one complete resample of ```filteredData()```. Then, we take the mean of the ```response``` column of the resample–that's what the ```mean(response, sample(filteredData(), replace = TRUE))``` part means. 
+
+```{r}
+renderPrint({
+ mean(x())
+})
+```
+
+```do(input$num)``` means that we do that process–taking a sample with replacement, and then taking a mean of that sample–as many times as we specified in ```input$num``` (that's the numeric input box labelled "Number of Bootstraps"). The processes for bootstrapping for a median or a standard deviation is the same, except for instead of taking the mean of the samples, we take the median or the standard deviation.
+
+No matter which statistic you choose, of those means/medians/standard deviations–as many of them as you selected in the "Number of Boostraps" box–goes into a vector called ```result```. ```trials()``` is just a data frame with a single column named ```result```, which contains the vector ```result```. (The data frame of ten zeros that ```trials()``` returns before we press the action button also has a column named ```result```, but this is only so the graph isn't confused.)
+
+Now it's time to make a complete ```trials()``` data set for real.
+
+```{r}
+radioButtons("stat", label = h4("Bootstrap Statistic"), c("Mean" = "bootMean", "Median" = "bootMedian", "Standard Deviation" = "bootSd"), selected = "bootMean")
+numericInput("num",label = h4("Number of Bootstraps"), value = 1000, min = 1, max = 100000)
+actionButton("goButton", "Permute!")
+
+renderTable({
+  head(trials())
+}, digits=3)
+```
+
+```{r, echo=FALSE}
+inputPanel(
+radioButtons("plot2", label=h4("Plotting"), c("Histogram" = "his2", "Kernel Density" = "den2", "Histogram and Kernel Density" = "hisDen2", "Q-Q Plot" = "qq2"), selected="his2")
+)
+
+ range2.100 <- reactive({
+   if(is.null(input$goButton)==FALSE){
+ if(input$goButton > 0){
+   y <- round(diff(range(trials()$result))/100, digits=3)
+    if (round(diff(range(trials()$result))/100, digits=3) == 0){
+      y <- 0.001
+  }
+ }
+  else{
+    y <- 0.001
+    }
+ y
+ }
+ })
+
+qqdata2 <- reactive({
+  n <- input$num
+  probabilities <- (1:n)/(1+n)
+  normal.quantiles <- qnorm(probabilities, mean(trials()$result, na.rm = T), sd(trials()$result, na.rm = T))
+  qqdata1 <- data.frame(sort(normal.quantiles), sort(trials()$result))
+  colnames(qqdata1) <- c("normal.quantiles", "diffs")
+  data.frame(qqdata1)
+})
+
+rmarkdown::render_delayed({
+      switch(input$plot2,
+            his2= trials %>%
+           ggvis(~result) %>%
+          layer_histograms(width = input_slider(min=isolate(range2.100()), max=isolate(range2.100())*50, step=isolate(range2.100()), value=isolate(range2.100())*25, label="Histogram Binwidth")),
+ den2=
+          trials %>%
+           ggvis(~result) %>%
+           layer_densities(fill := "dodgerblue") %>%
+           add_axis("y", title="Density"),
+ hisDen2=renderPlot({ggplot(data=trials(), aes(x=result)) + geom_histogram(colour="black", fill="grey19", binwidth=input$w2, aes(y=..density..)) + geom_density(colour="royalblue", fill="royalblue", alpha=0.5) + theme(panel.grid.minor = element_line(colour = "grey"), panel.background = element_rect(fill = "white"), axis.line = element_line(colour="black"), axis.text = element_text(colour = "black"), aspect.ratio=0.75) + xlab("result")}),
+  qq2 = qqdata2 %>% 
+           ggvis(~normal.quantiles, ~diffs) %>% 
+           layer_points() %>% 
+           add_axis("x", title="Theoretical") %>%
+           add_axis("y", title="Sample")
+ )
+    })
+
+
+```
+
+```{r, echo=FALSE}
+rmarkdown::render_delayed({
+if(input$plot2=="hisDen2"){
+inputPanel(
+ sliderInput("w2", label = "Histogram Binwidth", min=isolate(range2.100()), max=isolate(range2.100())*50, step=isolate(range2.100()), value=isolate(range2.100())*25)
+  )
+}
+})
+```
