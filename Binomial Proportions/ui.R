@@ -4,6 +4,7 @@ library(ggvis)
 
 shinyUI(bootstrapPage(
   useShinyjs(),
+  titlePanel("Binomial Proportions"),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -25,7 +26,7 @@ shinyUI(bootstrapPage(
                                '.tsv'
                              )
                    ),
-                   p("Note: The file size limit is 5MB. Larger files will take longer to upload and bootstrap.
+                   p("Note: The file size limit is 5MB. Larger files will take longer to upload and manipulate
                   You can upload text, .csv, or .tsv files."),
                    checkboxInput('header', 'Header', TRUE),
                    radioButtons('sep', 'Separator',
@@ -51,6 +52,8 @@ shinyUI(bootstrapPage(
         ), #conditionalPanel (input tab)
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
+        radioButtons("test", label=h4("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
+                     selected="tt"),
         h4(HTML(paste("p", tags$sub(0), sep = ""))),
         sliderInput("p0", label="", min=0.01, max=0.99, value=0.5, step=0.01),
         numericInput("num", label=h4("Number of Resamples"), value=1000, min=1, max=100000, step=1),
@@ -70,7 +73,7 @@ shinyUI(bootstrapPage(
       tabPanel("Tests",
               ggvisOutput("permHist"),
               h5("Sample Mean"),
-              verbatimTextOutput("sampleMean"),
+              verbatimTextOutput("mean"),
               h5("Permutation Mean"),
               verbatimTextOutput("permMean"),
               h5("P-Value"),

@@ -71,13 +71,17 @@ shinyServer(function(input, output){
       bind_shiny("permHist")
 })
 
-output$sampleMean <- renderPrint({
+sampleMean <- reactive({
   if(input$factor=="fact"){
     y <- which(levels(filteredData()$data)==input$success)
-(summary(filteredData()$data)/sum(summary(filteredData()$data)))[y]
+    (summary(filteredData()$data)/sum(summary(filteredData()$data)))[y]
   }else{
-  mean(filteredData()$data)
+    mean(filteredData()$data)
   }
+})
+
+output$mean <- renderPrint({
+sampleMean()
 })
 
 output$permMean <- renderPrint({
@@ -85,15 +89,12 @@ output$permMean <- renderPrint({
 })
 
 output$pval <- renderPrint({
-  x <- sum(perms())
-  n <- nrow(filteredData())*input$num
-  if(input$factor=="fact"){
-    y <- which(levels(filteredData()$data)==input$success)
-    p <- (summary(filteredData()$data)/sum(summary(filteredData()$data)))[y]
-  }else{
-    p <- mean(filteredData()$data)
-  }
-binom.test(x=x, n=n, p=p)$p.value
+  n <- input$num
+switch(input$test,
+       tt = min((sum(trials()$perms>=sampleMean())+1)/(n+1),
+                (sum(trials()$perms<=sampleMean())+1)/(n+1))*2,
+       lt = (sum(trials()$perms <= sampleMean()) +1)/(n+1),
+       ut = (sum(trials()$perms>=sampleMean())+1)/(n+1))
 })
 
 output$ci <- renderPrint({

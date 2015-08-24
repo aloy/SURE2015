@@ -3,6 +3,9 @@ library(shinyjs)
 library(ggvis)
 library(Stat2Data)
 library(dplyr)
+library(mosaic)
+
+#Two-Sample Binomial Proportions
 
 shinyServer(function(input, output){  
   data(Hoops)
@@ -40,34 +43,25 @@ shinyServer(function(input, output){
       selectInput("var2", label="Column for Proportions", cols)
     })
   
+  filteredData <- reactive({
+    data0 <- data.frame(theData()[,input$var], theData()[,input$var2])
+    names(data0) <- c("pop", "prop")
+    data0
+  })
+  
   tab <- reactive({
-    table(theData()[,input$var], theData()[,input$var2])
+    table(filteredData()$pop, filteredData()$prop)
   })
   
   output$orig <- renderTable({
     tab()
   })
   
-  perms1 <- reactive({
-    if(input$goButton>0){
-    data.frame(replicate(input$num, rbinom(nrow(theData()), 1, prob=tab()[3]/(tab()[3]+tab()[1]))))
-    }else{
-      data.frame(rep(1:2, 5))
-    }
-  })
-  
-  perms2 <- reactive({
-    if(input$goButton>0){
-    data.frame(replicate(input$num, rbinom(nrow(theData()), 1, prob=tab()[4]/(tab()[2]+tab()[4]))))
-    }else{
-      data.frame(rep(1:2, 5))
-    }
-  })
-  
   trials <- reactive({
     if(input$goButton>0){
-    trials1 <- data.frame(pop1 = colMeans(perms1()), pop2=colMeans(perms2()))
-    trials0 <- mutate(trials1, diff=(pop1-pop2))
+      perms <- do(input$num) * diff(mean(prop ~ shuffle(pop), data = filteredData()))
+      trials0 <- data.frame(perms)
+      names(trials0) <- "diff"
     }else{
       trials0 <- data.frame(diff=rep(0, 10))
     }
@@ -75,7 +69,7 @@ shinyServer(function(input, output){
   })
 
 observe({
-  trials %>% ggvis(~diff) %>% layer_histograms() %>% bind_shiny("permsHist")
+  trials %>% ggvis(~diff) %>% layer_histograms(width=input$w) %>% bind_shiny("permsHist")
 })
 
 output$propDiff <- renderPrint({
@@ -86,23 +80,18 @@ output$permDiff <- renderPrint({
   mean(trials()$diff)
 })
 
-output$test <- renderPrint({
-  prop.test(tab())
+output$pval <- renderPrint({
+  n <- input$num
+  switch(input$test,
+  tt = min((sum(trials()$diff>=0)+1)/(n+1),
+           (sum(trials()$diff<=0)+1)/(n+1))*2,
+  lt = (sum(trials()$diff <= 0) +1)/(n+1),
+  ut = (sum(trials()$diff>=0)+1)/(n+1)
+  )
 })
 
-## Alternative idea–-sample binomial distribution to get a distribution centered at the 
-## p_1-p_2 difference, then test with the sample proportion as null hypothesis
-# permsTest <- reactive ({ replicate(input$num, rbinom(nrow(theData()), 1, prob=input$p1p2)) })
-# trialsTest <- reactive({ data.frame(test=colMeans(permsTest)) })
-#  x <- sum(permsTest())
-# n <- nrow(theData())*input$num
-#  p <-  (tab()[3]/(tab()[1]+tab()[3])) - (tab()[4]/(tab()[2]+tab()[4]))
-# binom.test(x=x, n=n, p=p)
-## 
-
-
 output$confInt <- renderPrint({
-         prop.test(tab(), conf.level=input$ci)$conf.int[1:2]
+#          prop.test(tab(), conf.level=input$ci)$conf.int[1:2]
 })
   
   })

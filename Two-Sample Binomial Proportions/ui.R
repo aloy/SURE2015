@@ -4,6 +4,7 @@ library(ggvis)
 
 shinyUI(bootstrapPage(
   useShinyjs(),
+  titlePanel("Two-Sample Binomial Proportions"),
   sidebarLayout(
     sidebarPanel(
       conditionalPanel(
@@ -49,10 +50,11 @@ shinyUI(bootstrapPage(
       ), #conditionalPanel (input tab)
       conditionalPanel(
         "$('li.active a').first().html()==='Tests'",
-        h4(HTML(paste("p", tags$sub(1), "-p", tags$sub(2), sep = ""))),
-        sliderInput("p1p2", label="", min=-0.99, max=0.99, value=0, step=0.01),
+        radioButtons("test", label=h4("Permutation Test"), c("Two-Tailed" = "tt", "Lower Tail" = "lt", "Upper Tail" = "ut"), 
+                     selected="tt"),
         numericInput("num", label=h4("Number of Resamples"), value=1000, min=1, max=100000, step=1),
-        actionButton("goButton", "Permute!")
+        actionButton("goButton", "Permute!"),
+        sliderInput("w", label=h4("Bootstrap Bin Width"),value=0.1, min=0.01, max=0.5, step=0.01)
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Confidence Interval'",
@@ -72,7 +74,8 @@ shinyUI(bootstrapPage(
                       verbatimTextOutput("propDiff"),
                       h5("Permutation Difference In Proportions"),
                       verbatimTextOutput("permDiff"),
-                      verbatimTextOutput("test")
+                      h5("P-Value"),
+                      verbatimTextOutput("pval")
                            ),
                   tabPanel("Confidence Interval",
                            verbatimTextOutput("confInt")
