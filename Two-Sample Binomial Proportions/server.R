@@ -48,6 +48,13 @@ shinyServer(function(input, output){
       selectInput("var2", label="Column for Proportions", cols)
     })
   
+  output$factSuccess <- renderUI({
+    data <- data.frame(factor=theData()[,input$var2])
+    data$factor <- factor(data$factor)
+    levels <- levels(data$factor)
+      selectInput("success", "Indicator of Success", levels)
+  })
+  
   filteredData <- reactive({
     data0 <- data.frame(theData()[,input$var], theData()[,input$var2])
     names(data0) <- c("pop", "prop")

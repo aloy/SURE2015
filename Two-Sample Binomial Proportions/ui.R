@@ -38,12 +38,15 @@ shinyUI(bootstrapPage(
                                 c(None='',
                                   'Double Quote'='"',
                                   'Single Quote'="'"),
-                                '"')
+                                '"'),
+                   radioButtons("factor", label="Numeric/Factor", c("Column of 0/1s" = "col",
+                                                                    "Factor with Levels" = "fact"))
           ), #tags
           actionButton("hideDataOptions", "Show/hide data set options")
         ), #conditionalPanel
         uiOutput("selectPop"),
         uiOutput("selectDiff"),
+        uiOutput("factSuccess"),
         hidden(
           shiny::p(id = "suggest", "Suggested: Use 'Home' for Populations and 'WinLoss' for Proportions.")
         )
@@ -62,7 +65,7 @@ shinyUI(bootstrapPage(
         actionButton("goButton2", "Bootstrap!"),
         sliderInput("ci", label=h4("Confidence Level"), value=0.95, min=0.01, max=0.99, step=0.01),
         hidden(
-          shiny::p(id = "warning", strong("You must resample on the previous tab before bootstrapping for 
+          shiny::p(id = "warning", strong("You must permute on the previous tab before bootstrapping for 
                    the confidence interval."), style = "color:red")
       )
       )

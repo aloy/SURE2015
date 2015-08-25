@@ -101,7 +101,8 @@ switch(input$test,
        tt = min((sum(trials()$binom>=sampleMean())+1)/(n+1),
                 (sum(trials()$binom<=sampleMean())+1)/(n+1))*2,
        lt = (sum(trials()$binom <= sampleMean()) +1)/(n+1),
-       ut = (sum(trials()$binom>=sampleMean())+1)/(n+1))
+       ut = (sum(trials()$binom>=sampleMean())+1)/(n+1)
+       )
 })
 
 output$ci <- renderPrint({
