@@ -2,11 +2,18 @@ library(shiny)
 library(shinyjs)
 library(ggvis)
 library(dplyr)
+library(resample)
+
+#One-sample binomial proportions
 
 shinyServer(function(input, output){
   
   shinyjs::onclick("hideDataOptions",
                    shinyjs::toggle(id = "dataOptions", anim = TRUE))
+  
+  shiny::observe({
+    toggle(id = "warning", condition = input$goButton==0)
+  })
   
   theData <- reactive({
     if(input$chooseData=="uploadYes"){
@@ -47,7 +54,7 @@ shinyServer(function(input, output){
     }
   })
   
-  perms <- reactive({
+  binom <- reactive({
     if(input$goButton>0){
     data.frame(replicate(input$num, rbinom(nrow(filteredData()), 1, prob=input$p0)))  
     }
@@ -55,17 +62,17 @@ shinyServer(function(input, output){
   
   trials <- reactive({
     if(input$goButton>0){
-    trials0 <- data.frame(perms=colMeans(perms()))
+    trials0 <- data.frame(binom=colMeans(binom()))
     }
     else{
-      trials0 <- data.frame(perms=rep(0, 10))
+      trials0 <- data.frame(binom=rep(0, 10))
     }
     trials0
   })
   
   observe({
     trials() %>%
-      ggvis(~perms) %>%
+      ggvis(~binom) %>%
       add_axis("x", title = "Proportion of Successes") %>%
       layer_histograms(width=input$w) %>%
       bind_shiny("permHist")
@@ -85,24 +92,26 @@ sampleMean()
 })
 
 output$permMean <- renderPrint({
-  mean(trials()$perms)
+  mean(trials()$binom)
 })
 
 output$pval <- renderPrint({
   n <- input$num
 switch(input$test,
-       tt = min((sum(trials()$perms>=sampleMean())+1)/(n+1),
-                (sum(trials()$perms<=sampleMean())+1)/(n+1))*2,
-       lt = (sum(trials()$perms <= sampleMean()) +1)/(n+1),
-       ut = (sum(trials()$perms>=sampleMean())+1)/(n+1))
+       tt = min((sum(trials()$binom>=sampleMean())+1)/(n+1),
+                (sum(trials()$binom<=sampleMean())+1)/(n+1))*2,
+       lt = (sum(trials()$binom <= sampleMean()) +1)/(n+1),
+       ut = (sum(trials()$binom>=sampleMean())+1)/(n+1))
 })
 
 output$ci <- renderPrint({
-  x <- sum(perms())
-  n <- nrow(filteredData())*input$num
-  p <- input$p0
-  c <- input$ci
-  binom.test(x=x, n=n, p=p)$conf.int[1:2]
+  a <- 1-input$ci
+  if(input$goButton2>0){
+boot <- bootstrap(trials()$binom, mean, R=input$num2)
+}else{
+  boot <- bootstrap(0, mean, R=1)
+}
+CI.percentile(boot, probs=c(a/2, 1-(a/2)))
 })
 
 })

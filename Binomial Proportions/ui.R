@@ -58,11 +58,17 @@ shinyUI(bootstrapPage(
         sliderInput("p0", label="", min=0.01, max=0.99, value=0.5, step=0.01),
         numericInput("num", label=h4("Number of Resamples"), value=1000, min=1, max=100000, step=1),
         actionButton("goButton", "Permute!"),
-        sliderInput("w", label=h4("Bootstrap Bin Width"),value=0.05, min=0.001, max=0.1, step=0.001)
+        sliderInput("w", label=h4("Histogram Bin Width"),value=0.05, min=0.001, max=0.1, step=0.001)
       ),
       conditionalPanel(
         "$('li.active a').first().html()==='Confidence Intervals'",
-        sliderInput("ci", label=h4("Confidence Levels"), value=0.95, min=0.01, max=0.99, step=0.01)
+        numericInput("num2", label=h4("Number of Bootstraps"), value=1000, min=1, max=100000),
+        actionButton("goButton2", "Bootstrap!"),
+        sliderInput("ci", label=h4("Confidence Level"), value=0.95, min=0.01, max=0.99, step=0.01),
+        hidden(
+          shiny::p(id = "warning", strong("You must resample on the previous tab before bootstrapping for 
+                   the confidence interval."), style = "color:red")
+        )
       )
     ), 
   mainPanel(

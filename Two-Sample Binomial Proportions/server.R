@@ -4,6 +4,7 @@ library(ggvis)
 library(Stat2Data)
 library(dplyr)
 library(mosaic)
+library(resample)
 
 #Two-Sample Binomial Proportions
 
@@ -15,6 +16,10 @@ shinyServer(function(input, output){
   
   shiny::observe({
     toggle(id = "suggest", condition = input$chooseData=="uploadNo")
+  })
+  
+  shiny::observe({
+    toggle(id = "warning", condition = input$goButton==0)
   })
   
   theData <- reactive({
@@ -91,7 +96,13 @@ output$pval <- renderPrint({
 })
 
 output$confInt <- renderPrint({
-#          prop.test(tab(), conf.level=input$ci)$conf.int[1:2]
+  a <- 1-input$ci
+  if(input$goButton2>0){
+    boot <- bootstrap(trials()$diff, mean, R=input$num2)
+  }else{
+    boot <- bootstrap(0, mean, R=1)
+  }
+  CI.percentile(boot, probs=c(a/2, 1-(a/2)))
 })
   
   })
