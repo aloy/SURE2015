@@ -1,0 +1,163 @@
+---
+title: "R Basics Guide"
+author: "Alex Damisch"
+date: "August 25, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+## Reading in Files
+
+### What's your working directory?
+
+This is the folder where R is operating. The more specific your working directory, the less you'll have to specify filepaths when loading in data.
+
+```{r}
+getwd()
+```
+
+For Mac users, working directories will begin with ```"/Users/User Name/"```. For Windows users, working directories will begin with  ```"C:/Users/User Name"``` (but with your own user name). 
+
+### Setting a working directory
+
+You will probably want to set your working directory using the ```setwd``` command. For example, if your username on your Mac computer was  ```nameu``` and you had a file on your desktop named ```R files``` where you saved all of your data and projects, you would use
+
+```{r eval=FALSE}
+setwd("/Users/nameu/Desktop/R Files")
+```
+
+You can check that you've set your directory correctly using ```getwd()``` again.
+
+### Saving files
+
+Download the dataset ```tips.csv```. You can find a copy [here](http://www.ggobi.org/book/data/tips.csv) (warning: clicking the link will initiate an 8 KB download). Move the file to your working directory folder.
+
+### Commands
+
+Read in a data file (here we name it "tips").
+
+For .csv files, here are the default options:
+```{r, eval=FALSE}
+tips <- read.csv(file, header = TRUE, sep = ",", quote = "\"",
+         dec = ".", fill = TRUE, comment.char = "", ...)
+```
+
+If all of those things are true (which they are, for ```tips.csv```), you only need to type in
+```{r}
+tips <- read.csv("tips.csv")
+```
+
+You only need to change arguments, like ```header = FALSE```, if your data set doesn't have a header.
+
+If you have the data in a special file within your working directory, you need to specify where R should look in the working directory. For example, if your working directory is a folder called ```R Files``` on your desktop, and you saved ```tips.csv``` in a subfolder of ```R Files``` called ```data```, 
+
+```{r, eval=FALSE}
+tips <- read.csv("~/data/tips.csv", header=TRUE)
+```
+
+Other types of files:
+
+* ```read.delim()```: tab separated
+* ```read.delim(sep = "|")```: | separated
+* ```read.fwf()```: fixed width
+* ```read.table()```: general table
+
+There are lots of different possible arguments for these. Type in ```?read.table()``` in the console for more information about what these arguments mean.
+
+## Numeric Summaries
+
+NOTE: This will only discuss R commands for data, not how to interpret the data.
+
+### head() and tail()
+
+If you just put the name of the data set in the console, it will print the entire data set–not very useful for analysis. By default, ```head``` shows you the first six observations of your data set.
+
+```{r}
+head(tips)
+```
+
+If you want to see more or less than six rows, you can specify that in the head command:
+
+```{r}
+head(tips, n=3L)
+```
+
+```tail``` does basically the same thing as head, but it looks at the last six rows of a data set.
+
+```{r}
+tail(tips)
+```
+
+Again, you can also specify the number of rows to ```tail```.
+
+```{r}
+tail(tips, n=7L)
+```
+
+
+### str()
+```str``` tells you the structure of an R object. For a data frame, ```str``` will show you how many observations there are, the number of variables, and what type of data is in each variable: ```int``` for integer, ```num``` for numeric, ```Factor``` for categorical (or factor) variables and their "levels", etc.
+
+```{r}
+str(tips)
+```
+
+### summary()
+```summary``` will give you a summary of each variable in the data set. For numeric variables, ```summary``` will calculate a five-number summary and the mean. For factors, ```summary``` will count how many observations there are in each level.
+
+```{r}
+summary(tips)
+```
+
+## Subsetting
+
+### Columns 
+
+Subsetting is a way to look at only part of your data set. 
+
+One of the easiest ways to subset your data is the dollar sign, ```$```. This allows you to look at all of the values for a single variable, called by the variable name. The structure of a command using ```$``` is ```dataFrameName$variableName```. Data frame and variable names are case-sensitive, so make sure your capitalization is correct.
+
+You can see the names of your variables usin ```str``` or ```summary``` above, or by using ```colnames```.
+
+```{r}
+colnames(tips)
+tips$totbill
+```
+
+Another way to subset columns is using the square bracket notation. This is especially convenient because you can subset by column name or by column number. Note how the following two commands return the same thing, because ```smoker``` is the fifth column of the data set. (For brevity's sake, we will only look at the first six rows; to look at the columns in full, remove the ```head()``` around the ```tips["smoker"]``` or ```tips[5]``` argument.)
+
+
+```{r}
+head(tips["smoker"])
+head(tips[5])
+```
+
+You can also subset multiple columns of the data set using ```c``` (concatenate) for factors and ```:``` for numbers. The concatenate argument must be in parentheses, with the desired columns separated by commas. The colon specifies the first and last columns to subset Again, the following two commands are equivalent, and we will only look at the first six rows.
+
+```{r}
+head(tips[c("totbill", "tip", "sex")])
+head(tips[2:4])
+```
+
+### Rows
+
+Subsetting rows is very similar to subsetting columns. You can subset rows using the square bracket notation. A number in a square bracket with a comma after it will subset that number row.
+
+```{r}
+tips[5,]
+```
+
+An easy way to remember this is that rows come before the columns and commas come after–but if there's a single number with no comma, R will assume you're talking about a column. So you can see the fifth row's value for the third variable like this:
+
+```{r}
+tips[5,3]
+```
+
+Like columns, you can also select multiple rows at a time using a colon.
+
+```{r}
+tips[4:8,]
+```
+
+Now you're ready to start working with data.
