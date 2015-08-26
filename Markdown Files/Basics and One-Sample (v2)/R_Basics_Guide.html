@@ -79,6 +79,7 @@ img {
 <li><a href="#head-and-tail">head() and tail()</a></li>
 <li><a href="#str">str()</a></li>
 <li><a href="#summary">summary()</a></li>
+<li><a href="#sd-and-favstats">sd() and favstats()</a></li>
 </ul></li>
 <li><a href="#subsetting">Subsetting</a><ul>
 <li><a href="#columns">Columns</a></li>
@@ -108,11 +109,11 @@ img {
 </div>
 <div id="commands" class="section level3">
 <h3>Commands</h3>
-<p>Read in a data file (here we name it “tips”).</p>
+<p>We define the names of data frames, variables, etc. using the assignment operator <code>&lt;-</code>, with the name to the left of the arrow and its properties to the right of the arrow.</p>
 <p>For .csv files, here are the default options:</p>
 <pre class="r"><code>tips &lt;- read.csv(file, header = TRUE, sep = &quot;,&quot;, quote = &quot;\&quot;&quot;,
          dec = &quot;.&quot;, fill = TRUE, comment.char = &quot;&quot;, ...)</code></pre>
-<p>If all of those things are true (which they are, for <code>tips.csv</code>), you only need to type in</p>
+<p>Read in the data file (here we name it “tips”). If we want all of the default options for <code>read.csv</code> (which, in this case, we do), you only need to type in</p>
 <pre class="r"><code>tips &lt;- read.csv(&quot;tips.csv&quot;)</code></pre>
 <p>You only need to change arguments, like <code>header = FALSE</code>, if your data set doesn’t have a header.</p>
 <p>If you have the data in a special file within your working directory, you need to specify where R should look in the working directory. For example, if your working directory is a folder called <code>R Files</code> on your desktop, and you saved <code>tips.csv</code> in a subfolder of <code>R Files</code> called <code>data</code>,</p>
@@ -125,6 +126,19 @@ img {
 <li><code>read.table()</code>: general table</li>
 </ul>
 <p>There are lots of different possible arguments for these. Type in <code>?read.table()</code> in the console for more information about what these arguments mean.</p>
+<div id="assignment-operator" class="section level4">
+<h4>&lt;- (Assignment Operator)</h4>
+<p>As mentioned above, <code>&lt;-</code> is used to assign values to variables, data frames, and more in R. It is important to remember that by default you will not see the results of your assignment when you assign it. Note how nothing is printed when I simply assign a value to <code>a</code>–</p>
+<pre class="r"><code>a &lt;- 8*17</code></pre>
+<p>There are two ways to see the value of something after you’ve defined it. First, you can just print the variable you just defined.</p>
+<pre class="r"><code>a &lt;- 8*17
+a</code></pre>
+<pre><code>## [1] 136</code></pre>
+<p>Or you can put parentheses around the assignment.</p>
+<pre class="r"><code>(a &lt;- 8*17)</code></pre>
+<pre><code>## [1] 136</code></pre>
+<p>When you are loading or defining data frames, make sure you as assigning them to a name, or else R will just print the data set.</p>
+</div>
 </div>
 </div>
 <div id="numeric-summaries" class="section level2">
@@ -199,6 +213,21 @@ img {
 ##  Thu:62               Mean   :2.57  
 ##                       3rd Qu.:3.00  
 ##                       Max.   :6.00</code></pre>
+</div>
+<div id="sd-and-favstats" class="section level3">
+<h3>sd() and favstats()</h3>
+<p>Once you know what variable you want to look at, you can use the <code>sd</code> and <code>favstats</code> functions in the <code>mosaic</code> package to learn more about just that variable. But first, we have to install and load the package.</p>
+<pre class="r"><code>install.packages(&quot;mosaic&quot;)</code></pre>
+<pre class="r"><code>library(mosaic)</code></pre>
+<p>Let’s say we want to look at <code>totbill</code> in <code>tips</code>. What’s the standard deviation of <code>totbill</code>?</p>
+<pre class="r"><code>sd(totbill, data=tips)</code></pre>
+<pre><code>## [1] 8.902412</code></pre>
+<p>We can get all of the information in <code>summary</code>, plus the standard deviation, using <code>favstats</code>.</p>
+<pre class="r"><code>favstats(totbill, data=tips)</code></pre>
+<pre><code>##   min      Q1 median      Q3   max     mean       sd   n missing
+##  3.07 13.3475 17.795 24.1275 50.81 19.78594 8.902412 244       0</code></pre>
+<p>There are a lot of other convenient functions to learn about your data in the <code>mosaic</code> favstats. For more information about them, type <code>?mean</code> into the conssole after you’ve loaded <code>mosaic</code>, then click “Aggregating Functions.”</p>
+<p>Note: There are built-in <code>mean</code> and <code>sd</code> functions in R, but to evaluate them for a single variable in a data frame we have to learn about subsetting, below.</p>
 </div>
 </div>
 <div id="subsetting" class="section level2">
@@ -287,6 +316,7 @@ img {
 ## 6   6   25.29 4.71   M     No Sun Night    4
 ## 7   7    8.77 2.00   M     No Sun Night    2
 ## 8   8   26.88 3.12   M     No Sun Night    4</code></pre>
+<p>Now you’re ready to start working with data.</p>
 </div>
 </div>
 

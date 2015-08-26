@@ -35,7 +35,7 @@ Download the dataset ```tips.csv```. You can find a copy [here](http://www.ggobi
 
 ### Commands
 
-Read in a data file (here we name it "tips").
+We define the names of data frames, variables, etc. using the assignment operator ```<-```, with the name to the left of the arrow and its properties to the right of the arrow.
 
 For .csv files, here are the default options:
 ```{r, eval=FALSE}
@@ -43,7 +43,7 @@ tips <- read.csv(file, header = TRUE, sep = ",", quote = "\"",
          dec = ".", fill = TRUE, comment.char = "", ...)
 ```
 
-If all of those things are true (which they are, for ```tips.csv```), you only need to type in
+Read in the data file (here we name it "tips"). If we want all of the default options for ```read.csv``` (which, in this case, we do), you only need to type in
 ```{r}
 tips <- read.csv("tips.csv")
 ```
@@ -64,6 +64,29 @@ Other types of files:
 * ```read.table()```: general table
 
 There are lots of different possible arguments for these. Type in ```?read.table()``` in the console for more information about what these arguments mean.
+
+#### <- (Assignment Operator)
+
+As mentioned above, ```<-``` is used to assign values to variables, data frames, and more in R. It is important to remember that by default you will not see the results of your assignment when you assign it. Note how nothing is printed when I simply assign a value to ```a```–
+
+```{r}
+a <- 8*17
+```
+
+There are two ways to see the value of something after you've defined it. First, you can just print the variable you just defined.
+
+```{r}
+a <- 8*17
+a
+```
+
+Or you can put parentheses around the assignment.
+
+```{r}
+(a <- 8*17)
+```
+
+When you are loading or defining data frames, make sure you as assigning them to a name, or else R will just print the data set. 
 
 ## Numeric Summaries
 
@@ -109,6 +132,33 @@ str(tips)
 ```{r}
 summary(tips)
 ```
+
+### sd() and favstats()
+
+Once you know what variable you want to look at, you can use the ```sd``` and ```favstats``` functions in the ```mosaic``` package to learn more about just that variable. But first, we have to install and load the package.
+
+```{r, eval=FALSE, message=FALSE}
+install.packages("mosaic")
+```
+```{r, message=FALSE}
+library(mosaic)
+```
+
+Let's say we want to look at ```totbill``` in ```tips```. What's the standard deviation of ```totbill```?
+
+```{r}
+sd(totbill, data=tips)
+```
+
+We can get all of the information in ```summary```, plus the standard deviation, using ```favstats```.
+
+```{r}
+favstats(totbill, data=tips)
+```
+
+There are a lot of other convenient functions to learn about your data in the ```mosaic``` favstats. For more information about them, type ```?mean``` into the conssole after you've loaded ```mosaic```, then click "Aggregating Functions."
+
+Note: There are built-in ```mean``` and ```sd``` functions in R, but to evaluate them for a single variable in a data frame we have to learn about subsetting, below.
 
 ## Subsetting
 
