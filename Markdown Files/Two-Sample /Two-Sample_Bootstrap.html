@@ -78,6 +78,8 @@ img {
 </ul></li>
 <li><a href="#resampling">Resampling</a><ul>
 <li><a href="#grouping">Grouping</a></li>
+<li><a href="#one-resample">One Resample</a></li>
+<li><a href="#many-resamples">Many Resamples</a></li>
 </ul></li>
 </ul>
 </div>
@@ -204,6 +206,8 @@ head(grouped)</code></pre>
 <pre><code>## [1] 147.1042</code></pre>
 <pre class="r"><code>mean(Swahili$Attitude.Score)</code></pre>
 <pre><code>## [1] 147.1042</code></pre>
+<div id="two-values" class="section level4">
+<h4>Two Values</h4>
 <p>But the <code>summarise</code> command allows us to perform operations on <code>grouped</code>, and it recognizes the differences in <code>grouped</code>. Here we can calculate the minimum and maximum Attitude.Score per group, and define the column names as minScore and maxScore. We name the table minMax.</p>
 <pre class="r"><code>(minMax &lt;- summarise(grouped, minScore= min(Attitude.Score), maxScore=max(Attitude.Score)))</code></pre>
 <pre><code>## Source: local data frame [2 x 3]
@@ -218,6 +222,9 @@ head(grouped)</code></pre>
 ##   Province range
 ## 1  NAIROBI    64
 ## 2    PWANI    41</code></pre>
+</div>
+<div id="one-value" class="section level4">
+<h4>One Value</h4>
 <p>In the above example, we were trying to get two values–one for each Province. However, if we were condensing down to a single value overall, such as the differences in means between the two provinces, we would only need to group_by once. The <code>diff</code> function finds the difference between two values.</p>
 <pre class="r"><code>(groupMeans &lt;- summarise(grouped, mean=mean(Attitude.Score)))</code></pre>
 <pre><code>## Source: local data frame [2 x 2]
@@ -231,11 +238,81 @@ head(grouped)</code></pre>
 ##   mean.diff
 ## 1      16.4</code></pre>
 <p>Note that defining the functions separately above will produce the same result as calling them in a nested way, i.e.</p>
-<pre class="r"><code>summarise(summarise(group_by(Swahili, Province), mean=mean(Attitude.Score)), mean.diff=diff(mean))</code></pre>
+<pre class="r"><code>summarise(summarise(grouped, mean=mean(Attitude.Score)), mean.diff=diff(mean))</code></pre>
 <pre><code>## Source: local data frame [1 x 1]
 ## 
 ##   mean.diff
 ## 1      16.4</code></pre>
+</div>
+</div>
+<div id="one-resample" class="section level3">
+<h3>One Resample</h3>
+<p>If you already know <code>sample</code> from one-sample bootstrapping and <code>group_by</code>, then taking a resample from two different groups is pretty easy. We use the <code>sample_n</code> function in the <code>dplyr</code> package to give us samples of equal sizes from the two groups. Unlike the <code>sample</code> function we used for the one-sample bootstrap, here we have to specify how large we want the sizes to be. If you don’t remember how large the groups are, you can use <code>summary</code> or <code>?Swahili</code> to check.</p>
+<pre class="r"><code>one.resample &lt;- sample_n(grouped, 240, replace=TRUE)
+head(one.resample)</code></pre>
+<pre><code>## Source: local data frame [6 x 4]
+## Groups: Province
+## 
+##   Province    Sex Attitude.Score School
+## 1  NAIROBI female            166      B
+## 2  NAIROBI female            143      D
+## 3  NAIROBI female            134      D
+## 4  NAIROBI female            152      F
+## 5  NAIROBI female            146      D
+## 6  NAIROBI female            156      B</code></pre>
+<pre class="r"><code>tail(one.resample)</code></pre>
+<pre><code>## Source: local data frame [6 x 4]
+## Groups: Province
+## 
+##   Province    Sex Attitude.Score School
+## 1    PWANI   male            163      J
+## 2    PWANI female            159      I
+## 3    PWANI   male            141      H
+## 4    PWANI   male            157      J
+## 5    PWANI female            156      I
+## 6    PWANI   male            166      H</code></pre>
+<p>Again, we can use <code>summarise</code> to see the means of the two groups in our resample.</p>
+<pre class="r"><code>summarise(group_by(one.resample, Province), mean=mean(Attitude.Score))</code></pre>
+<pre><code>## Source: local data frame [2 x 2]
+## 
+##   Province     mean
+## 1  NAIROBI 137.9792
+## 2    PWANI 154.9083</code></pre>
+<p>However, we have not specifically indicated what statistic we are even bootstrapping for! Since I’ve already demonstrated above how to do a difference of means, I’ll show an example of a ratio of means, because the syntax is a hair more complicated. Again, we can used nested <code>summarise</code> functions to find the ratio of means between the two groups in our <code>one.resample</code>.</p>
+<pre class="r"><code>summarise(summarise(group_by(one.resample, Province), mean=mean(Attitude.Score)), meanRatio = mean[1]/mean[2])</code></pre>
+<pre><code>## Source: local data frame [1 x 1]
+## 
+##   meanRatio
+## 1 0.8907149</code></pre>
+<p>If you remember your subsetting, this shouldn’t faze you too badly–the first mean divided by the second mean.</p>
+</div>
+<div id="many-resamples" class="section level3">
+<h3>Many Resamples</h3>
+<p>The step to building a <code>trials</code> data set is not conceptually difficult, but syntactically it’s a little ugly. First, let’s make a data set called resamples, made of 1000 resamples from <code>grouped</code>. Do not print this data set. You will regret it. This may take awhile to execute, mostly because it has 480,000 rows.</p>
+<pre class="r"><code>resamples &lt;- do(1000) * sample_n(grouped, 240, replace=TRUE)</code></pre>
+<p>If you type <code>View(resamples)</code> into your console after running the code, you’ll see the first 1,000 rows. The different resamples are grouped by <code>.index</code> (the first resample has a <code>.index</code> of all 1s, the second full resample has a <code>.index</code> of all 2s, etc.), and then we want to break those down further by <code>Province</code>. Luckily, <code>group_by</code> can handle multiple groups at once.</p>
+<pre class="r"><code>resampleGrouped &lt;- group_by(resamples, .index, Province)
+head(resampleGrouped)</code></pre>
+<pre><code>## Source: local data frame [6 x 6]
+## Groups: .index, Province
+## 
+##   Province    Sex Attitude.Score School .row .index
+## 1  NAIROBI   male            126      C    1      1
+## 2  NAIROBI female            142      F    2      1
+## 3  NAIROBI female            152      F    3      1
+## 4  NAIROBI   male            134      E    4      1
+## 5  NAIROBI   male            117      A    5      1
+## 6  NAIROBI   male            121      C    6      1</code></pre>
+<p>Then we can find the means and mean differences of resampleGrouped (substitute with mean ratio if desired). This is our final data set.</p>
+<pre class="r"><code>trials&lt;- data.frame(summarise(summarise(resampleGrouped, mean=mean(Attitude.Score)), diff=diff(mean)))
+head(trials)</code></pre>
+<pre><code>##   .index     diff
+## 1      1 17.13333
+## 2      2 18.02917
+## 3      3 16.55417
+## 4      4 16.47083
+## 5      5 16.71250
+## 6      6 16.36250</code></pre>
 </div>
 </div>
 

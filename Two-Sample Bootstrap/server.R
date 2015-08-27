@@ -80,9 +80,6 @@ output$basicSummary <- renderTable({
   favstats(~response|group, data=filteredData())  
   })
 
-
-
-
 bootResult <- reactive({
   if(input$goButton > 0) {
     if(input$stat=="bootMean"){

@@ -154,6 +154,8 @@ mean(grouped$Attitude.Score)
 mean(Swahili$Attitude.Score)
 ```
 
+#### Two Values
+
 But the ```summarise``` command allows us to perform operations on ```grouped```, and it recognizes the differences in ```grouped```. Here we can calculate the minimum and maximum Attitude.Score per group, and define the column names as minScore and maxScore. We name the table minMax.
 
 ```{r}
@@ -166,6 +168,8 @@ We can also use ```summarise``` multiple times if we need to make a second level
 summarise(group_by(minMax, Province), range=maxScore-minScore)
 ```
 
+#### One Value
+
 In the above example, we were trying to get two values–one for each Province. However, if we were condensing down to a single value overall, such as the differences in means between the two provinces, we would only need to group_by once. The ```diff``` function finds the difference between two values.
 
 ```{r}
@@ -176,5 +180,70 @@ summarise(groupMeans, mean.diff=diff(mean))
 Note that defining the functions separately above will produce the same result as calling them in a nested way, i.e. 
 
 ```{r}
-summarise(summarise(group_by(Swahili, Province), mean=mean(Attitude.Score)), mean.diff=diff(mean))
+summarise(summarise(grouped, mean=mean(Attitude.Score)), mean.diff=diff(mean))
+```
+
+### One Resample
+
+If you already know ```sample``` from one-sample bootstrapping and ```group_by```, then taking a resample from two different groups is pretty easy. We use the ```sample_n``` function in the ```dplyr``` package to give us samples of equal sizes from the two groups. Unlike the ```sample``` function we used for the one-sample bootstrap, here we have to specify how large we want the sizes to be. If you don't remember how large the groups are, you can use ```summary``` or ```?Swahili``` to check.
+
+```{r}
+one.resample <- sample_n(grouped, 240, replace=TRUE)
+head(one.resample)
+tail(one.resample)
+```
+
+Again, we can use ```summarise``` to see the means of the two groups in our resample.
+
+```{r}
+summarise(group_by(one.resample, Province), mean=mean(Attitude.Score))
+```
+
+However, we have not specifically indicated what statistic we are even bootstrapping for! Since I've already demonstrated above how to do a difference of means, I'll show an example of a ratio of means, because the syntax is a hair more complicated. Again, we can used nested ```summarise``` functions to find the ratio of means between the two groups in our ```one.resample```.
+
+```{r}
+summarise(summarise(group_by(one.resample, Province), mean=mean(Attitude.Score)), meanRatio = mean[1]/mean[2])
+```
+
+If you remember your subsetting, this shouldn't faze you too badly–the first mean divided by the second mean.
+
+### Many Resamples
+
+The step to building a ```trials``` data set is not conceptually difficult, but syntactically it's a little ugly. First, let's make a data set called resamples, made of 1000 resamples from ```grouped```. Do not print this data set. You will regret it. This may take awhile to execute, mostly because it has 480,000 rows.
+
+```{r}
+resamples <- do(1000) * sample_n(grouped, 240, replace=TRUE)
+```
+
+If you type ```View(resamples)``` into your console after running the code, you'll see the first 1,000 rows. The different resamples are grouped by ```.index``` (the first resample has a ```.index``` of all 1s, the second full resample has a ```.index``` of all 2s, etc.), and then we want to break those down further by ```Province```. Luckily, ```group_by``` can handle multiple groups at once.
+
+```{r}
+resampleGrouped <- group_by(resamples, .index, Province)
+head(resampleGrouped)
+```
+
+We can then find the means for each Province in resampleGrouped.
+
+```{r}
+resampleGroupedMeans <- summarise(resampleGrouped, mean=mean(Attitude.Score))
+head(resampleGroupedMeans)
+```
+
+Next come the mean differences (substitute with mean ratio if desired).
+
+```{r}
+resampleMeanDiffs <- summarise(resampleGroupedMeans, diff=diff(mean))
+head(resampleMeanDiffs)
+```
+
+This is our final data set.
+
+```{r}
+trials<- data.frame(resampleMeanDiffs)
+```
+
+This was showed step-by-step by purely pedagogical reasons. It is wise to make ```resamples``` its own function, in case something goes wrong later on–you don't want to wait 20 seconds every time. But ```trials``` can also be formed like this:
+
+```{r, eval=false}
+trials <- data.frame(summarise(summarise(group_by(resamples, .index, Province), mean=mean(Attitude.Score)), diff=diff(mean)))
 ```
