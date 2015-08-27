@@ -53,7 +53,13 @@ But it is bad practice to have the two stacked on top of each other, as it is mo
 We will go more in-depth with better graphs in later sections. However, it is first important to cover the summary statistics for the two. We can use ```favstats``` in the ```mosaic``` package, and use the ```groups``` argument to specify which groups we want to examine:
 
 ```{r}
-favstats(Attitude.Score , groups=Province, data=Swahili)
+favstats(Attitude.Score, groups=Province, data=Swahili)
+```
+
+Another way to phrase this is using the ```~``` (tilde) to indicate ```Attitude.Score``` as an explanatory variable variable (for example, when defining linear models in R, response variables are placed to the left of a ```~``` and explanatory variables are placed to the right). A ```|``` vertical bar separates the explanatory variable from the variable to group by.
+
+```{r}
+favstats(~Attitude.Score|Province, data=Swahili)  
 ```
 
 ## Plots
@@ -76,7 +82,7 @@ For example, we could make a basic histogram like this:
 ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram()
 ```
 
-It looks like the one we made with the ```qplot``` function. However, ```ggplot``` is more flexible–we can keep adding functions like we added ```geom_histogram()```. There is a function called ```facet_wrap()``` grid that allows us to create facetted histograms based on a certain categorical variable. For example, if we wanted, we could make two different histograms, one for male students and one for female students:
+It looks like the one we made with the ```qplot``` function. However, ```ggplot``` is more flexible–we can keep adding functions like we added ```geom_histogram()```. There is a function called ```facet_wrap()``` grid that allows us to create facetted histograms based on a certain categorical variable. We use the ```~``` to show which variables we want to facet by–here, they become the explanatory variable to ```facet_wrap```.  For example, if we wanted, we could make two different histograms, one for male students and one for female students:
 
 ```{r}
 ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram() + facet_wrap(~Sex)
@@ -88,6 +94,12 @@ So, for our purposes, we can make two graphs which vary by province, with the sa
 ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram() + facet_wrap(~Province)
 ```
 
+If we wanted to, we could change the binwidths of the histograms the same way that we did for one-sample plots; however, one must keep in mind that both graphs will have the same scale. Because the binwidth affects the histogram, the ```binwidth``` argument goes in the ```geom_histogram()``` function.
+
+```{r}
+ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram(binwidth=5) + facet_wrap(~Province)
+```
+
 ### Density Plots
 
 Once we know how to manipulate ```ggplot```, it's not hard to make other plots of the same type. ```ggplot``` has a ```geom_density()``` function, so we can replace ```geom_histogram()``` with that.
@@ -95,4 +107,74 @@ Once we know how to manipulate ```ggplot```, it's not hard to make other plots o
 
 ```{r}
 ggplot(Swahili, aes(x=Attitude.Score)) + geom_density() + facet_wrap(~Province)
+```
+
+### Q-Q Plots
+
+```ggplot2``` has a ```stat_qq()``` function that makes Q-Q plots about as easy as we've had before. However, there is a small change in the ```ggplot()``` function–instead of using ```x=Attitude.Score```, we use ```sample=Attitude.Score```, indicating that we're plotting the sample quantiles against the theoretical quantiles, which are calculated by ```stat.qq()```.
+
+```{r}
+ggplot(Swahili, aes(sample = Attitude.Score)) + stat_qq() + facet_wrap(~Province)
+```
+
+These are not necessarily bad charts; however, when looking at Q-Q plots it important to be able to draw a 45˚ line, either mentally or manually, to judge the normality of the points. The ```theme()``` function in ```ggplot2``` allows control over almost every imaginable aspect of the plots: the size, font, and color of the axis labels; the color of the grid lines, the position of the legend, etc. (Type ```?theme``` into the console to see some of the examples.) One way to make judging the normality of these plots easier would be to change their aspect ratio to being square, or a length/width ratio of 1. We can introduce an ```aspect.ratio``` argument to the ```theme```function like so:
+
+```{r}
+ggplot(Swahili, aes(sample=Attitude.Score)) + stat_qq() + facet_wrap(~Province) + theme(aspect.ratio=1)
+```
+
+Try out some other arguments to ```theme()```. Then it's time to resample.
+
+## Resampling
+
+### Grouping
+
+Now that we've separately graphed various aspects of the two groups, we have to separately sample them. First, install and load the ```dplyr``` package (as usual, if you've already installed it, just load it).
+
+```{r, eval=FALSE}
+install.packages("dplyr")
+```
+```{r, message=FALSE}
+library(dplyr)
+```
+
+(Note: If you've already loaded the ```plyr``` package into your library, you may have to detach it to get some of these functions to work.)
+
+```dplyr``` has two functions that go together very well–```group_by``` and ```summarise```. ```group_by``` groups a data frame by a certain variable. We'll define a new data frame called ```grouped``` that groups ```Swahili``` by ```Province```. However, before we perform any operations on ```grouped```, it won't look any different than ```Swahili```.
+
+```{r}
+grouped <- group_by(Swahili, Province)
+head(grouped)
+```
+
+Indeed, if we try to apply any of the regular functions to ```grouped```, they'll look the same as they do for ```Swahili```.
+
+```{r}
+mean(grouped$Attitude.Score)
+mean(Swahili$Attitude.Score)
+```
+
+But the ```summarise``` command allows us to perform operations on ```grouped```, and it recognizes the differences in ```grouped```. Here we can calculate the minimum and maximum Attitude.Score per group, and define the column names as minScore and maxScore. We name the table minMax.
+
+```{r}
+(minMax <- summarise(grouped, minScore= min(Attitude.Score), maxScore=max(Attitude.Score)))
+```
+
+We can also use ```summarise``` multiple times if we need to make a second level of calculations based off of the ones we just did. However, since ```minMax``` is a table of the two variables, we have to group again. For example,
+
+```{r}
+summarise(group_by(minMax, Province), range=maxScore-minScore)
+```
+
+In the above example, we were trying to get two values–one for each Province. However, if we were condensing down to a single value overall, such as the differences in means between the two provinces, we would only need to group_by once. The ```diff``` function finds the difference between two values.
+
+```{r}
+(groupMeans <- summarise(grouped, mean=mean(Attitude.Score)))
+summarise(groupMeans, mean.diff=diff(mean))
+```
+
+Note that defining the functions separately above will produce the same result as calling them in a nested way, i.e. 
+
+```{r}
+summarise(summarise(group_by(Swahili, Province), mean=mean(Attitude.Score)), mean.diff=diff(mean))
 ```
