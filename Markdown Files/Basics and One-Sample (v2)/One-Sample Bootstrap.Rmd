@@ -7,7 +7,7 @@ output:
     toc: true
 ---
 
-## Getting started
+## Getting Started
 
 We will examine a variable from the ```SleepStudy``` dataset, found in the ```Lock5Data``` package. First, install the ```Lock5Data``` package, then load it into your library, then load the dataset ```SleepStudy```. This will automatically name the data set SleepStudy. We will also need to install and load the ```ggplot2``` package for some graphs.
 

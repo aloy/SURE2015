@@ -1,0 +1,98 @@
+---
+title: "Two-Sample Bootstrap Guide"
+author: "Alex Damisch"
+date: "August 26, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+## Getting Started
+
+We will examine the ```Swahili``` dataset, found in the ```Stat2Data``` package. First, install the ```Stat2Data``` package, then load it into your library, then load the dataset ```Swahili```. We will also need to install and load the ```mosaic``` package, and the ```ggplot2``` package for some graphs.
+
+If you've used any of these packages before, you don't need to reinstall them, just load them into your library.
+
+```{r, eval=FALSE}
+install.packages("Stat2Data")
+install.packages("mosaic")
+install.packages("ggplot2")
+```
+```{r, message=FALSE}
+library(Stat2Data)
+library(ggplot2)
+library(mosaic)
+data(Swahili)
+```
+
+You can look at the help file for this data set by typing ```?Swahili``` into your console.
+
+```{r}
+head(Swahili)
+summary(Swahili)
+```
+
+## Initial Problem
+
+As the summary tells us, there is data from 480 students from 12 different schools (A-L) in this data set, 6 from the Nairobi province and 6 from the Pwani province. All of the 480 students took the same test about their attitudes towards Swahili. A natural question may be whether or not there is a significant difference in the attitude scores of students from the Nairobi province and the Pwani province.
+
+It would seem that the tools that we used for one-sample bootstrapping are inadequate here. The summary does not tell us how the two schools differ from each other. We can plot a histogram, but it does not tell us which province's students rated which scores.
+
+```{r}
+qplot(Attitude.Score, data=Swahili)
+```
+
+We need some way to look at the difference between the two provinces. We can make a qplot and add an extra argument to differentiate the colors by province:
+
+```{r}
+qplot(Attitude.Score, color=Province, data=Swahili)
+```
+
+But it is bad practice to have the two stacked on top of each other, as it is more difficult to judge relative frequency.
+
+We will go more in-depth with better graphs in later sections. However, it is first important to cover the summary statistics for the two. We can use ```favstats``` in the ```mosaic``` package, and use the ```groups``` argument to specify which groups we want to examine:
+
+```{r}
+favstats(Attitude.Score , groups=Province, data=Swahili)
+```
+
+## Plots
+
+### Histograms
+
+As pictured above, we can make histograms that differentiate between the two groups with the ```qplot``` function, but it is a better habit to simply make different graphs for the different groups. It would be tiresome to make two different qplots and look at them siultaneously in R's viewer window. However, there are built-in functions in the ```ggplot2``` package that can help us out.
+
+```ggplot``` is the name of a function in the ```ggplot2``` package. All ```ggplot``` arguments begin like this:
+
+```{r, eval=FALSE}
+ggplot(dataSet, aes(x=xVariableName, y=yVariableName)) + geom_GeomName()
+```
+
+The names of the dataset and the x and y variables (where applicable) are in the ```ggplot()``` function, with the latter two wrapped in an ```aes()``` (aesthetics) argument. We then add the geometry for the plot with a separate argument. Most geoms are of the form ```geom_``` and then the name of the geometry.
+
+For example, we could make a basic histogram like this:
+
+```{r}
+ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram()
+```
+
+It looks like the one we made with the ```qplot``` function. However, ```ggplot``` is more flexible–we can keep adding functions like we added ```geom_histogram()```. There is a function called ```facet_wrap()``` grid that allows us to create facetted histograms based on a certain categorical variable. For example, if we wanted, we could make two different histograms, one for male students and one for female students:
+
+```{r}
+ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram() + facet_wrap(~Sex)
+```
+
+So, for our purposes, we can make two graphs which vary by province, with the same scale:
+
+```{r}
+ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram() + facet_wrap(~Province)
+```
+
+### Density Plots
+
+Once we know how to manipulate ```ggplot```, it's not hard to make other plots of the same type. ```ggplot``` has a ```geom_density()``` function, so we can replace ```geom_histogram()``` with that.
+
+
+```{r}
+ggplot(Swahili, aes(x=Attitude.Score)) + geom_density() + facet_wrap(~Province)
+```
