@@ -127,7 +127,7 @@ if(input$goButton > 0) {
 #                                 (sum(trials()$perms<=observedDiff())+1)/(n+1))*2,
 #                        lt = (sum(trials()$perms <= observedDiff()) +1)/(n+1),
 #                        ut = (sum(trials()$perms>=observedDiff())+1)/(n+1)
-signif(pvalSwitch, digits = 4)
+signif(pvalSwitch, digits = 5)
 } else{
   return(0)
 }

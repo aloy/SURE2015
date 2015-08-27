@@ -1,0 +1,143 @@
+---
+title: "Permutation Tests"
+author: "Alex Damisch"
+date: "August 27, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+## Getting Started
+
+We will examine the ```Smiles``` dataset, found in the ```Lock5Data``` package. We will also need to load the ```dplyr``` and ```mosaic``` package for certain functions, and ```ggplot2``` package for graphics.
+
+```{r, message=FALSE}
+library(Lock5Data)
+data(Smiles)
+library(dplyr)
+library(mosaic)
+library(ggplot2)
+```
+
+You can look at the help file for this data set by typing ```?Smiles``` into your console.
+
+```{r}
+head(Smiles)
+favstats(~Leniency|Group, data=Smiles)
+```
+
+Does a suspect's expression, either neutral or smiling, affect a disciplinary panel's lenience in its decision? The null hypothesis is that it does not.
+
+We can calculate the observed mean difference right away. Since ```summarise``` produces data frames and we want just the number, we'll wrap an ```as.numeric()``` function around the functions defining ```meanDiff```.
+```{r}
+grouped <- group_by(Smiles, Group)
+(meanDiff <- as.numeric(summarise(summarise(grouped, mean=mean(Leniency)), meanDiff=diff(mean))))
+```
+
+## Plots
+
+### Histograms
+
+As with the two-sample bootstrap test, we can facet our plots to see the difference between ```neutral``` and ```smile``` values for ```Group```.
+
+```{r}
+ggplot(Smiles, aes(x=Leniency)) + geom_histogram(binwidth=0.5) + facet_wrap(~Group)
+```
+
+### Density Plots
+
+Density plots still work like we're used to.
+
+```{r}
+ggplot(Smiles, aes(x=Leniency)) + geom_density() + facet_wrap(~Group)
+```
+
+### Q-Q Plots
+
+Last come the Q-Q plots.
+
+```{r}
+ggplot(Smiles, aes(sample = Leniency)) + stat_qq() + facet_wrap(~Group) + theme(aspect.ratio=1)
+```
+
+## Permutations
+
+Review the "Grouping" section of the Two-Sample Bootstrap guide, and then continue.
+
+### One Permutation
+
+The method of sampling is where permutation tests differ from bootstrap tests. Instead of sampling the groups separately and then taking the difference, we sample the data set without replacement and switch up, or shuffle, the groups. If the null hypothesis is true, there should not be a significant difference between the resampled groups, even with the labels mixed up.
+
+```{r}
+one.resample <- sample(Smiles, replace=FALSE, shuffle="Group")
+head(one.resample)
+favstats(~Leniency|Group, data=one.resample)
+```
+
+Here's a way to calculate the difference of means in our one resample by using the ```diff``` function in stead of another ```summarise```.
+
+```{r}
+diff(summarise(group_by(one.resample, Group), mean=mean(Leniency))$mean)
+```
+
+### Many Permutations
+
+Instead of building a very large data set of resamples, let's make our ```trials``` data set have all of the means right away. We can combine the function that we made to create ```one.resample``` with the faster ```diff(summarise(...``` function above to make a data frame called ```trials``` with a column named ```perms```.
+
+```{r}
+perms <-do (1000) * diff(summarise(group_by(sample(Smiles, replace=FALSE,shuffle="Group"), Group), mean=mean(Leniency))$mean)
+trials <- data.frame(perms)
+names(trials) <- "perms"
+head(trials)
+```
+
+### Plots
+
+```{r}
+favstats(perms, data=trials)
+```
+
+We'll use ```ggplot2``` graphics here. We don't need to use facetting because the dataset has already been broken down into mean differences.
+
+```{r}
+ggplot(trials, aes(x=perms)) + geom_histogram(binwidth=0.25)
+ggplot(trials, aes(x=perms)) + geom_density()
+ggplot(trials, aes(sample=perms)) + stat_qq()
+```
+
+## P-Value
+
+Instead of building confidence intervals, we will calculate p-values, with the null hypothesis that smiling has no effect on ```Leniency``` (more formally, that the mean ```Leniency``` score for the ```smile``` group is the same as the mean ```Leniency``` score for the ```neutral``` group).
+
+First, we will define the number of permutation resamples we had as ```n```, and the mean of the differences of our permutation tests as permDiff.
+
+```{r}
+n <- 1000
+permDiff <- mean(trials$perms)
+```
+
+### Lower Tail 
+
+Lower tail p-values are calculated as the proportion of trial mean differences that were less than or equal to the observed mean difference. We add one to both the numerator and denominator to include the original sample.
+
+```{r}
+lt <- (sum(trials$perms <= meanDiff) +1)/(n+1)
+lt
+```
+
+### Upper Tail
+
+Upper tail p-values are calculated as the proportion of trial mean differences that were greater than or equal to the observed mean difference. We add one to both the numerator and denominator to include the original sample.
+
+```{r}
+ut <- (sum(trials$perms >= meanDiff) +1)/(n+1)
+ut
+```
+
+### Two-Tailed
+
+Two-tailed p-values are usually defined as the smaller of the lower and upper tailed tests, multiplied by two.
+
+```{r}
+(tt <- min(lt, ut)*2)
+```

@@ -1,0 +1,246 @@
+---
+title: "One-Sample Bootstrap Guide"
+author: "Alex Damisch"
+date: "August 25, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+## Getting Started
+
+We will examine a variable from the ```SleepStudy``` dataset, found in the ```Lock5Data``` package. First, install the ```Lock5Data``` package, then load it into your library, then load the dataset ```SleepStudy```. This will automatically name the data set SleepStudy. We will also need to install and load the ```ggplot2``` package for some graphs.
+
+If you've used Lock5Data or ggplot2 before, you don't need to reinstall them, just load them into your library.
+
+```{r, eval=FALSE}
+install.packages("Lock5Data")
+install.packages("ggplot2")
+```
+```{r}
+library(Lock5Data)
+library(ggplot2)
+data(SleepStudy)
+```
+
+You can look at the head of the data set, summary, etc.
+```{r}
+head(SleepStudy)
+summary(SleepStudy)
+```
+
+## Plots
+
+### Histograms
+
+We can get a good idea about the basic shape of the data by making a histogram using the ``qplot`` function in the ``ggplot2`` package.
+
+```{r}
+qplot(SleepStudy$AverageSleep)
+```
+
+We can also plot the same thing by specfying the variable and the data set separately.
+
+```{r}
+qplot(AverageSleep, data=SleepStudy)
+```
+
+R's default binwidth is the range of the data divided by 30. For our purposes, that means that R defaulted to a binwidth of:
+
+```{r}
+dataRange <- range(SleepStudy$AverageSleep)
+dataDiff <- diff(dataRange) #computes the difference between two numbers
+dataDiff/30
+```
+
+We can change the binwidth to be either wider or more narrow.
+
+```{r}
+qplot(AverageSleep, data=SleepStudy, binwidth=0.05)
+qplot(AverageSleep, data=SleepStudy, binwidth=0.5)
+```
+
+### Density Plots
+
+Density plots are another kind of plot that give us a rough outline of a histogram. Here we introduce another argument inside the ``qplot`` (quick plot) function by specificying the geometry, or ``geom`` of the plot.
+
+```{r}
+qplot(AverageSleep, data=SleepStudy, geom="density")
+```
+
+### Q-Q Plots
+
+In order to create a quantile-quantile plot, we have to install and load the ```car``` (Companion to Applied Regression) package.
+
+```{r, eval=FALSE}
+install.packages("car")
+```
+```{r}
+library(car)
+```
+
+The ```qqPlot``` function does not have a ```data=``` argument, so we have to specify our data by subsetting ```SleepStudy``` again (if you're ever not sure, you can just type ```?qqPlot``` into the console).
+
+```{r}
+qqPlot(SleepStudy$AverageSleep)
+```
+
+In order to make the dots easier to see, we can change the plotting character, or ```pch```. A ```pch``` value of 16 is a filled circle (you can see all of the plotting character options by typing ```?pch``` into the console). We can do this by adding another argument to qqPlot.
+
+```{r}
+qqPlot(SleepStudy$AverageSleep, pch=16)
+```
+
+## Resampling
+
+### One Resample
+Taking a single resample from a data set is pretty easy. As you know, it's simply taking a sample with replacement from the original sample. There's a built-in ```sample``` function you can use, and its arguments are pretty intuitive–you input the data you want to sample and whether or not to replace. If you don't specify a size for the sample, R will assume you want a sample as large as the original data.
+
+```{r}
+(one.resample <- sample(SleepStudy$AverageSleep, replace=TRUE))
+```
+
+Let's say you want to make a bootstrap distribution for the mean of ```AverageSleep```. We then take the mean of our ```one.resample```:
+
+```{r}
+one.mean <- mean(one.resample)
+one.mean
+```
+
+Let's put our ```one.mean``` into a data frame called ```trials```, since we're going to get a lot of means to make our bootstrap distribution. We'll call the column of resample means that we're collecting ```result```. Because ```trials``` is still a small data frame, we'll also print what ```trials``` looks like.
+
+```{r}
+trials <- data.frame(result=one.mean)
+trials
+```
+
+### Many Resamples
+Now we're ready for the big leagues. First, let's see how we can wrap the process of taking a resample and taking a mean into one larger function:
+
+```{r}
+another.resample <- mean(sample(SleepStudy$AverageSleep, replace=TRUE))
+another.resample
+```
+
+We've just nested the ```sample``` function inside the ```mean``` function.
+
+As it turns out, taking a lot of samples isn't much harder than taking one. If you haven't already, install and load the ```mosaic``` package (if you've already installed it, you can just reload it).
+
+```{r, eval=FALSE, message=FALSE}
+install.packages("mosaic")
+```
+```{r, message=FALSE}
+library(mosaic)
+```
+
+The ```do``` function in the ```mosaic``` package allows us to do one thing many times. Let's take the mean of five resamples and print them:
+
+```{r}
+(do(5) * mean(sample(SleepStudy$AverageSleep, replace=TRUE)))
+```
+
+(Note that the output of ```do``` is by default data frame with a column named ```result```, just as we defined ```trials``` above.)
+
+You can probably see where this is going. Make a data frame called ```trials``` of the means of 1000 resamples from ```AverageSleep```. You will definitely not want to print ```trials```, but we can look at the first six rows.
+
+```{r}
+trials <- do(1000) * mean(sample(SleepStudy$AverageSleep, replace=TRUE))
+head(trials)
+```
+
+### Plots 
+
+How do we get a feel for a larger data set? The same way we would for a smaller one.
+
+```{r}
+favstats(result, data=trials)
+```
+
+```{r}
+qplot(result, data=trials, binwidth=0.03)
+qplot(result, data=trials, geom="density")
+qqPlot(trials$result, pch=16)
+```
+
+Those graphs represent the counts for the 1,000 resample means in the ```trials``` data set.
+
+## Bias and Confidence Intervals
+
+### Bias
+
+So, we took a bunch of samples from a sample. What do we do with them?
+
+We can calculate the bias, which is the difference between our original sample mean and the mean of the bootstrap distribution.
+
+```{r}
+mean(SleepStudy$AverageSleep) - mean(trials$result)
+```
+
+### Percentile Confidence Intervals
+
+There are two ways to calculate confidence intervals. The first one is the percentile method, which gives us sample quantiles from the data set. 
+
+First, we need to decide our confidence level. 0.95 is pretty standard, but we'll define a variable called ```level``` to represent whatever number you want to put in, and a variable called ```alpha``` to represent the alpha level.
+
+```{r}
+level <- 0.95
+alpha <- 1-level
+```
+
+#### Two-Tailed
+
+A two-tailed confidence interval for the ```trials``` data set requires that we divide ```alpha``` by 2:
+
+```{r}
+quantile(trials$result, probs=c(alpha/2, 1-(alpha/2)))
+```
+
+#### Lower Bound
+
+For the lower bound, we use ```alpha```:
+
+```{r}
+quantile(trials$result, probs=alpha)
+```
+
+#### Upper Bound
+
+For the upper bound, we use ```1-alpha``` (equivalent to using ```level```):
+
+```{r}
+quantile(trials$result, probs=1-alpha)
+```
+
+### Normal Confidence Intervals
+
+Normal-based confidence intervals use the mean of the original sample, plus or minus the standard error of the bootstrap distribution times quantiles from the normal distribution. ```alpha``` and ```level``` are used in the same way.
+
+We will define the standard error ahead of time:
+```{r}
+SE <- sd(trials$result)
+```
+
+#### Two-Tailed
+
+A two-tailed confidence interval for the ```trials``` data set requires that we divide ```alpha``` by 2. We will calculate the lower tail, then the upper tail.
+
+```{r}
+mean(SleepStudy$AverageSleep) - (qnorm(1-alpha/2) *  SE)
+mean(SleepStudy$AverageSleep) + (qnorm(1-alpha/2) * SE)
+```
+
+#### Lower Bound
+
+For the lower bound, we use ```1-alpha```, but we subtract from the mean.
+
+```{r}
+mean(SleepStudy$AverageSleep)  - (qnorm(1-alpha) * SE)
+```
+
+#### Upper Bound
+
+For the upper bound, we also use ```1-alpha```, but we add to the mean.
+
+```{r}
+mean(SleepStudy$AverageSleep)  + (qnorm(1-alpha) * SE)
+```

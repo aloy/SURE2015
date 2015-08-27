@@ -104,7 +104,6 @@ ggplot(Swahili, aes(x=Attitude.Score)) + geom_histogram(binwidth=5) + facet_wrap
 
 Once we know how to manipulate ```ggplot```, it's not hard to make other plots of the same type. ```ggplot``` has a ```geom_density()``` function, so we can replace ```geom_histogram()``` with that.
 
-
 ```{r}
 ggplot(Swahili, aes(x=Attitude.Score)) + geom_density() + facet_wrap(~Province)
 ```
@@ -243,7 +242,7 @@ trials<- data.frame(resampleMeanDiffs)
 head(trials)
 ```
 
-This was showed step-by-step by purely pedagogical reasons. It is wise to make ```resamples``` its own function, in case something goes wrong later on–you don't want to wait 20 seconds every time. But ```trials``` can also be formed like this:
+This was showed step-by-step by purely pedagogical reasons. As a beginniner, it may wise to make ```resamples``` its own function, in case something goes wrong later on–you don't want to wait 20 seconds every time. But ```trials``` can also be formed like this:
 
 ```{r, eval=FALSE}
 trials <- data.frame(summarise(summarise(group_by(resamples, .index, Province), mean=mean(Attitude.Score)), diff=diff(mean)))
