@@ -173,8 +173,8 @@ summarise(group_by(minMax, Province), range=maxScore-minScore)
 In the above example, we were trying to get two values–one for each Province. However, if we were condensing down to a single value overall, such as the differences in means between the two provinces, we would only need to group_by once. The ```diff``` function finds the difference between two values.
 
 ```{r}
-(groupMeans <- summarise(grouped, mean=mean(Attitude.Score)))
-summarise(groupMeans, mean.diff=diff(mean))
+(groupedMeans <- summarise(grouped, mean=mean(Attitude.Score)))
+(groupedMeanDiff <- summarise(groupedMeans, mean.diff=diff(mean)))
 ```
 
 Note that defining the functions separately above will produce the same result as calling them in a nested way, i.e. 
@@ -209,10 +209,10 @@ If you remember your subsetting, this shouldn't faze you too badly–the first m
 
 ### Many Resamples
 
-The step to building a ```trials``` data set is not conceptually difficult, but syntactically it's a little ugly. First, let's make a data set called resamples, made of 1000 resamples from ```grouped```. Do not print this data set. You will regret it. This may take awhile to execute, mostly because it has 480,000 rows.
+The step to building a ```trials``` data set is not conceptually difficult, but syntactically it's a little ugly. First, let's make a data set called resamples, made of 1000 resamples from ```grouped```. (Do not print this data set. You will regret it.) 
 
 ```{r}
-resamples <- do(1000) * sample_n(grouped, 240, replace=TRUE)
+resamples <- do(1000)*sample_n(grouped, 240, replace=TRUE)
 ```
 
 If you type ```View(resamples)``` into your console after running the code, you'll see the first 1,000 rows. The different resamples are grouped by ```.index``` (the first resample has a ```.index``` of all 1s, the second full resample has a ```.index``` of all 2s, etc.), and then we want to break those down further by ```Province```. Luckily, ```group_by``` can handle multiple groups at once.
@@ -240,10 +240,108 @@ This is our final data set.
 
 ```{r}
 trials<- data.frame(resampleMeanDiffs)
+head(trials)
 ```
 
 This was showed step-by-step by purely pedagogical reasons. It is wise to make ```resamples``` its own function, in case something goes wrong later on–you don't want to wait 20 seconds every time. But ```trials``` can also be formed like this:
 
-```{r, eval=false}
+```{r, eval=FALSE}
 trials <- data.frame(summarise(summarise(group_by(resamples, .index, Province), mean=mean(Attitude.Score)), diff=diff(mean)))
+```
+
+### Plots 
+
+By now, you know the drill.
+
+```{r}
+favstats(diff, data=trials)
+```
+
+We'll use ```ggplot2``` graphics here. We don't need to use facetting because the dataset has already been broken down into mean differences.
+
+```{r}
+ggplot(trials, aes(x=diff)) + geom_histogram(binwidth=0.75)
+ggplot(trials, aes(x=diff)) + geom_density()
+ggplot(trials, aes(sample=diff)) + stat_qq()
+```
+
+## Bias and Confidence Intervals
+
+### Bias
+
+Recall that bias is the difference between our original sample statistic and the mean of the bootstrap distribution. We've saved the original mean difference as ```groupedMeanDiff```.
+
+```{r}
+groupedMeanDiff - mean(trials$diff)
+```
+
+### Percentile Confidence Intervals
+
+Confidence intervals for two-sample bootstrapping are very similar to those for one-sample, because we've summarized the mean difference (or ratio, etc.) down to a single number.
+
+As always,  we need to decide our confidence level. Although 0.95 is standard, we will do 0.9 in this example for demonstration purposes. We'll define a variable called ```level``` to represent whatever number you want to put in, and a variable called ```alpha``` to represent the alpha level.
+
+```{r}
+level <- 0.9
+alpha <- 1-level
+```
+
+#### Two-Tailed
+
+A two-tailed confidence interval for the ```trials``` data set requires that we divide ```alpha``` by 2:
+
+```{r}
+quantile(trials$diff, probs=c(alpha/2, 1-(alpha/2)))
+```
+
+#### Lower Bound
+
+For the lower bound, we use ```alpha```:
+
+```{r}
+quantile(trials$diff, probs=alpha)
+```
+
+#### Upper Bound
+
+For the upper bound, we use ```1-alpha``` (equivalent to using ```level```):
+
+```{r}
+quantile(trials$diff, probs=1-alpha)
+```
+
+### Normal Confidence Intervals
+
+Normal-based confidence intervals use the mean difference of the original sample, plus or minus the standard error (in this case, the standard deviation of the bootstrap distribution) times quantiles from the normal distribution. ```alpha``` and ```level``` are used in the same way.
+
+We saved the mean difference of the original sample as ```groupedMeanDiff```.
+
+Here's the standard error:
+```{r}
+SE <- sd(trials$diff)
+```
+
+#### Two-Tailed
+
+A two-tailed confidence interval for the ```trials``` data set requires that we divide ```alpha``` by 2. We will calculate the lower tail, then the upper tail.
+
+```{r}
+groupedMeanDiff - (qnorm(1-alpha/2) *  SE)
+groupedMeanDiff + (qnorm(1-alpha/2) * SE)
+```
+
+#### Lower Bound
+
+For the lower bound, we use ```1-alpha```, but we subtract from the mean difference.
+
+```{r}
+groupedMeanDiff  - (qnorm(1-alpha) * SE)
+```
+
+#### Upper Bound
+
+For the upper bound, we also use ```1-alpha```, but we add to the mean difference.
+
+```{r}
+groupedMeanDiff  + (qnorm(1-alpha) * SE)
 ```
