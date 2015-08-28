@@ -156,14 +156,17 @@ output$slider <- renderUI({
   })
   
 output$pval <- renderText({
-  observedSlope <- summary(lm(y~x, data=filteredData()))$coefficients[2]
+  observed <- switch(input$permStat,
+                     slope= summary(lm(y~x, data=filteredData()))$coefficients[2],
+                     cor = cor(filteredData()$x, filteredData()$y)
+  )
   n <- input$num
   if(input$goButton > 0) {
     pvalSwitch <- switch(input$test, 
-                         tt = min((sum(trials()$perms>=observedSlope)+1)/(n+1),
-                                  (sum(trials()$perms<=observedSlope)+1)/(n+1))*2,
-                         lt = (sum(trials()$perms <= observedSlope) +1)/(n+1),
-                         ut = (sum(trials()$perms>=observedSlope)+1)/(n+1)
+                         tt = min((sum(trials()$perms>=observed)+1)/(n+1),
+                                  (sum(trials()$perms<=observed)+1)/(n+1))*2,
+                         lt = (sum(trials()$perms <= observed) +1)/(n+1),
+                         ut = (sum(trials()$perms>=observed)+1)/(n+1)
     )
     signif(pvalSwitch, 3)
   }

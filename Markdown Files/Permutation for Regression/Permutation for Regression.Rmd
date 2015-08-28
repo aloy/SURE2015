@@ -9,12 +9,13 @@ output:
 
 ## Getting Started
 
-We will examine the ```HappyPlanetIndex``` data set, found in the ```Lock5Data``` package. We will also need the ```ggplot2``` package for graphics.
+We will examine the ```HappyPlanetIndex``` data set, found in the ```Lock5Data``` package. We will also need the ```ggplot2``` package for graphics, and the ```mosaic``` package for some data manipulation functions.
 
 ```{r}
 library(Lock5Data)
 data(HappyPlanetIndex)
 library(ggplot2)
+library(mosaic)
 ```
 
 This data set contains different measurements of happiness and well-being for 143 countries.
@@ -47,10 +48,128 @@ plot(HappyPlanetIndex[-1])
 
 It looks like ```HLY``` has very strong linear association with ```Happiness```–however, calculating HLY involves a 1-10 happiness score, so ```HLY``` is, by definition, dependent on ```Happiness``` (see [the Happy Planet Index website](http://www.happyplanetindex.org/about/)). So, that's not very interesting. However, it looks like ```HDI``` (Human Development Index), which does not directly depend on ```Happiness``` also has a strong linear association. We'll choose this as our explanatory variable.
 
-## Plots
+Although we've seen a small plot of it on our scatterplot matrix, let's plot ```HDI``` and ```Happiness``` together on a larger scale. Because we expect that we'll add a linear model soon, we'll use ```ggplot2```. If you didn't remove the rows with missing values, you'll get a message from R saying that it's been done automatically.
 
-Assuming you already know the basics of linear models (see Basics of Linear Models guide), we will immediately plot a scatterplot of ```Calcium``` vs. ```ProteinProp.```
+```{r, warning=FALSE}
+ggplot(HappyPlanetIndex, aes(x=HDI, y=Happiness)) +geom_point()
+```
+
+## Linear Model
+
+Now we'll define our linear model and look at the summary.
 
 ```{r}
-# ggplot(Fluorescence, aes(x=Calcium, y=ProteinProp)) + geom_point()
+lm(Happiness~HDI, data=HappyPlanetIndex)
+summary(lm(Happiness~HDI, data=HappyPlanetIndex))
+```
+
+We'll also superimpose our linear model onto our scatterplot.
+
+```{r, warning=FALSE}
+ggplot(HappyPlanetIndex, aes(x=HDI, y=Happiness)) +geom_point() + stat_smooth(method="lm")
+```
+
+## Permutation for Regression
+
+First, we need to pick a statistic to permute. Your two basic options here are slope and correlation. Because the methods are different, we'll look at the initial steps for both slope and correlation.
+
+### One Sample
+
+#### Slope
+
+Just as we did for permutation tests, we permute the sample by shuffling one of the groups–in this case, ```HDI```. Here's how it looks for one permutation:
+
+```{r, warning=FALSE}
+lm(Happiness~shuffle(HDI), data=HappyPlanetIndex)
+```
+
+If you try this multiple times, you will get different results depending on how ```HDI``` was shuffled. However, we only need the slope, not the y-intercept.
+
+Let's look at the structure of a linear model. There's quite a bit there.
+```{r}
+str(lm(Happiness~shuffle(HDI), data=HappyPlanetIndex))
+```
+
+Anything that's preceded by a dollar sign, we can directly subset.
+
+```{r}
+lm(Happiness~shuffle(HDI), data=HappyPlanetIndex)$coefficients
+```
+
+Now we can pull off just the slope. The slope below may differ from the one above, because it's shuffling the data in a different way.
+
+```{r}
+lm(Happiness~shuffle(HDI), data=HappyPlanetIndex)$coefficients[2]
+```
+
+We can do this many times for our permutation distribution.
+
+#### Correlation
+
+The method for correlation is a little different. We know that the ```cor``` command, when given two columns of a data set, finds the correlation between them. We'll use the ```sample``` command to take a sample from ```HDI``` that is the same size as ```HDI```, effectively doing the same thing as shuffling.
+
+```{r}
+cor(HappyPlanetIndex$HDI, sample(HappyPlanetIndex$Happiness), use="complete.obs")
+```
+
+We can do this many times for our permutation distribution.
+
+### Many Permutations
+
+We'll just permute for slope here. We'll create a list of data called ```perms``` that contains 1,000 slopes of linear models where ```Happiness``` depends on shuffled ```HDI``` scores. Then we'll make a data frame called ```trials``` that is a data frame of ```perms```, with a column named ```perms```.
+
+```{r}
+perms <-do (1000) * lm(Happiness~shuffle(HDI), data=HappyPlanetIndex)$coefficients[2]
+trials <- data.frame(perms)
+names(trials) <- "perms"
+head(trials)
+```
+
+### Plots
+
+```{r}
+favstats(perms, data=trials)
+```
+
+We'll use ```ggplot2``` graphics here. We don't need to use facetting because the dataset has already been broken down into mean differences.
+
+```{r}
+ggplot(trials, aes(x=perms)) + geom_histogram(binwidth=0.25)
+ggplot(trials, aes(x=perms)) + geom_density()
+ggplot(trials, aes(sample=perms)) + stat_qq()
+```
+
+## P-Value
+
+We will calculate p-values with the null hypothesis that the slope is equal to 0. We will also need the observed slope of our original, unshuffled linear model.
+
+```{r}
+slope <- lm(Happiness~HDI, data=HappyPlanetIndex)$coefficients[2]
+n <- 1000
+```
+
+### Lower Tail 
+
+Lower tail p-values are calculated as the proportion of trial slopes that were less than or equal to the observed slope. We add one to both the numerator and denominator to include the original sample.
+
+```{r}
+lt <- (sum(trials$perms <= slope) +1)/(n+1)
+signif(lt, digits=3)
+```
+
+### Upper Tail
+
+Upper tail p-values are calculated as the proportion of trial slopes that were greater than or equal to the observed slope. We add one to both the numerator and denominator to include the original sample.
+
+```{r}
+ut <- (sum(trials$perms >= slope) +1)/(n+1)
+ut
+```
+
+### Two-Tailed
+
+Two-tailed p-values are usually defined as the smaller of the lower and upper tailed tests, multiplied by two.
+
+```{r}
+(tt <- min(lt, ut)*2)
 ```
