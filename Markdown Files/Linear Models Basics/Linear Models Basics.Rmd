@@ -1,0 +1,120 @@
+---
+title: "Linear Models Basics"
+author: "Alex Damisch"
+date: "August 28, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+## Getting Started
+
+We will examine variables from the ```NBAPlayers2011``` dataset, found in the ```Lock5Data``` package. We will also need the ```ggplot2``` package for graphics. 
+
+```{r}
+library(Lock5Data)
+data(NBAPlayers2011)
+library(ggplot2)
+```
+
+This data set has 25 variables, which is larger than many of the data sets you may have looked at in the past. We can still use many of the same strategies to examine it.
+
+```{r}
+head(NBAPlayers2011)
+summary(NBAPlayers2011)
+```
+
+If you are familiar with basketball terminology, these abbreviations may seem intuitive; if not, type ```?NBAPlayers2011``` into the console for more information.
+
+### Selecting Variables
+
+Let's select two variables to examine in this data set: an explanatory variable, and a response variable. Just by looking at the column names, it would make a lot of sense for ```Points``` to be our response variable, as this is a pretty good metric for the utility of a basketball player.
+
+How should we select our explanatory variable? One good way to examine the linear relationships between many variables is by looking at their correlations. However, correlation only makes sense for numeric variables, and not every variable in ```NBAPlayers2011``` is numeric. But by subsetting ```NBAPlayers2011``` correctly, we can avoid this problem. 
+
+#### Subsetting Aside
+
+Recall subsetting by concatenation. In the R Basics guide, we just examined it for using column names, but it also works for column numbers:
+
+```{r}
+head(NBAPlayers2011[c("Team","Starts")])
+head(NBAPlayers2011[c(2, 4)])
+```
+
+With the simple power of a minus sign, we can subset the whole data set *except* for the columns we've specified. This works for column numbers with and without concatenation and the use of a colon.
+
+```{r}
+head(NBAPlayers2011[-1])
+head(NBAPlayers2011[-(15:25)])
+head(NBAPlayers2011[-c(2, 3, 5, 7, 11, 13, 17, 19, 23)])
+```
+
+### Correlation Matrices
+
+Now we're ready to look at correlation matrices for ```NBAPlayers2011```, using ```Points``` as our response variable. We know that we can take out the first column and the third column right away, because they are categorical variables. I would also propose that we remove ```FGMade```, ```FG3Made```, and ```FTMade``` –although these have very high correlations (see below), it is somewhat redundant to note that making baskets will increase the number of points you've scored. 
+
+Using the ```cor``` function with arguments of two numeric columns of a data set will calculate the correlation between them.
+
+```{r}
+cor(NBAPlayers2011$FGMade,NBAPlayers2011$Points)
+cor(NBAPlayers2011$FG3Made,NBAPlayers2011$Points)
+cor(NBAPlayers2011$FTMade,NBAPlayers2011$Points)
+```
+
+So we will remove columns 1, 3, 8, 11, and 14 when we subset for our correlation matrix. One argument to ```cor``` of a data frame will print the correlation between every possible pair of variables. Because there are some NAs in our data set, we will add a ```use=complete.obs``` argument to ```cor```, to tell R to calculate the correlations for all complete observations.
+
+```{r}
+cor(NBAPlayers2011[-c(1, 3, 8, 11, 14)], use="complete.obs")
+```
+
+It looks like ```Mins```, ```FGAttempt```, ```FTAttempt```, and ```Turnovers``` all have fairly strong positive correlations with ```Points```. Let's use ```Turnovers```.
+
+## Scatterplots
+
+It is important to plot the data before fitting a linear model, and scatterplots are the bread and butter of linear models. Simply put, we put our explanatory variable on the x axis and our response variable on the y axis.
+
+```{r}
+qplot(Turnovers, Points, data=NBAPlayers2011)
+```
+
+If there was anything strange with our data, this would probably be where we could catch it. It's not perfect, but for our purposes this should be fine.
+
+## Linear Model
+
+Now, of course, it's time to define our linear model. There is an ```lm``` function built into R that will do this quite easily. The format for a simple linear regression model in R is:
+
+```{r, eval=FALSE}
+lm(responseVariable~explanatoryVariable, data=dataSet)
+```
+
+This will return a y-intercept and a slope.
+
+```{r}
+lm(Points~Turnovers, data=NBAPlayers2011)
+```
+
+Much more helpful than just the y-intercept and slope is the summary of the linear model. As it turns out, the ```summary``` command isn't just for data sets; it's immensely helpful for understanding linear models as well.
+
+```{r}
+summary(lm(Points~Turnovers, data=NBAPlayers2011))
+```
+
+## Plots with Linear Models
+
+We can now plot our linear model to our data. This will require use and knowledge of the ```ggplot2``` package, a review of which is found in the Two-Sample Bootstrap guide.
+
+```{r}
+library(ggplot2)
+```
+
+Just as we used ```geom_histogram()``` to build a histogram, we use ```geom_point()```  for a scatterplot.
+
+```{r}
+ggplot(NBAPlayers2011, aes(x=Turnovers, y=Points)) + geom_point()
+```
+
+Now it's time to learn the ```stat_smooth``` command. This simple command plots a smoother to our data. Although there are many different kinds of smoothers, we will use a ```method="lm"``` argument, which automatically calculates the linear model that we specified above.
+
+```{r}
+ggplot(NBAPlayers2011, aes(x=Turnovers, y=Points)) + geom_point() + stat_smooth(method="lm")
+```

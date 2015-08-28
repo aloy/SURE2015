@@ -1,0 +1,56 @@
+---
+title: "Permutation for Regression"
+author: "Alex Damisch"
+date: "August 28, 2015"
+output: 
+  html_document:
+    toc: true
+---
+
+## Getting Started
+
+We will examine the ```HappyPlanetIndex``` data set, found in the ```Lock5Data``` package. We will also need the ```ggplot2``` package for graphics.
+
+```{r}
+library(Lock5Data)
+data(HappyPlanetIndex)
+library(ggplot2)
+```
+
+This data set contains different measurements of happiness and well-being for 143 countries.
+
+```{r}
+head(HappyPlanetIndex)
+summary(HappyPlanetIndex)
+```
+
+We will choose ```Happiness``` as our response variable, to see how different measurements of quality of life in a country affect ```Happiness```.
+
+Looking at the data set (type ```View(HappyPlanetIndex)``` in the console), it appears that there are some missing values in the data set in rows 63 and 113. This will cause problems when calculating correlations.
+
+Optionally, you can remove the rows with missing values.
+```{r, eval=FALSE}
+HappyPlanetIndex <- HappyPlanetIndex[-63, -113]
+```
+
+Assuming you already know the basics of linear models (see Basics of Linear Models guide), we will make a correlation matrix for the data set, excluding the first variable. If you did not choose to remove the rows with missing values, you will need the ```use``` argument; if you did, you don't need it.
+
+```{r}
+cor(HappyPlanetIndex[-1], use="complete.obs")
+```
+
+For smaller data sets–in terms of column size, <20 or so)–it can often be helpful to plot a scatterplot matrix, which plots each of the variables against each other (much like the correlation matrix, but for plots).
+
+```{r}
+plot(HappyPlanetIndex[-1])
+```
+
+It looks like ```HLY``` has very strong linear association with ```Happiness```–however, calculating HLY involves a 1-10 happiness score, so ```HLY``` is, by definition, dependent on ```Happiness``` (see [the Happy Planet Index website](http://www.happyplanetindex.org/about/)). So, that's not very interesting. However, it looks like ```HDI``` (Human Development Index), which does not directly depend on ```Happiness``` also has a strong linear association. We'll choose this as our explanatory variable.
+
+## Plots
+
+Assuming you already know the basics of linear models (see Basics of Linear Models guide), we will immediately plot a scatterplot of ```Calcium``` vs. ```ProteinProp.```
+
+```{r}
+# ggplot(Fluorescence, aes(x=Calcium, y=ProteinProp)) + geom_point()
+```
