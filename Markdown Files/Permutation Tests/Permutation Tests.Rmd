@@ -113,7 +113,6 @@ First, we will define the number of permutation resamples we had as ```n```, and
 
 ```{r}
 n <- 1000
-permDiff <- mean(trials$perms)
 ```
 
 ### Lower Tail 

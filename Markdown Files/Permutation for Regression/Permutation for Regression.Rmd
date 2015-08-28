@@ -154,7 +154,7 @@ Lower tail p-values are calculated as the proportion of trial slopes that were l
 
 ```{r}
 lt <- (sum(trials$perms <= slope) +1)/(n+1)
-signif(lt, digits=3)
+lt
 ```
 
 ### Upper Tail
